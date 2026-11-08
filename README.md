@@ -92,13 +92,12 @@ docker compose exec web composer install
 
 ## Equipo
 
-|     | Módulo                                         | Nombre | GitHub                 |
-| --- | ---------------------------------------------- | ------ | ---------------------- |
-| P1  | Cuentas + Infraestructura                      | Daiana | Daiana1411             |
-| P2  | Despensa + Diseño                              | Julian | julianmartinez093-tech |
-| P3  | Recetas + Base de datos (coordinación)         | Pablo  | pablito2032            |
-| P4  | Contacto + Calidad                             | Ariana | arianapajon            |
-| P5  | Administración: ABM de usuarios e ingredientes | Susana | Susana2030             |
+|     | Módulo                                      | Nombre          | GitHub                 |
+| --- | ------------------------------------------- | --------------- | ---------------------- |
+| P1  | Cuentas + Infraestructura + Administración  | Daiana Martin   | Daiana1411             |
+| P2  | Despensa + Diseño                           | Julian Martinez | julianmartinez093-tech |
+| P3  | Recetas + Base de datos                     | Pablo Faraone   | pablito2032            |
+| P4  | Contacto + Calidad                          | Ariana Pajon    | arianapajon            |
 
 División de tareas: [docs/tareas-incremento-1.md](docs/tareas-incremento-1.md) · Cómo trabajamos: [CONTRIBUTING.md](CONTRIBUTING.md) · Decisiones: [docs/decisiones.md](docs/decisiones.md) · Modelo de datos: [docs/modelo-datos.md](docs/modelo-datos.md)
 

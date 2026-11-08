@@ -958,6 +958,15 @@ td small { display: block; }
 }
 .nota-panel:hover .nota-panel__dibujo { transform: rotate(-6deg) scale(1.12); }
 
+/* Administración → Correo: la configuración como pares "dato: valor" */
+.datos-correo { display: grid; grid-template-columns: max-content 1fr; gap: 0 16px; margin: 0 0 var(--renglon); line-height: var(--renglon); }
+.datos-correo dt { font-weight: 700; }
+.datos-correo dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+  .datos-correo { grid-template-columns: 1fr; }
+  .datos-correo dd { margin-bottom: 6px; }
+}
+
 /* ══════════ Administración: dibujos en listas y formularios ══════════ */
 /* Las hojas con tablas se despegan un poco al pasar el mouse (sin girar: se está leyendo) */
 .tabla-contenedor:not(:has(#tabla-despensa)) { transition: transform .35s cubic-bezier(.3, 1.5, .5, 1), box-shadow .35s; }
@@ -1312,16 +1321,19 @@ td > .acciones { flex-wrap: nowrap; }
 .iman-enlace--correo { --claro: #FF9C8F; --base: var(--color-marca); }
 .iman-enlace:hover, .iman-enlace:focus-visible { transform: translateY(-3px) rotate(-6deg); box-shadow: var(--sombra-iman-alto); }
 /* Los dos ingredientes a los costados de la última hoja (solo en la computadora) */
+/* La nota de contacto, con el mate y el café a los costados (en pantallas angostas solo la nota) */
+.nosotros__fila-contacto { display: grid; grid-template-columns: minmax(0, 640px); justify-content: center; align-items: center; gap: 0 32px; margin: 44px 0 30px; }
 .nosotros__adorno { display: none; }
 @media (min-width: 900px) {
+  .nosotros__fila-contacto { grid-template-columns: 150px minmax(0, 640px) 150px; }
   .nosotros__adorno {
-    display: block; align-self: center; justify-self: center; width: min(150px, 80%); height: auto;
+    display: block; align-self: center; justify-self: center; width: 150px; height: auto;
     filter: drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 8px 8px rgb(30 50 40 / 30%));
     --d: 0s; animation: mecer 3.6s ease-in-out var(--d) infinite alternate;
   }
   .nosotros__adorno--derecha { --d: -1.8s; }
 }
-.nosotros__contacto { max-width: 640px; margin: 44px auto 30px; text-align: center; background: #CFE0F2; --giro: .8deg; }
+.nosotros__contacto { max-width: 640px; margin: 0; text-align: center; background: #CFE0F2; --giro: .8deg; }
 .nosotros__contacto .postit__chinche { background: radial-gradient(circle at 35% 30%, #9FD3FF, var(--color-azul) 70%); }
 .nosotros__pregunta { margin: 0 0 14px; font: 700 1.8rem/1.1 var(--fuente-mano); }
 .nosotros__contacto .acciones { justify-content: center; }
