@@ -105,4 +105,10 @@ final class SmtpTest extends TestCase
         $this->expectExceptionMessage('no válida');
         (new Smtp('127.0.0.1', 1))->enviar("a@cooki.test\r\nRCPT TO:<otro@x.com>", 'b@cooki.test', 'x');
     }
+
+    public function testIntentarDevuelveElMotivoSiNoSePuedeMandar(): void
+    {
+        $this->assertSame('La dirección de destino no es válida.', Correo::intentar('no-es-un-correo', 'Hola', 'Hola'));
+        $this->assertFalse(Correo::enviar('no-es-un-correo', 'Hola', 'Hola'));
+    }
 }

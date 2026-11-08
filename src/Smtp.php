@@ -30,7 +30,7 @@ final class Smtp
         private string $seguridad = 'ninguna',
         private string $usuario = '',
         private string $contrasena = '',
-        private int $espera = 10
+        private int $espera = 8   // segundos: con el límite de 20 s por página del hosting, sobra margen
     ) {
     }
 
