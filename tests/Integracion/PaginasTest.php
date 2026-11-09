@@ -160,6 +160,28 @@ final class PaginasTest extends TestCase
         $this->assertStringEndsWith('error.php?motivo=sin-sesion', $destino);
     }
 
+    public function testLasPaginasDeLaIaPidenSesionYNoMuestranRecetasAjenas(): void
+    {
+        $sinSesion = new Navegador();
+        foreach (['app/receta-ia.php?id=1', 'app/mis-recetas-ia.php'] as $pagina) {
+            [$estado, , $destino] = $sinSesion->get($pagina);
+            $this->assertSame(302, $estado, $pagina);
+            $this->assertStringEndsWith('error.php?motivo=sin-sesion', $destino, $pagina);
+        }
+        [$estado] = $sinSesion->json('GET', 'api/ia');
+        $this->assertSame(401, $estado);
+
+        $web = new Navegador();
+        $web->ingresar('juan@cooki.test', 'Usuario1234');
+        [$estado, $html] = $web->get('app/mis-recetas-ia.php');
+        $this->assertSame(200, $estado);
+        $this->assertStringContainsString('Mis recetas de IA', $html);
+        [, , $destino] = $web->get('app/receta-ia.php?id=999999');
+        $this->assertStringEndsWith('error.php?motivo=no-encontrado', $destino);
+        [, , $destino] = $web->get('app/receta-ia.php');
+        $this->assertStringEndsWith('error.php?motivo=no-encontrado', $destino);
+    }
+
     public function testIngresoIncorrectoRedirigeALaPaginaDeError(): void
     {
         $destino = (new Navegador())->ingresar('maria@cooki.test', 'otra-cosa');

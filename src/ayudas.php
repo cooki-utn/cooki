@@ -138,6 +138,7 @@ const PAGINAS_PARA_VOLVER = [
     'admin/ingredientes.php' => 'Ingredientes',
     'admin/usuarios.php' => 'Usuarios',
     'admin/consultas.php' => 'Consultas',
+    'admin/ia.php' => 'la IA',
 ];
 
 /** "Volver a Recetas", "Volver al panel"… */

@@ -117,7 +117,7 @@ $volverReceta = 'app/receta-ia.php?id=' . $receta['id'];
 $titulo = $receta['titulo'];
 require parcial('encabezado');
 ?>
-<?= enlaceVolver('app/mis-recetas-ia.php', 'Mis recetas de IA', [['app/index.php', 'Mi cocina']]) ?>
+<?= enlaceVolver('app/mis-recetas-ia.php', 'Volver a Mis recetas de IA', [['app/mis-recetas-ia.php', 'Mis recetas de IA'], ['app/index.php', 'Mi cocina']]) ?>
 <article class="receta-ia">
   <div class="receta-titulo">
     <h1><?= e($receta['titulo']) ?></h1>
