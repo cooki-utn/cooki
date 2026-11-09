@@ -16,7 +16,8 @@ use PDO;
  * Cada pedido: ¿hay IA? → ¿está en la caché? → ¿quedan pedidos hoy? → llama a la IA → valida (RecetaIa) →
  * guarda la caché y el uso. Si algo falla, lanza ErrorIa con un mensaje amable (paraUsuario()).
  *
- * Límites (DEC-020): a la persona solo le descuentan los pedidos que salieron bien y no vinieron de la caché;
+ * Límites (DEC-020): a la persona solo le descuentan los pedidos que salieron bien y no vinieron de la caché, y los
+ * reemplazos cuentan 1 pedido cada 5 (se gasta con el primero de cada 5);
  * el límite de todo el sitio cuenta todas las llamadas reales, también las que fallaron, para cuidar el cupo.
  */
 final class Ia
@@ -29,6 +30,9 @@ final class Ia
     private float $inicio;
     /** Si el último pedido salió de la caché (así no se cuenta dos veces un reemplazo sugerido). */
     private bool $desdeCache = false;
+    /** @var array<int, array{restricciones: list<array{id: int, nombre: string}>, despensa: list<string>,
+     *     basicos: list<string>}> lo de cada persona que va en los pedidos (se busca una vez por página) */
+    private array $contextos = [];
 
     /**
      * @param ?ProveedorIa $proveedor otro proveedor (por ejemplo, en una prueba); si no, Gemini con el .env
@@ -63,6 +67,31 @@ final class Ia
         return $restantes === 0
             ? 'Por hoy ya usaste tus ' . self::limiteUsuario() . ' pedidos. Mañana podés pedir más.'
             : 'Te quedan ' . $restantes . ' pedido' . ($restantes === 1 ? '' : 's') . ' hoy.';
+    }
+
+    /**
+     * El aviso de los reemplazos (HU-32): cada 5 reemplazos se gasta 1 pedido; se gasta con el primero de cada 5.
+     */
+    public static function textoReemplazos(int $restantes, int $sinGastar): string
+    {
+        $cada = IaRepositorio::REEMPLAZOS_POR_PEDIDO;
+        if ($sinGastar > 0) {
+            return 'Te quedan ' . $sinGastar . ' reemplazo' . ($sinGastar === 1 ? '' : 's')
+                . " sin gastar pedidos (cada {$cada} reemplazos se gasta 1 pedido).";
+        }
+        if ($restantes > 0) {
+            return "Cada {$cada} reemplazos se gasta 1 pedido: el próximo gasta 1 y te deja " . ($cada - 1)
+                . ' más sin gastar.';
+        }
+        return 'Por hoy no te quedan pedidos para reemplazos nuevos. Los ya consultados los podés ver igual.';
+    }
+
+    /** Reemplazos que todavía puede pedir hoy sin gastar otro pedido (ya pagó el primero de cada 5). */
+    public function reemplazosSinGastar(int $usuarioId): int
+    {
+        $cada = IaRepositorio::REEMPLAZOS_POR_PEDIDO;
+        $hechos = $this->repo->reemplazosHoy($usuarioId) % $cada;
+        return $hechos === 0 ? 0 : $cada - $hechos;
     }
 
     /** Pedidos que le quedan hoy a la persona. */
@@ -139,6 +168,45 @@ final class Ia
             throw new ErrorIa(ErrorIa::DATOS, 'Esa adaptación no hace falta en esta receta: ya la cumple.');
         }
         $porciones = max(Porciones::MINIMO, min(Porciones::MAXIMO, $porciones));
+        $datos = $this->datosAdaptar($usuarioId, $receta, $adaptacion, $porciones);
+        $idsRestringidos = array_column($this->contexto($usuarioId)['restricciones'], 'id');
+        $resultado = $this->pedir(
+            $usuarioId,
+            'adaptar',
+            $datos,
+            Instrucciones::adaptar(),
+            Instrucciones::esquemaReceta(true),
+            fn (RecetaIa $validador, array $json) => $validador->validar($json, $idsRestringidos, $adaptacion)
+        );
+        $resultado['pedido'] = ['adaptacion' => $adaptacion, 'porciones' => $porciones];
+        return $this->repo->crearReceta($usuarioId, 'adaptada', (int) $receta['id'], $resultado);
+    }
+
+    /**
+     * Las adaptaciones de esta receta (con estas porciones) que ya están en la caché: verlas no gasta un pedido.
+     * @param array<string, mixed> $receta como la devuelve RecetaRepositorio::obtener() para la persona
+     * @return list<string> claves de RecetaIa::ADAPTACIONES
+     */
+    public function adaptacionesConsultadas(int $usuarioId, array $receta, int $porciones): array
+    {
+        $porciones = max(Porciones::MINIMO, min(Porciones::MAXIMO, $porciones));
+        $claves = [];
+        $posibles = RecetaIa::adaptacionesPara($receta['ingredientes'], self::faltantes($receta) !== []);
+        foreach (array_keys($posibles) as $a) {
+            $claves[$a] = RecetaIa::clave('adaptar', $this->datosAdaptar($usuarioId, $receta, $a, $porciones));
+        }
+        $enCache = $this->repo->enCache(array_values($claves));
+        return array_keys(array_filter($claves, fn (string $clave) => in_array($clave, $enCache, true)));
+    }
+
+    /**
+     * Lo que se manda para adaptar. Solo "con lo que tengo" lleva la despensa: así las otras adaptaciones se
+     * reusan entre personas (caché).
+     * @param array<string, mixed> $receta
+     * @return array<string, mixed>
+     */
+    private function datosAdaptar(int $usuarioId, array $receta, string $adaptacion, int $porciones): array
+    {
         $factor = Porciones::factor((int) $receta['porciones_base'], $porciones);
         $porSlug = [];
         foreach ($receta['ingredientes'] as $ing) {
@@ -148,8 +216,7 @@ final class Ia
                 'unidad' => $ing['unidad'],
             ];
         }
-        $restricciones = $this->repo->restricciones($usuarioId);
-        $idsRestringidos = array_column($restricciones, 'id');
+        $contexto = $this->contexto($usuarioId);
         $datos = [
             'receta' => [
                 'titulo' => $receta['titulo'],
@@ -166,30 +233,35 @@ final class Ia
                 ),
             ],
             'adaptacion' => $adaptacion,
-            'no_usar' => array_column($restricciones, 'nombre'),
+            'no_usar' => array_column($contexto['restricciones'], 'nombre'),
         ];
-        // Solo "con lo que tengo" necesita la despensa: así las otras adaptaciones se reusan entre personas (caché)
         if ($adaptacion === 'con_lo_que_tengo') {
-            $datos['falta'] = $faltan;
-            $datos['despensa'] = array_values(array_diff(
-                array_column(array_filter(
-                    $this->repo->despensa($usuarioId),
-                    fn (array $i) => !in_array($i['id'], $idsRestringidos, true)
-                ), 'nombre'),
-                $datos['no_usar']
-            ));
-            $datos['basicos'] = array_column($this->repo->basicos($usuarioId), 'nombre');
+            $datos['falta'] = self::faltantes($receta);
+            $datos['despensa'] = $contexto['despensa'];
+            $datos['basicos'] = $contexto['basicos'];
         }
-        $resultado = $this->pedir(
-            $usuarioId,
-            'adaptar',
-            $datos,
-            Instrucciones::adaptar(),
-            Instrucciones::esquemaReceta(true),
-            fn (RecetaIa $validador, array $json) => $validador->validar($json, $idsRestringidos, $adaptacion)
-        );
-        $resultado['pedido'] = ['adaptacion' => $adaptacion, 'porciones' => $porciones];
-        return $this->repo->crearReceta($usuarioId, 'adaptada', (int) $receta['id'], $resultado);
+        return $datos;
+    }
+
+    /**
+     * Restricciones, despensa (sin lo restringido) y básicos de la persona, una vez por página.
+     * @return array{restricciones: list<array{id: int, nombre: string}>, despensa: list<string>, basicos: list<string>}
+     */
+    private function contexto(int $usuarioId): array
+    {
+        if (!isset($this->contextos[$usuarioId])) {
+            $restricciones = $this->repo->restricciones($usuarioId);
+            $ids = array_column($restricciones, 'id');
+            $this->contextos[$usuarioId] = [
+                'restricciones' => $restricciones,
+                'despensa' => array_values(array_column(array_filter(
+                    $this->repo->despensa($usuarioId),
+                    fn (array $i) => !in_array($i['id'], $ids, true)
+                ), 'nombre')),
+                'basicos' => array_column($this->repo->basicos($usuarioId), 'nombre'),
+            ];
+        }
+        return $this->contextos[$usuarioId];
     }
 
     /**
@@ -217,25 +289,8 @@ final class Ia
             (int) $receta['porciones_base'],
             max(Porciones::MINIMO, min(Porciones::MAXIMO, $porciones))
         );
-        $restricciones = $this->repo->restricciones($usuarioId);
-        $idsRestringidos = array_column($restricciones, 'id');
-        $datos = [
-            'falta' => array_filter([
-                'nombre' => $falta['nombre'],
-                'cantidad' => $falta['cantidad'] === null ? null : round((float) $falta['cantidad'] * $factor, 2),
-                'unidad' => $falta['unidad'] ?: null,
-            ], fn ($v) => $v !== null),
-            'receta' => [
-                'titulo' => $receta['titulo'],
-                'ingredientes' => array_column($receta['ingredientes'], 'nombre'),
-            ],
-            'despensa' => array_column(array_filter(
-                $this->repo->despensa($usuarioId),
-                fn (array $i) => !in_array($i['id'], $idsRestringidos, true)
-            ), 'nombre'),
-            'basicos' => array_column($this->repo->basicos($usuarioId), 'nombre'),
-            'no_usar' => array_column($restricciones, 'nombre'),
-        ];
+        $datos = $this->datosReemplazo($usuarioId, $receta, $falta, $factor);
+        $idsRestringidos = array_column($this->contexto($usuarioId)['restricciones'], 'id');
         $reemplazo = $this->pedir(
             $usuarioId,
             'reemplazo',
@@ -261,6 +316,56 @@ final class Ia
             'frase' => RecetaIa::frase($reemplazo['texto'], $reemplazo['ratio'], $cantidad),
             'tengo' => $reemplazo['ingrediente_id'] !== null
                 && in_array($reemplazo['ingrediente_id'], $this->repo->idsQueTengo($usuarioId), true),
+        ];
+    }
+
+    /**
+     * Los ingredientes que le faltan de esta receta cuyo reemplazo (con estas porciones) ya está en la caché:
+     * verlo no gasta nada.
+     * @param array<string, mixed> $receta como la devuelve RecetaRepositorio::obtener() para la persona
+     * @return list<int> ids de los ingredientes
+     */
+    public function reemplazosConsultados(int $usuarioId, array $receta, int $porciones): array
+    {
+        $factor = Porciones::factor(
+            (int) $receta['porciones_base'],
+            max(Porciones::MINIMO, min(Porciones::MAXIMO, $porciones))
+        );
+        $claves = [];
+        foreach ($receta['ingredientes'] as $ing) {
+            if (!$ing['en_despensa'] && !$ing['es_basico']) {
+                $claves[(int) $ing['ingrediente_id']] = RecetaIa::clave(
+                    'reemplazo',
+                    $this->datosReemplazo($usuarioId, $receta, $ing, $factor)
+                );
+            }
+        }
+        $enCache = $this->repo->enCache(array_values($claves));
+        return array_keys(array_filter($claves, fn (string $clave) => in_array($clave, $enCache, true)));
+    }
+
+    /**
+     * Lo que se manda para pedir un reemplazo.
+     * @param array<string, mixed> $receta
+     * @param array<string, mixed> $falta el ingrediente de la receta que falta
+     * @return array<string, mixed>
+     */
+    private function datosReemplazo(int $usuarioId, array $receta, array $falta, float $factor): array
+    {
+        $contexto = $this->contexto($usuarioId);
+        return [
+            'falta' => array_filter([
+                'nombre' => $falta['nombre'],
+                'cantidad' => $falta['cantidad'] === null ? null : round((float) $falta['cantidad'] * $factor, 2),
+                'unidad' => $falta['unidad'] ?: null,
+            ], fn ($v) => $v !== null),
+            'receta' => [
+                'titulo' => $receta['titulo'],
+                'ingredientes' => array_column($receta['ingredientes'], 'nombre'),
+            ],
+            'despensa' => $contexto['despensa'],
+            'basicos' => $contexto['basicos'],
+            'no_usar' => array_column($contexto['restricciones'], 'nombre'),
         ];
     }
 
@@ -329,7 +434,9 @@ final class Ia
             }
         }
 
-        if ($this->repo->usosHoy($usuarioId) >= self::limiteUsuario()) {
+        // Un reemplazo que entra en los 5 ya pagados no mira el límite de la persona (sí el del sitio)
+        $pagado = $tipo === 'reemplazo' && $this->reemplazosSinGastar($usuarioId) > 0;
+        if (!$pagado && $this->repo->usosHoy($usuarioId) >= self::limiteUsuario()) {
             $limite = self::limiteUsuario();
             throw new ErrorIa(
                 ErrorIa::LIMITE,

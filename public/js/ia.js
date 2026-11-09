@@ -73,6 +73,14 @@
       }
       if (respuesta.ok && json.frase) {
         form.replaceWith(reemplazo(json));   // el reemplazo se muestra en el renglón del ingrediente
+        // Al día: cuántos reemplazos quedan sin gastar y cuántos pedidos quedan
+        const aviso = document.querySelector('.reemplazo-ia-aviso small');
+        if (aviso && json.aviso) aviso.textContent = json.aviso;
+        if (json.restantes === 0 && json.sin_gastar === 0) {
+          for (const otro of document.querySelectorAll('.reemplazo-ia-form__boton:not(.reemplazo-ia-form__boton--visto)')) {
+            otro.disabled = true;
+          }
+        }
         return;
       }
       if (respuesta.ok && json.url) {

@@ -1744,6 +1744,12 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
 .reemplazo-ia-form__boton:hover { background: #D7F2DD; }
 .reemplazo-ia-form__boton:disabled { opacity: .5; cursor: not-allowed; }
 .reemplazo-ia-form .nota-ia__estado { font-size: 1.1rem; }
+/* Ya consultado: borde lleno y el detalle "no gasta" (se ve sin la IA, sale de la caché) */
+.reemplazo-ia-form__boton--visto { border-style: solid; display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.reemplazo-ia-form__boton small, .chip--vista small { font-family: system-ui, sans-serif; font-size: .8rem; font-weight: 700; line-height: 1.2; opacity: .85; }
+.nota-ia .chip--vista:not(:has(input:checked)) { box-shadow: inset 0 0 0 2px #3B8F55; }
+.nota-ia .chip:has(input:disabled) { opacity: .45; cursor: not-allowed; }
+.reemplazo-ia-aviso { margin: 6px 0 0; color: #23633A; font-weight: 700; }
 .reemplazo-ia {
   flex-basis: 100%; margin: 2px 0 8px 26px; padding: 6px 10px; border-left: 4px solid #3B8F55;
   background: #EAF7EE; color: #1E3B28; line-height: 1.4;
@@ -1754,7 +1760,7 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
 .sello-ia {
   display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 6px 14px 6px 8px;
   background: #FFF4C2; border: 2px dashed var(--color-texto); border-radius: 12px; transform: rotate(-1deg);
-  font-weight: 700;
+  font-weight: 700; color: var(--color-texto);   /* siempre oscuro: va sobre amarillo, también en la heladera noche */
 }
 .receta-ia__porque { background: #D7F2DD; --giro: -.6deg; max-width: 760px; }
 .receta-ia__porque h2 { font-size: 1.8rem; }

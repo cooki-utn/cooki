@@ -58,6 +58,8 @@ final class IaTest extends TestCase
         $alta->execute([$this->usuario, 2, 2, null, 'alacena']);
         $alta->execute([$this->usuario, $hongo, 2, null, 'heladera']);
         $this->registro = ServidorIaFalso::nuevoRegistro();
+        // La base de prueba junta las llamadas de todas las corridas del día: el límite del sitio se prueba aparte
+        putenv('IA_LIMITE_GLOBAL_DIA=1000000');
     }
 
     protected function tearDown(): void
@@ -304,9 +306,55 @@ final class IaTest extends TestCase
 
         // Si no toma leche, la respuesta (leche) se rechaza
         (new PreferenciasRepositorio($this->db))->agregar($this->usuario, 'restricciones', 24);
-        $error = $this->falla(fn () => $ia->reemplazo($this->usuario, $tortilla, 1, 2));
+        $error = $this->falla(fn () => $this->ia()->reemplazo($this->usuario, $tortilla, 1, 2));
         $this->assertSame(ErrorIa::FORMATO, $error['motivo']);
         $this->assertSame($antes + 1, $veces());
+    }
+
+    public function testLosReemplazosGastanUnPedidoCadaCinco(): void
+    {
+        putenv('IA_LIMITE_USUARIO_DIA=1');
+        $tortilla = (new RecetaRepositorio($this->db))->obtener(1, $this->usuario);
+        $ia = $this->ia();
+        $this->assertSame(0, $ia->reemplazosSinGastar($this->usuario));
+        $this->assertStringContainsString('el próximo gasta 1', Ia::textoReemplazos(1, 0));
+
+        // Con otras porciones es otra pregunta (no sale de la caché): el primero gasta el único pedido del día...
+        $ia->reemplazo($this->usuario, $tortilla, 1, 1);
+        $this->assertSame(0, $ia->restantesHoy($this->usuario));
+        $this->assertSame(4, $ia->reemplazosSinGastar($this->usuario));
+        $this->assertSame(
+            'Te quedan 4 reemplazos sin gastar pedidos (cada 5 reemplazos se gasta 1 pedido).',
+            Ia::textoReemplazos(0, 4)
+        );
+        // ...y los 4 siguientes no gastan, aunque ya no le queden pedidos
+        foreach ([2, 3, 4, 5] as $porciones) {
+            $ia->reemplazo($this->usuario, $tortilla, 1, $porciones);
+        }
+        $this->assertSame(0, $ia->reemplazosSinGastar($this->usuario));
+        $error = $this->falla(fn () => $ia->reemplazo($this->usuario, $tortilla, 1, 6));
+        $this->assertSame(ErrorIa::LIMITE, $error['motivo']);
+        $this->assertStringContainsString('Los ya consultados', Ia::textoReemplazos(0, 0));
+        // Lo que ya consultó se puede ver igual
+        $this->assertSame('Leche', $ia->reemplazo($this->usuario, $tortilla, 1, 3)['texto']);
+        $this->assertCount(5, ServidorIaFalso::pedidos($this->registro));
+    }
+
+    public function testSabeQueYaSeConsultoAntesDePedir(): void
+    {
+        (new PreferenciasRepositorio($this->db))->agregar($this->usuario, 'restricciones', $this->hongo);
+        $tortilla = (new RecetaRepositorio($this->db))->obtener(1, $this->usuario);
+        $ia = $this->ia();
+        $this->assertSame([], $ia->reemplazosConsultados($this->usuario, $tortilla, 2));
+        $this->assertSame([], $ia->adaptacionesConsultadas($this->usuario, $tortilla, 2));
+
+        $ia->reemplazo($this->usuario, $tortilla, 1, 2);
+        $ia->adaptar($this->usuario, $tortilla, 'sin_huevo', 2);
+        $this->assertSame([1], $ia->reemplazosConsultados($this->usuario, $tortilla, 2));
+        $this->assertSame(['sin_huevo'], $ia->adaptacionesConsultadas($this->usuario, $tortilla, 2));
+        $otras = $ia->reemplazosConsultados($this->usuario, $tortilla, 4);
+        $this->assertSame([], $otras, 'Otras porciones, otra pregunta');
+        $this->assertSame([], $ia->adaptacionesConsultadas($this->usuario, $tortilla, 4));
     }
 
     /** @return array<string, mixed> los datos que se le mandaron a la IA en el pedido número $n */
@@ -384,6 +432,7 @@ final class IaTest extends TestCase
         $this->assertStringContainsString('Usá leche: la misma cantidad (600 g).', $html);
         [, $html] = $web->get('app/receta.php?id=1&porciones=4');
         $this->assertStringNotContainsString('Usá leche', $html, 'Se muestra una sola vez');
+        $this->assertStringContainsString('ya consultado · no gasta', $html);
         [$estado, $json] = $web->json('POST', 'api/ia/reemplazo', ['receta' => 1, 'ingrediente' => 1,
             'porciones' => 4]);
         $this->assertSame(200, $estado);

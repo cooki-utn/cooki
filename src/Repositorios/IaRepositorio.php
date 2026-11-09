@@ -19,6 +19,8 @@ final class IaRepositorio
 {
     /** Días que dura la caché y que se guardan las recetas generadas que nadie guardó. */
     public const DIAS_CACHE = 7;
+    /** Los reemplazos (HU-32) gastan 1 pedido cada tantos. */
+    public const REEMPLAZOS_POR_PEDIDO = 5;
     /** Como mucho se mandan tantos ingredientes de la despensa (los que vencen antes primero). */
     private const MAX_DESPENSA = 40;
 
@@ -130,6 +132,25 @@ final class IaRepositorio
         return is_array($datos) ? $datos : null;
     }
 
+    /**
+     * Cuáles de estas claves tienen una respuesta guardada de menos de 7 días (para marcar "ya consultado").
+     * @param list<string> $claves
+     * @return list<string>
+     */
+    public function enCache(array $claves): array
+    {
+        if ($claves === []) {
+            return [];
+        }
+        $marcas = implode(', ', array_fill(0, count($claves), '?'));
+        $consulta = $this->db->prepare(
+            "SELECT clave FROM respuesta_ia
+             WHERE clave IN ({$marcas}) AND creado_en >= NOW() - INTERVAL " . self::DIAS_CACHE . ' DAY'
+        );
+        $consulta->execute($claves);
+        return $consulta->fetchAll(PDO::FETCH_COLUMN);
+    }
+
     /** @param array<string, mixed> $respuesta */
     public function guardarCache(string $clave, string $tipo, array $respuesta): void
     {
@@ -157,12 +178,29 @@ final class IaRepositorio
 
     // ───────────── Uso y límites ─────────────
 
-    /** Pedidos de hoy que salieron bien y no vinieron de la caché (los que cuentan para el límite de la persona). */
+    /**
+     * Pedidos gastados hoy: los que salieron bien y no vinieron de la caché. Los reemplazos cuentan 1 cada 5,
+     * redondeando para arriba (el primero de cada 5 ya gasta).
+     */
     public function usosHoy(int $usuarioId): int
     {
         $consulta = $this->db->prepare(
-            'SELECT COUNT(*) FROM uso_ia
+            'SELECT COALESCE(SUM(tipo <> \'reemplazo\'), 0)
+                    + CEIL(COALESCE(SUM(tipo = \'reemplazo\'), 0) / ' . self::REEMPLAZOS_POR_PEDIDO . ')
+             FROM uso_ia
              WHERE usuario_id = :usuario AND ok = 1 AND desde_cache = 0 AND creado_en >= CURDATE()'
+        );
+        $consulta->execute(['usuario' => $usuarioId]);
+        return (int) $consulta->fetchColumn();
+    }
+
+    /** Reemplazos de hoy que salieron bien y no vinieron de la caché. */
+    public function reemplazosHoy(int $usuarioId): int
+    {
+        $consulta = $this->db->prepare(
+            'SELECT COUNT(*) FROM uso_ia
+             WHERE usuario_id = :usuario AND tipo = \'reemplazo\' AND ok = 1 AND desde_cache = 0
+               AND creado_en >= CURDATE()'
         );
         $consulta->execute(['usuario' => $usuarioId]);
         return (int) $consulta->fetchColumn();

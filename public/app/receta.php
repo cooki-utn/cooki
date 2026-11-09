@@ -60,13 +60,26 @@ $volverReceta = (string) ($_SERVER['REQUEST_URI'] ?? '') . '#ingredientes';
 $iaDisponible = Ia::disponible();
 $adaptaciones = [];
 $iaRestantes = 0;
+$sinGastar = 0;          // reemplazos que puede pedir sin gastar otro pedido (1 pedido cada 5)
+$adaptacionesVistas = [];   // las que ya están en la caché: verlas no gasta
+$reemplazosVistos = [];
+$hayReemplazos = false;
 // La respuesta de "¿Con qué lo reemplazo?" sin JavaScript: viene de app/receta-ia.php y se muestra una vez
 $reemplazosIa = $_SESSION['reemplazo_ia'][(int) $receta['id']] ?? [];
 unset($_SESSION['reemplazo_ia'][(int) $receta['id']]);
 if ($iaDisponible) {
     $adaptaciones = RecetaIa::adaptacionesPara($receta['ingredientes'], Ia::faltantes($receta) !== []);
-    $iaRestantes = (new Ia(Db::conexion()))->restantesHoy(Sesion::idUsuario());
+    $ia = new Ia(Db::conexion());
+    $iaRestantes = $ia->restantesHoy(Sesion::idUsuario());
+    $sinGastar = $ia->reemplazosSinGastar(Sesion::idUsuario());
+    $adaptacionesVistas = $ia->adaptacionesConsultadas(Sesion::idUsuario(), $receta, $porciones);
+    $reemplazosVistos = $ia->reemplazosConsultados(Sesion::idUsuario(), $receta, $porciones);
 }
+// Si ya no le quedan pedidos, solo se puede elegir lo que ya está consultado
+$adaptacionElegida = array_values(array_filter(
+    array_keys($adaptaciones),
+    fn (string $a) => $iaRestantes > 0 || in_array($a, $adaptacionesVistas, true)
+))[0] ?? null;
 
 $titulo = $receta['titulo'];
 require parcial('encabezado');
@@ -122,15 +135,16 @@ require parcial('encabezado');
           <input type="hidden" name="porciones" value="<?= $porciones ?>">
           <fieldset class="chips">
             <legend>¿Cómo la querés?</legend>
-            <?php foreach (array_keys($adaptaciones) as $n => $clave) : ?>
-              <label class="chip">
-                <input type="radio" name="adaptacion" value="<?= e($clave) ?>"<?= $n === 0 ? ' checked' : '' ?>>
-                <span><?= e($adaptaciones[$clave]) ?></span>
+            <?php foreach ($adaptaciones as $clave => $nombre) : ?>
+              <?php $vista = in_array($clave, $adaptacionesVistas, true); ?>
+              <label class="chip<?= $vista ? ' chip--vista' : '' ?>">
+                <input type="radio" name="adaptacion" value="<?= e($clave) ?>"<?= $clave === $adaptacionElegida ? ' checked' : '' ?><?= !$vista && $iaRestantes === 0 ? ' disabled' : '' ?>>
+                <span><?= e($nombre) ?><?php if ($vista) : ?> <small>✓ ya consultada · no gasta</small><?php endif; ?></span>
               </label>
             <?php endforeach; ?>
           </fieldset>
           <p class="nota-ia__boton">
-            <button class="boton" type="submit"<?= $iaRestantes === 0 ? ' disabled' : '' ?>>Adaptar la receta</button>
+            <button class="boton" type="submit"<?= $adaptacionElegida === null ? ' disabled' : '' ?>>Adaptar la receta</button>
             <small class="nota-ia__quedan"><?= e(Ia::textoRestantes($iaRestantes)) ?></small>
           </p>
           <p class="nota-ia__estado" role="status" aria-live="polite"></p>
@@ -216,7 +230,12 @@ require parcial('encabezado');
                 <?php if ($reemplazoIa['nota'] !== '') : ?><small><?= e($reemplazoIa['nota']) ?></small><?php endif; ?>
               </span>
             <?php elseif ($iaDisponible && !$tiene && $ing['sustituto'] === null && !$ing['es_opcional']) : ?>
-              <?php /* HU-32: sin JavaScript recarga y la respuesta aparece acá; con JavaScript (ia.js), sin recargar */ ?>
+              <?php
+                $hayReemplazos = true;
+                $visto = in_array((int) $ing['ingrediente_id'], $reemplazosVistos, true);
+              ?>
+              <?php /* HU-32: sin JavaScript recarga y la respuesta aparece acá; con JavaScript (ia.js), sin recargar.
+                       Si ya se consultó (está en la caché), el botón lo dice: verlo no gasta. */ ?>
               <form class="reemplazo-ia-form" method="post" action="<?= e(url('app/receta-ia.php')) ?>"
                     data-ia="<?= e(url('api/ia/reemplazo')) ?>" data-pensando="Buscando un reemplazo…">
                 <?= Sesion::campoCsrf() ?>
@@ -224,15 +243,25 @@ require parcial('encabezado');
                 <input type="hidden" name="receta" value="<?= e($receta['id']) ?>">
                 <input type="hidden" name="ingrediente" value="<?= e($ing['ingrediente_id']) ?>">
                 <input type="hidden" name="porciones" value="<?= $porciones ?>">
-                <button class="reemplazo-ia-form__boton" type="submit"<?= $iaRestantes === 0 ? ' disabled title="' . e(Ia::textoRestantes(0)) . '"' : '' ?>>
-                  ¿Con qué lo reemplazo? (IA)<span class="solo-lectores">: <?= e($ing['nombre']) ?></span>
-                </button>
+                <?php if ($visto) : ?>
+                  <button class="reemplazo-ia-form__boton reemplazo-ia-form__boton--visto" type="submit">
+                    Ver el reemplazo<span class="solo-lectores"> de <?= e($ing['nombre']) ?></span>
+                    <small>✓ ya consultado · no gasta</small>
+                  </button>
+                <?php else : ?>
+                  <button class="reemplazo-ia-form__boton" type="submit"<?= $iaRestantes === 0 && $sinGastar === 0 ? ' disabled' : '' ?>>
+                    ¿Con qué lo reemplazo? (IA)<span class="solo-lectores">: <?= e($ing['nombre']) ?></span>
+                  </button>
+                <?php endif; ?>
                 <span class="nota-ia__estado" role="status" aria-live="polite"></span>
               </form>
             <?php endif; ?>
           </li>
         <?php endforeach; ?>
       </ul>
+      <?php if ($hayReemplazos) : ?>
+        <p class="reemplazo-ia-aviso"><small><?= e(Ia::textoReemplazos($iaRestantes, $sinGastar)) ?></small></p>
+      <?php endif; ?>
       <?php if ($faltantes !== []) : ?>
         <form class="mas-lista mas-lista--todo" method="post" action="<?= e(url('app/lista.php')) ?>">
           <?= Sesion::campoCsrf() ?>

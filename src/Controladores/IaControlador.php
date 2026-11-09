@@ -24,7 +24,8 @@ use PDO;
  *                                   (adaptacion: sin_huevo, sin_tacc, sin_lactosa, vegetariana o con_lo_que_tengo)
  *                                   → 201 {id, titulo, url, restantes}
  *   POST /api/ia/reemplazo          con qué reemplazar un ingrediente que falta: {receta, ingrediente, porciones}
- *                                   → 200 {reemplazo, ingrediente_id, ratio, nota, frase, tengo, restantes}
+ *                                   → 200 {reemplazo, ingrediente_id, ratio, nota, frase, tengo, restantes,
+ *                                          sin_gastar, aviso} (los reemplazos gastan 1 pedido cada 5)
  * Si la IA no puede, responde el error con un mensaje para mostrar tal cual:
  *   503 sin IA configurada · 429 límite del día · 422 faltan datos (despensa vacía) · 504 tardó demasiado ·
  *   502 la IA falló o respondió algo que no sirve.
@@ -109,6 +110,8 @@ final class IaControlador
         } catch (ErrorIa $e) {
             throw self::errorHttp($e);
         }
+        $restantes = $ia->restantesHoy($usuario);
+        $sinGastar = $ia->reemplazosSinGastar($usuario);
         Respuesta::json([
             'reemplazo' => $r['texto'],
             'ingrediente_id' => $r['ingrediente_id'],
@@ -116,7 +119,9 @@ final class IaControlador
             'nota' => $r['nota'],
             'frase' => $r['frase'],
             'tengo' => $r['tengo'],
-            'restantes' => $ia->restantesHoy($usuario),
+            'restantes' => $restantes,
+            'sin_gastar' => $sinGastar,
+            'aviso' => Ia::textoReemplazos($restantes, $sinGastar),
         ]);
     }
 
