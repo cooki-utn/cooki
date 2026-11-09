@@ -31,16 +31,19 @@ public/                 ← lo único que ve el navegador (raíz web)
   olvide.php · restablecer.php   recuperar la contraseña con un enlace por correo
   nosotros.php          Quiénes somos (imán "Nosotros" sin cuenta; los datos están en src/equipo.php)
   app/                  páginas del usuario logueado: Mi cocina, Mi despensa, Recetas, modo cocina (cocinar.php),
-                        Lista de compras (lista.php), Mis preferencias, Mi cuenta
-  admin/                páginas solo para administradores: panel y ABM
+                        Lista de compras (lista.php), recetas de la IA (receta-ia.php, mis-recetas-ia.php),
+                        Mis preferencias, Mi cuenta
+  admin/                páginas solo para administradores: panel, ABM, correo e IA (ia.php)
   css/ · js/ · img/      (img/equipo: los dibujos de cada integrante para Quiénes somos)
-  api/index.php         API JSON: sesión, recetas, recomendaciones, despensa, favoritas y lista (docs/api.md)
+  api/index.php         API JSON: sesión, recetas, recomendaciones, despensa, favoritas, lista e IA (docs/api.md)
 src/                    código PHP que no se ve desde el navegador
   bootstrap.php         arranque: cada página empieza con require de este archivo
   ayudas.php            e() para escapar HTML, url(), redirigir(), parcial()...
   Sesion.php            sesión del usuario, roles, protección de páginas y token CSRF
   Correo.php · Smtp.php envío de correos con el cliente SMTP propio (o mail() si no hay MAIL_HOST)
-  Dominio/              reglas sin base de datos: puntaje, porciones, descuento, bloqueo, paginación, foto
+  Dominio/              reglas sin base de datos: puntaje, porciones, descuento, bloqueo, paginación, foto,
+                        lista de compras y lo que devuelve la IA (RecetaIa)
+  Ia/                   la IA (Gemini): cliente, instrucciones, límites y caché. Sin IA_CLAVE queda apagada
   equipo.php            integrantes para "Quiénes somos": nombre, actividades, GitHub, LinkedIn y correo
   Repositorios/         todas las consultas SQL (una clase por tabla principal)
   Vistas/               partes comunes: encabezado (con el menú) y pie
@@ -85,7 +88,7 @@ docker compose exec web composer install
 | Comando                      | Qué hace                                                  | Con Docker                                           |
 | ---------------------------- | --------------------------------------------------------- | ---------------------------------------------------- |
 | `composer lint`              | Sintaxis de todos los .php + estilo PSR-12                | `docker compose exec web composer lint`              |
-| `composer test`              | Pruebas (unitarias y de páginas)                          | `docker compose exec web composer test`              |
+| `composer test`              | 182 pruebas, unitarias y de páginas (sin la IA real)      | `docker compose exec web composer test`              |
 | `composer servidor`          | Servidor PHP en http://localhost:8080 (sin Docker)        | —                                                    |
 | `php scripts/empaquetar.php` | Arma `cooki-hosting.zip` para subir al hosting            | `docker compose exec web php scripts/empaquetar.php` |
 | `docker compose down -v`     | Apagar y **borrar** la base local (se recrea al levantar) |                                                      |
