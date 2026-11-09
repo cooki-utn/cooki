@@ -176,9 +176,12 @@ Pide sesión. `POST` lo marca como comprado: si es un ingrediente, pasa a la des
 estimado con la vida útil del ingrediente y la ubicación que ya tenía o la sugerida). `DELETE` lo deshace, solo el
 mismo día: vuelve a la lista y la despensa queda como estaba.
 
+Si se compró otra cantidad de la prevista, el `POST` puede llevar `{ "cantidad": 2, "unidad": "kg" }` (la unidad, una de
+`u`, `g`, `kg`, `ml` o `l`): esa cantidad pasa a la despensa y queda en el renglón. Al deshacer vuelve la prevista.
+
 **Respuesta 200:** `{ "id": 7, "comprado": true }` (o `false` al deshacer).
 
-**Errores:** `404` si no está en la lista del usuario, si ya estaba comprado (al marcar) o si no hay nada que deshacer.
+**Errores:** `400` si la cantidad o la unidad no sirven; `404` si no está en la lista del usuario, si ya estaba comprado (al marcar) o si no hay nada que deshacer.
 
 ## DELETE /api/lista/{id}
 

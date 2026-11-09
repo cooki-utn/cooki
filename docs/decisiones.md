@@ -6,12 +6,29 @@ Formato: decisiones tipo ADR (ver la guía de metodología del equipo, sección 
 
 ---
 
-## DEC-019 · AAAA-MM-DD · (título)
+## DEC-020 · AAAA-MM-DD · (título)
 - **Contexto:** 
 - **Decisión:** 
 - **Alternativas descartadas:** 
 - **Consecuencias:** 
 - **Participaron:** 
+
+---
+
+## DEC-019 · 2026-11-09 · La lista a mano en Mi cocina y Mi despensa, otra cantidad y comprar todo
+- **Contexto:** al probar la lista, el equipo pidió verla sin entrar a la página Lista, poder cerrarla o apagarla, anotar cuando se compra otra cantidad de la prevista y marcar todo junto. En Mi despensa, los "+ lista" quedaban abajo de todo y no se veía de qué ingrediente eran.
+- **Decisión:**
+  - **Nota de la lista:** un post-it celeste al lado de "Usalo pronto" (Mi cocina) y en el hueco a la derecha del contador, las pestañas y el buscador (Mi despensa). Muestra hasta 8 cosas y lleva a la lista completa. "✕" la cierra y queda un recuadro chico ("Lista de compras · 3") que la vuelve a desplegar.
+  - **Se guarda en la cuenta** (`usuario.nota_lista`: `abierta`, `cerrada` o `nunca`), como el color de la heladera. En Mis preferencias, "Mostrar mi lista de compras en Mi cocina y Mi despensa": apagada, no aparece ni siquiera cerrada. Va en la migración 008, porque la 007 ya estaba importada en el hosting.
+  - **"+ lista" en Mi despensa** va al lado de la cantidad, en la misma fila del ingrediente.
+  - **Otra cantidad:** cada renglón tiene "Otra cantidad", que abre un campito con la cantidad y la unidad y "Lo compré". Esa cantidad es la que pasa a la despensa y queda en el renglón; "Deshacer" vuelve a la prevista (se guarda en `deshacer`).
+  - **Marcar todo como comprado:** un botón que pasa todo lo que falta a la despensa, en una transacción. Cada cosa se puede deshacer por separado.
+- **Alternativas descartadas:**
+  - Guardar si la nota está cerrada en una cookie: en el celular volvería a aparecer.
+  - La nota "asomada" en el costado de la pantalla: se pisa con la manija de la heladera. El recuadro chico queda en el mismo lugar.
+  - Editar la cantidad tocándola: sin JavaScript no anda.
+- **Consecuencias:** migración nueva `008-nota-lista.sql`. Pruebas nuevas en `ListaTest`.
+- **Participaron:** P2 (lista y pantallas), P1 (preferencias de la cuenta)
 
 ---
 

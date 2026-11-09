@@ -7,6 +7,9 @@
  *                                   Con receta=ID (+ porciones): la cantidad sale de la receta, escalada
  *   POST accion=receta            → receta=ID porciones=N: agrega todo lo que falta de esa receta
  *   POST accion=comprar ids[]=…   → lo tildado pasa a la despensa
+ *   POST accion=comprar_todo      → todo lo que falta comprar pasa a la despensa
+ *   POST comprar_uno=ID           → "Otra cantidad": ese renglón, con lo que de verdad se compró
+ *        cantidad_comprada[ID]= unidad_comprada[ID]=   (también valen con accion=comprar)
  *   POST quitar=ID / deshacer=ID  → quita un renglón / deshace una compra de hoy
  * Todas vuelven a "volver" (una dirección de este sitio) o a la lista. Con el encabezado
  * X-Requested-With: fetch (lista.js) responden JSON en lugar de redirigir.
@@ -64,10 +67,45 @@ if (esPost()) {
         $responder($ok, $ok ? 'Listo, volvió a la lista y tu despensa quedó como estaba.' : 'Ya no se puede deshacer.');
     }
 
+    // "Otra cantidad": lo que de verdad se compró, por renglón (los campos vacíos no cuentan)
+    $otraCantidad = [];
+    foreach ((array) ($_POST['cantidad_comprada'] ?? []) as $idRenglon => $valor) {
+        $valor = str_replace(',', '.', trim((string) $valor));
+        if ($valor === '') {
+            continue;
+        }
+        if (!is_numeric($valor) || (float) $valor <= 0 || (float) $valor > 99999) {
+            $responder(false, 'La cantidad que compraste tiene que ser un número mayor que 0.');
+        }
+        $unidadComprada = (string) (((array) ($_POST['unidad_comprada'] ?? []))[$idRenglon] ?? 'u');
+        $otraCantidad[(int) $idRenglon] = [
+            'cantidad' => (float) $valor,
+            'unidad' => isset($unidadesLista[$unidadComprada]) ? $unidadComprada : 'u',
+        ];
+    }
+
+    if (isset($_POST['comprar_uno'])) {
+        $idRenglon = (int) $_POST['comprar_uno'];
+        if (!isset($otraCantidad[$idRenglon])) {
+            $responder(false, 'Escribí cuánto compraste.');
+        }
+        $ok = $repo->comprar($usuarioId, [$idRenglon], $otraCantidad) > 0;
+        $otra = $otraCantidad[$idRenglon];
+        $responder($ok, $ok ? 'Anotamos que compraste ' . Porciones::texto($otra['cantidad'], $otra['unidad']) . '.'
+            : 'Eso ya no estaba en tu lista.', ['texto_cantidad' => Porciones::texto($otra['cantidad'], $otra['unidad'])]);
+    }
+
     $accion = campo('accion');
+    if ($accion === 'comprar_todo') {
+        $hechos = $repo->comprarTodo($usuarioId);
+        $responder($hechos > 0, $hechos > 0
+            ? "Listo: marcamos {$hechos} cosa" . ($hechos === 1 ? '' : 's') . ' como comprada' . ($hechos === 1 ? '' : 's')
+                . '. Los ingredientes ya están en tu despensa.'
+            : 'No había nada para comprar.');
+    }
     if ($accion === 'comprar') {
         $ids = array_map('intval', (array) ($_POST['ids'] ?? []));
-        $hechos = $repo->comprar($usuarioId, $ids);
+        $hechos = $repo->comprar($usuarioId, $ids, $otraCantidad);
         $responder($hechos > 0, match (true) {
             $hechos === 0 => 'Tildá lo que compraste y después tocá "Pasar a mi despensa".',
             $hechos === 1 => 'Anotado como comprado. Si es un ingrediente, ya está en tu despensa.',
@@ -244,6 +282,23 @@ require parcial('encabezado');
                   <?php endif; ?>
                 </span>
               </label>
+              <?php /* Si compraste otra cantidad: se anota y eso es lo que pasa a la despensa */ ?>
+              <details class="renglon__otra">
+                <summary>Otra cantidad</summary>
+                <div class="renglon__otra-campos">
+                  <label class="solo-lectores" for="otra-<?= e($item['id']) ?>">Cuánto compraste de <?= e($item['nombre']) ?></label>
+                  <input id="otra-<?= e($item['id']) ?>" name="cantidad_comprada[<?= e($item['id']) ?>]" type="number"
+                         min="0" max="99999" step="any" inputmode="decimal" placeholder="¿Cuánto?">
+                  <label class="solo-lectores" for="otra-unidad-<?= e($item['id']) ?>">Unidad</label>
+                  <select id="otra-unidad-<?= e($item['id']) ?>" name="unidad_comprada[<?= e($item['id']) ?>]">
+                    <?php $unidadRenglon = isset($unidadesLista[(string) $item['unidad']]) ? $item['unidad'] : ($item['unidad_default'] ?? 'u'); ?>
+                    <?php foreach ($unidadesLista as $clave => $texto) : ?>
+                      <option value="<?= e($clave) ?>"<?= $clave === $unidadRenglon ? ' selected' : '' ?>><?= e($texto) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                  <button class="boton boton--chico" type="submit" name="comprar_uno" value="<?= e($item['id']) ?>">Lo compré</button>
+                </div>
+              </details>
               <button class="renglon__quitar" type="submit" name="quitar" value="<?= e($item['id']) ?>"
                       title="Quitar de la lista" data-sonido="sticker-arranca">
                 <span aria-hidden="true">✕</span><span class="solo-lectores">Quitar <?= e($item['nombre']) ?> de la lista</span>
@@ -256,6 +311,9 @@ require parcial('encabezado');
     <?php if ($pendientes !== []) : ?>
       <div class="acciones lista-compras__pasar">
         <button class="boton" type="submit" name="accion" value="comprar" id="pasar-lista">Pasar lo tildado a mi despensa</button>
+      </div>
+      <div class="acciones lista-compras__todo">
+        <button class="boton boton--secundario" type="submit" name="accion" value="comprar_todo">Marcar todo como comprado</button>
       </div>
     <?php else : ?>
       <p class="vacio">¡No te falta nada! Lo que compraste hoy está abajo.</p>

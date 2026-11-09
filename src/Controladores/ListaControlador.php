@@ -16,6 +16,7 @@ use Cooki\Repositorios\ListaRepositorio;
  *   GET    /api/lista                  lo que falta comprar (por góndola), lo comprado hoy y el texto para compartir
  *   POST   /api/lista                  agrega {ingrediente_id} o {texto}, con {cantidad, unidad} opcionales
  *   POST   /api/lista/{id}/comprado    lo marca como comprado: el ingrediente pasa a la despensa
+ *                                      (con {cantidad, unidad} opcionales si se compró otra cantidad)
  *   DELETE /api/lista/{id}/comprado    deshace la compra (solo la de hoy)
  *   DELETE /api/lista/{id}             lo quita de la lista
  */
@@ -53,15 +54,7 @@ final class ListaControlador
         $cantidad = null;
         $unidad = null;
         if (isset($datos['cantidad'])) {
-            $numero = is_numeric($datos['cantidad']) ? (float) $datos['cantidad'] : 0.0;
-            if ($numero <= 0 || $numero > 99999) {
-                throw new ErrorHttp('"cantidad" tiene que ser un número mayor que 0', 400);
-            }
-            $cantidad = (float) $datos['cantidad'];
-            $unidad = (string) ($datos['unidad'] ?? 'u');
-            if (!in_array($unidad, self::UNIDADES, true)) {
-                throw new ErrorHttp('"unidad" tiene que ser una de estas: ' . implode(', ', self::UNIDADES), 400);
-            }
+            ['cantidad' => $cantidad, 'unidad' => $unidad] = self::cantidad($datos);
         }
         $hecho = (new ListaRepositorio(Db::conexion()))->agregar($usuario, $ingrediente, $texto, $cantidad, $unidad);
         if ($hecho === null) {
@@ -76,7 +69,13 @@ final class ListaControlador
     public static function comprar(array $parametros): void
     {
         $usuario = SesionControlador::requiereSesion();
-        if ((new ListaRepositorio(Db::conexion()))->comprar($usuario, [(int) $parametros['id']]) === 0) {
+        $id = (int) $parametros['id'];
+        $datos = Respuesta::cuerpo();
+        $otra = [];
+        if (isset($datos['cantidad'])) {
+            $otra[$id] = self::cantidad($datos);
+        }
+        if ((new ListaRepositorio(Db::conexion()))->comprar($usuario, [$id], $otra) === 0) {
             throw new ErrorHttp('No está en tu lista, o ya lo compraste', 404);
         }
         Respuesta::json(['id' => (int) $parametros['id'], 'comprado' => true]);
@@ -100,6 +99,24 @@ final class ListaControlador
             throw new ErrorHttp('No está en tu lista', 404);
         }
         Respuesta::json(['id' => (int) $parametros['id'], 'quitado' => true]);
+    }
+
+    /**
+     * Valida {cantidad, unidad} de un cuerpo JSON (la unidad, 'u' si no viene).
+     * @param array<mixed> $datos
+     * @return array{cantidad: float, unidad: string}
+     */
+    private static function cantidad(array $datos): array
+    {
+        $numero = is_numeric($datos['cantidad'] ?? null) ? (float) $datos['cantidad'] : 0.0;
+        if ($numero <= 0 || $numero > 99999) {
+            throw new ErrorHttp('"cantidad" tiene que ser un número mayor que 0', 400);
+        }
+        $unidad = (string) ($datos['unidad'] ?? 'u');
+        if (!in_array($unidad, self::UNIDADES, true)) {
+            throw new ErrorHttp('"unidad" tiene que ser una de estas: ' . implode(', ', self::UNIDADES), 400);
+        }
+        return ['cantidad' => $numero, 'unidad' => $unidad];
     }
 
     /**

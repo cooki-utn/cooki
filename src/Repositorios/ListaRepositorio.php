@@ -34,8 +34,9 @@ final class ListaRepositorio
     {
         $consulta = $this->db->prepare(
             'SELECT l.id, l.ingrediente_id, COALESCE(i.nombre, l.texto) AS nombre, i.usuario_id IS NOT NULL AS propio,
-                    c.nombre AS categoria, c.orden, c.color_hex, l.cantidad, l.unidad, l.receta_id,
-                    COALESCE(r.titulo, ri.titulo) AS receta, l.comprado_en, l.deshacer IS NOT NULL AS paso_a_despensa
+                    i.unidad_default, c.nombre AS categoria, c.orden, c.color_hex, l.cantidad, l.unidad, l.receta_id,
+                    COALESCE(r.titulo, ri.titulo) AS receta, l.comprado_en,
+                    l.ingrediente_id IS NOT NULL AND l.deshacer IS NOT NULL AS paso_a_despensa
              FROM lista_compra_item l
              LEFT JOIN ingrediente i ON i.id = l.ingrediente_id
              LEFT JOIN categoria c ON c.id = i.categoria_id
@@ -48,7 +49,16 @@ final class ListaRepositorio
         return $consulta->fetchAll();
     }
 
-    /** Cuántos ítems faltan comprar (para el imán del menú y Mi cocina). */
+    /**
+     * Solo lo que falta comprar (para la nota de Mi cocina y Mi despensa).
+     * @return list<array<string, mixed>>
+     */
+    public function faltaComprar(int $usuarioId): array
+    {
+        return array_values(array_filter($this->listar($usuarioId), fn (array $i) => $i['comprado_en'] === null));
+    }
+
+    /** Cuántos ítems faltan comprar. */
     public function pendientes(int $usuarioId): int
     {
         $consulta = $this->db->prepare(
@@ -207,9 +217,12 @@ final class ListaRepositorio
      * Marca como comprados los renglones (sin comprar) de la lista y pasa los ingredientes a la despensa
      * (ListaCompras::alComprar). Los de texto libre se marcan, pero no pasan a la despensa.
      * Todo en una transacción: si algo falla, no queda nada a medias. Devuelve cuántos marcó.
+     * $otraCantidad: lo que de verdad se compró, si no fue lo previsto ([id => ['cantidad' => 2.0, 'unidad' => 'kg']]).
+     * Esa cantidad es la que pasa a la despensa y queda en el renglón; "Deshacer" vuelve a la prevista.
      * @param list<int> $ids
+     * @param array<int, array{cantidad: float, unidad: string}> $otraCantidad
      */
-    public function comprar(int $usuarioId, array $ids): int
+    public function comprar(int $usuarioId, array $ids, array $otraCantidad = []): int
     {
         $ids = array_values(array_unique(array_filter(array_map('intval', $ids), fn (int $id) => $id > 0)));
         if ($ids === []) {
@@ -220,7 +233,7 @@ final class ListaRepositorio
             $hoy = new DateTimeImmutable((string) $this->db->query('SELECT CURDATE()')->fetchColumn());
             $marcados = 0;
             foreach ($ids as $id) {
-                $marcados += $this->comprarUno($usuarioId, $id, $hoy) ? 1 : 0;
+                $marcados += $this->comprarUno($usuarioId, $id, $hoy, $otraCantidad[$id] ?? null) ? 1 : 0;
             }
             $this->db->commit();
             return $marcados;
@@ -228,6 +241,12 @@ final class ListaRepositorio
             $this->db->rollBack();
             throw $e;
         }
+    }
+
+    /** Marca como comprado todo lo que falta comprar (ver comprar()). Devuelve cuántos marcó. */
+    public function comprarTodo(int $usuarioId): int
+    {
+        return $this->comprar($usuarioId, array_map(fn (array $i) => (int) $i['id'], $this->faltaComprar($usuarioId)));
     }
 
     /**
@@ -265,6 +284,10 @@ final class ListaRepositorio
                     ]);
                 }
             }
+            if (is_array($antes) && isset($antes['lista'])) {   // se había comprado otra cantidad: vuelve la prevista
+                $this->db->prepare('UPDATE lista_compra_item SET cantidad = :cantidad, unidad = :unidad WHERE id = :id')
+                    ->execute(['id' => $id] + $antes['lista']);
+            }
             $this->db->prepare('UPDATE lista_compra_item SET comprado_en = NULL, deshacer = NULL WHERE id = :id')
                 ->execute(['id' => $id]);
             $this->db->commit();
@@ -275,8 +298,11 @@ final class ListaRepositorio
         }
     }
 
-    /** Un renglón comprado (adentro de la transacción de comprar()). */
-    private function comprarUno(int $usuarioId, int $id, DateTimeImmutable $hoy): bool
+    /**
+     * Un renglón comprado (adentro de la transacción de comprar()).
+     * @param array{cantidad: float, unidad: string}|null $otra lo que se compró, si no fue lo previsto
+     */
+    private function comprarUno(int $usuarioId, int $id, DateTimeImmutable $hoy, ?array $otra = null): bool
     {
         $consulta = $this->db->prepare(
             'SELECT l.id, l.ingrediente_id, l.cantidad, l.unidad, c.nombre AS categoria, i.perecedero,
@@ -292,6 +318,12 @@ final class ListaRepositorio
             return false;
         }
         $deshacer = null;
+        $prevista = null;
+        if ($otra !== null) {
+            $prevista = ['cantidad' => $item['cantidad'], 'unidad' => $item['unidad']];
+            $item['cantidad'] = $otra['cantidad'];
+            $item['unidad'] = $otra['unidad'];
+        }
         if ($item['ingrediente_id'] !== null) {
             // Si ya está en la despensa (en cualquier ubicación), se actualiza el renglón que tiene algo;
             // si todos están agotados, el último que se tocó
@@ -332,8 +364,17 @@ final class ListaRepositorio
                 ];
             }
         }
-        $this->db->prepare('UPDATE lista_compra_item SET comprado_en = NOW(), deshacer = :deshacer WHERE id = :id')
-            ->execute(['deshacer' => $deshacer === null ? null : json_encode($deshacer), 'id' => $id]);
+        if ($prevista !== null) {
+            $deshacer = ($deshacer ?? []) + ['lista' => $prevista];
+        }
+        $this->db->prepare(
+            'UPDATE lista_compra_item
+             SET comprado_en = NOW(), deshacer = :deshacer, cantidad = :cantidad, unidad = :unidad
+             WHERE id = :id'
+        )->execute([
+            'deshacer' => $deshacer === null ? null : json_encode($deshacer),
+            'cantidad' => $item['cantidad'], 'unidad' => $item['unidad'], 'id' => $id,
+        ]);
         return true;
     }
 

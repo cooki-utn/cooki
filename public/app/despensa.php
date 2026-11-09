@@ -151,7 +151,9 @@ if ($estado !== '') {
     $items = array_values(array_filter($items, fn ($fila) => DespensaRepositorio::estado($fila) === $estado));
 }
 /** Dirección de la despensa con los filtros (ubicación y estado) que se pasen; los vacíos no van. */
-$enLista = (new ListaRepositorio($db))->ingredientesPendientes($usuarioId);
+$listaCompras = new ListaRepositorio($db);
+$enLista = $listaCompras->ingredientesPendientes($usuarioId);
+$notaLista = $listaCompras->faltaComprar($usuarioId);   // la nota de la lista de compras, a la derecha de los filtros
 $filtro = fn (string $ubic, string $est) => url('app/despensa.php' . (($q = http_build_query(array_filter(['ubicacion' => $ubic, 'estado' => $est]))) !== '' ? '?' . $q : ''));
 $error = fn (string $campo) => isset($errores[$campo]) ? '<p class="error-campo">' . e($errores[$campo]) . '</p>' : '';
 
@@ -263,6 +265,9 @@ require parcial('encabezado');
   </form>
 </section>
 
+<?php /* Contador, pestañas y buscador a la izquierda; la nota de la lista de compras en el hueco de la derecha */ ?>
+<div class="despensa-arriba">
+<div class="despensa-arriba__filtros">
 <?php if (array_sum($resumen) > 0) : ?>
   <?php /* Cada número es un filtro: tocarlo muestra solo esos; tocarlo de nuevo, todos */ ?>
   <nav class="contador" aria-label="Filtrar por estado">
@@ -286,6 +291,15 @@ require parcial('encabezado');
     <a href="<?= e($filtro($valor, $estado)) ?>"<?= $ubicacion === $valor ? ' aria-current="page"' : '' ?>><?= e($texto) ?></a>
   <?php endforeach; ?>
 </nav>
+<?php if ($items !== []) : ?>
+  <div class="campo filtro-rapido">
+    <label for="filtro">Buscar en mi despensa</label>
+    <input id="filtro" type="search" placeholder="Escribí para filtrar la lista" autocomplete="off">
+  </div>
+<?php endif; ?>
+</div>
+<?php require parcial('nota-lista'); ?>
+</div>
 
 <?php if ($items === []) : ?>
   <p class="vacio">
@@ -297,10 +311,6 @@ require parcial('encabezado');
     <?php endif; ?>
   </p>
 <?php else : ?>
-  <div class="campo filtro-rapido">
-    <label for="filtro">Buscar en mi despensa</label>
-    <input id="filtro" type="search" placeholder="Escribí para filtrar la lista" autocomplete="off">
-  </div>
   <div class="tabla-contenedor">
     <table id="tabla-despensa" class="tabla-tarjetas">
       <thead><tr><th>Ingrediente</th><th>Cantidad</th><th>Vencimiento</th><th>Ubicación</th><th><span class="solo-lectores">Acciones</span></th></tr></thead>
@@ -326,14 +336,10 @@ require parcial('encabezado');
             <strong><?= e($fila['nombre']) ?></strong>
             <small class="texto-suave"><?= e($fila['categoria']) ?></small>
           </td>
-          <td><span class="nivel nivel--<?= (int) $fila['nivel'] ?>"><?= e($textoCantidad !== '' ? $textoCantidad : DespensaRepositorio::NIVELES[(int) $fila['nivel']]) ?></span></td>
           <td>
-            <span class="etiqueta<?= $estilo ? ' etiqueta--' . $estilo : '' ?>"><?= e($textoVence) ?></span>
-            <?php if ($fila['fecha_vencimiento']) : ?><small class="texto-suave"><?= e(date('d/m', strtotime($fila['fecha_vencimiento']))) ?></small><?php endif; ?>
-          </td>
-          <td><?= e(DespensaRepositorio::UBICACIONES[$fila['ubicacion']]) ?></td>
-          <td>
-            <div class="acciones">
+            <?php /* Agotado o con poco: "+ lista" va al lado de la cantidad, así se ve de qué ingrediente es */ ?>
+            <div class="cantidad-y-lista">
+              <span class="nivel nivel--<?= (int) $fila['nivel'] ?>"><?= e($textoCantidad !== '' ? $textoCantidad : DespensaRepositorio::NIVELES[(int) $fila['nivel']]) ?></span>
               <?php if ((int) $fila['nivel'] <= 1 && in_array((int) $fila['ingrediente_id'], $enLista, true)) : ?>
                 <a class="etiqueta etiqueta--lista" href="<?= e(url('app/lista.php')) ?>">En tu lista</a>
               <?php elseif ((int) $fila['nivel'] <= 1) : ?>
@@ -348,6 +354,15 @@ require parcial('encabezado');
                   </button>
                 </form>
               <?php endif; ?>
+            </div>
+          </td>
+          <td>
+            <span class="etiqueta<?= $estilo ? ' etiqueta--' . $estilo : '' ?>"><?= e($textoVence) ?></span>
+            <?php if ($fila['fecha_vencimiento']) : ?><small class="texto-suave"><?= e(date('d/m', strtotime($fila['fecha_vencimiento']))) ?></small><?php endif; ?>
+          </td>
+          <td><?= e(DespensaRepositorio::UBICACIONES[$fila['ubicacion']]) ?></td>
+          <td>
+            <div class="acciones">
               <a class="boton boton--secundario boton--chico" data-editar href="<?= e(url('app/despensa.php?editar=' . $fila['id'] . '#formulario')) ?>">Editar</a>
               <form method="post" data-confirmar="¿Quitar <?= e($fila['nombre']) ?> de tu despensa?" data-confirmar-si="Sí, quitar"
                     data-confirmar-dibujo="<?= e(iconoIngrediente($fila['nombre'], (bool) $fila['propio'])) ?>" data-sonido="sticker-arranca">

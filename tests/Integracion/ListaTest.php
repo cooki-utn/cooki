@@ -216,4 +216,81 @@ final class ListaTest extends TestCase
         $this->assertSame(200, $api->pedir('DELETE', "/lista/{$id}")[0]);
         $this->assertSame(404, $api->pedir('DELETE', "/lista/{$id}")[0]);
     }
+
+    public function testOtraCantidadPasaALaDespensaYDeshacerVuelveALaPrevista(): void
+    {
+        $tomate = $this->lista->agregar($this->usuario, 4, null, 2.0, 'u')['id'];
+        $harina = $this->lista->agregar($this->usuario, 16, null, 500.0, 'g')['id'];
+
+        $web = new Navegador();
+        $web->ingresar($this->email, 'Usuario1234');
+        [, $html] = $web->get('app/lista.php');
+        $this->assertStringContainsString('Otra cantidad', $html);
+        $this->assertStringContainsString('Marcar todo como comprado', $html);
+        $web->post('app/lista.php', [
+            'comprar_uno' => $harina,
+            'cantidad_comprada' => [$harina => '1', $tomate => ''],
+            'unidad_comprada' => [$harina => 'kg', $tomate => 'u'],
+        ]);
+        $this->assertSame('1000.00', $this->despensa()[16]['cantidad'], 'Pasa lo que de verdad se compró: 1 kg');
+        $renglon = array_column($this->lista->listar($this->usuario), null, 'id')[$harina];
+        $this->assertSame(['1.00', 'kg'], [$renglon['cantidad'], $renglon['unidad']]);
+        $this->assertSame(1, $this->lista->pendientes($this->usuario), 'El tomate sigue sin comprar');
+
+        $this->assertTrue($this->lista->deshacer($this->usuario, $harina));
+        $renglon = array_column($this->lista->listar($this->usuario), null, 'id')[$harina];
+        $this->assertSame(['500.00', 'g'], [$renglon['cantidad'], $renglon['unidad']], 'Vuelve la cantidad prevista');
+        $this->assertArrayNotHasKey(16, $this->despensa());
+
+        // Sin escribir cuánto, "Lo compré" no marca nada
+        $web->get('app/lista.php');
+        $web->post('app/lista.php', ['comprar_uno' => $tomate, 'cantidad_comprada' => [$tomate => '']]);
+        $this->assertSame(2, $this->lista->pendientes($this->usuario));
+    }
+
+    public function testMarcarTodoComoComprado(): void
+    {
+        $this->lista->agregar($this->usuario, 4, null, 2.0, 'u');
+        $this->lista->agregar($this->usuario, null, 'Servilletas');
+        $web = new Navegador();
+        $web->ingresar($this->email, 'Usuario1234');
+        $web->get('app/lista.php');
+        $web->post('app/lista.php', ['accion' => 'comprar_todo']);
+        $this->assertSame(0, $this->lista->pendientes($this->usuario));
+        $this->assertArrayHasKey(4, $this->despensa());
+    }
+
+    public function testLaNotaDeLaListaEnMiCocinaYMiDespensa(): void
+    {
+        $this->lista->agregar($this->usuario, 4, null, 2.0, 'u');
+        $web = new Navegador();
+        $web->ingresar($this->email, 'Usuario1234');
+        foreach (['app/index.php', 'app/despensa.php'] as $pagina) {
+            [, $html] = $web->get($pagina);
+            $this->assertStringContainsString('id="titulo-nota-lista"', $html, $pagina);
+            $this->assertStringContainsString('data-estado="abierta"', $html, $pagina);
+        }
+
+        // Cerrar: queda el recuadro chico (la nota entera, oculta)
+        $web->post('app/preferencias.php', ['nota_lista' => 'cerrada', 'volver' => '/app/index.php']);
+        [, $html] = $web->get('app/index.php');
+        $this->assertStringContainsString('data-estado="cerrada"', $html);
+        $this->assertMatchesRegularExpression('/nota-lista__abierta"[^>]*hidden/', $html);
+
+        // Apagada en Mis preferencias: no aparece en ningún lado
+        [, $html] = $web->get('app/mis-preferencias.php');
+        $this->assertStringContainsString('Mostrar mi lista de compras en Mi cocina y Mi despensa', $html);
+        $apagar = ['nota_lista' => 'nunca', 'avisar' => '1', 'volver' => '/app/mis-preferencias.php'];
+        $web->post('app/preferencias.php', $apagar);
+        foreach (['app/index.php', 'app/despensa.php'] as $pagina) {
+            [, $html] = $web->get($pagina);
+            $this->assertStringNotContainsString('class="nota-lista"', $html, $pagina);
+        }
+        $guardado = Db::conexion()->prepare('SELECT nota_lista FROM usuario WHERE id = ?');
+        $guardado->execute([$this->usuario]);
+        $this->assertSame('nunca', $guardado->fetchColumn(), 'Queda guardado en la cuenta');
+        $this->assertSame(302, $web->post('app/preferencias.php', ['nota_lista' => 'cualquiera', 'volver' => '/'])[0]);
+        $guardado->execute([$this->usuario]);
+        $this->assertSame('nunca', $guardado->fetchColumn(), 'Un valor inválido no se guarda');
+    }
 }

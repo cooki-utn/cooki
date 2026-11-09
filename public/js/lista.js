@@ -94,11 +94,39 @@
   const pasar = document.querySelector('.lista-compras__pasar');
   if (pasar) pasar.hidden = true;
 
+  // "Otra cantidad": muestra en el renglón lo que de verdad se compró (y al deshacer, vuelve la prevista)
+  function cambiarCantidad(renglon, texto) {
+    let cantidad = renglon.querySelector('.renglon__cantidad');
+    if (!cantidad) {
+      cantidad = document.createElement('span');
+      cantidad.className = 'renglon__cantidad';
+      renglon.querySelector('.renglon__texto strong').after(cantidad);
+    }
+    if (renglon.dataset.prevista === undefined) renglon.dataset.prevista = cantidad.textContent;
+    cantidad.textContent = texto;
+  }
+  function textoOtraCantidad(renglon) {
+    const campo = renglon.querySelector('.renglon__otra input');
+    if (!campo || campo.value.trim() === '') return null;
+    const unidad = renglon.querySelector('.renglon__otra select');
+    return `${campo.value.trim().replace('.', ',')} ${unidad.selectedOptions[0].textContent}`;
+  }
+
   function marcarComprado(renglon, comprado) {
     renglon.classList.toggle('renglon--comprado', comprado);
     const check = renglon.querySelector('input[type=checkbox]');
     check.checked = comprado;
     renglon.querySelector('.renglon__quitar').hidden = comprado;
+    const otra = renglon.querySelector('.renglon__otra');
+    if (otra) {
+      otra.open = false;
+      otra.hidden = comprado;
+      if (!comprado) otra.querySelector('input').value = '';
+    }
+    if (!comprado && renglon.dataset.prevista !== undefined) {
+      cambiarCantidad(renglon, renglon.dataset.prevista);
+      delete renglon.dataset.prevista;
+    }
     let deshacer = renglon.querySelector('.renglon__deshacer');
     if (comprado && !deshacer) {
       deshacer = document.createElement('button');
@@ -144,6 +172,8 @@
       avisar(respuesta.mensaje, respuesta.ok);
       if (respuesta.ok) {
         window.sonar?.('tic');
+        const otra = textoOtraCantidad(renglon);
+        if (otra) cambiarCantidad(renglon, otra);
         marcarComprado(renglon, true);
       } else {
         check.checked = false;
@@ -153,6 +183,36 @@
       avisar('No se pudo marcar. Probá de nuevo.', false);
     }
     check.disabled = false;
+  });
+
+  // Enter en "Otra cantidad" usa el "Lo compré" de ese renglón (no el primero del formulario)
+  lista.addEventListener('keydown', (evento) => {
+    const campo = evento.target.closest('.renglon__otra input');
+    if (!campo || evento.key !== 'Enter') return;
+    evento.preventDefault();
+    campo.closest('.renglon__otra').querySelector('button').click();
+  });
+
+  // "Lo compré" con otra cantidad, sin recargar
+  lista.addEventListener('submit', async (evento) => {
+    const boton = evento.submitter;
+    if (!boton || boton.name !== 'comprar_uno') return;
+    evento.preventDefault();
+    const renglon = boton.closest('.renglon');
+    boton.disabled = true;
+    try {
+      const respuesta = await enviar(lista, { comprar_uno: boton.value });
+      avisar(respuesta.mensaje, respuesta.ok);
+      if (respuesta.ok) {
+        window.sonar?.('tic');
+        cambiarCantidad(renglon, respuesta.texto_cantidad);
+        marcarComprado(renglon, true);
+        renglon.querySelector('.renglon__deshacer')?.focus();
+      }
+    } catch {
+      avisar('No se pudo marcar. Probá de nuevo.', false);
+    }
+    boton.disabled = false;
   });
 
   // Quitar y Deshacer (los de "Comprado hoy") sin recargar

@@ -1552,7 +1552,8 @@ a.paginacion__numero:hover, .paginacion__flecha:hover { transform: translateY(-2
 .mas-lista--todo { display: block; margin: 8px 0 4px; }
 .etiqueta--lista { background: #DCEBFA; color: var(--color-azul); text-decoration: none; }
 a.etiqueta--lista:hover { text-decoration: underline; }
-#tabla-despensa .acciones .etiqueta--lista { align-self: center; }
+/* En Mi despensa, "+ lista" va al lado de la cantidad (así se ve de qué ingrediente es) */
+.cantidad-y-lista { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 
 /* La lista: una hoja de cuaderno con un renglón por cosa, agrupada por góndola */
 .lista-agregar .nuevo-ingrediente__nota { margin-top: 4px; }
@@ -1604,3 +1605,62 @@ a.etiqueta--lista:hover { text-decoration: underline; }
   .renglon { min-height: 32px; }
   .renglon__dibujo { width: 24px; height: 24px; filter: none; }
 }
+
+/* La nota de la lista de compras (Mi cocina y Mi despensa): un post-it celeste que se cierra y queda asomando */
+.nota-lista .postit { background: #CFE0F2; --giro: 1deg; max-width: none; }
+.nota-lista .postit__chinche { background: radial-gradient(circle at 35% 30%, #9FD3FF, var(--color-azul) 70%); }
+.nota-lista__form { margin: 0; }
+.postit__titulo .nota-lista__form { margin-left: auto; }
+.nota-lista__cerrar {
+  width: 36px; height: 36px; border: none; border-radius: 50%; background: rgb(255 255 255 / 45%);
+  color: var(--color-texto); font-size: 1.1rem; cursor: pointer;
+}
+.nota-lista__cerrar:hover { background: #fff; }
+.nota-lista__items { list-style: none; margin: 0; padding: 0; }
+.nota-lista__items li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 4px 0; border-bottom: 1px dashed rgb(30 43 38 / 22%); }
+.nota-lista__items li:last-child { border-bottom: none; }
+.nota-lista__items strong { font: 700 1.4rem/1 var(--fuente-mano); }
+.nota-lista__items span { color: var(--color-azul); font-weight: 700; }
+.nota-lista__ir { display: inline-block; margin-top: 8px; font-weight: 700; }
+.nota-lista__cerrada { margin: 10px 0 24px; }
+.nota-lista__asomada {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 16px 6px 14px;
+  border: none; background: #CFE0F2; color: var(--color-texto); font: 700 1.45rem/1 var(--fuente-mano);
+  box-shadow: 0 6px 12px rgb(0 0 0 / 16%); transform: rotate(-2deg); cursor: pointer;
+  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+}
+.nota-lista__asomada b {
+  display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding: 0 6px; border-radius: 99px;
+  background: var(--color-azul); color: #fff; font: 800 .9rem var(--fuente);
+}
+.nota-lista__asomada:hover, .nota-lista__asomada:focus-visible { transform: rotate(1deg) translateY(-2px); }
+/* Mi cocina: "Usalo pronto" y la nota, lado a lado (se apilan si no entran) */
+.cocina__notas { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 28px; }
+.cocina__notas > .postit { flex: 1 1 420px; }
+.cocina__notas > .nota-lista { flex: 0 1 360px; }
+.cocina__notas > .nota-lista:has(.nota-lista__abierta[hidden]) { flex-basis: auto; }
+@media (min-width: 1100px) {
+  [data-disposicion="panoramica"] .cocina__notas > .postit, [data-disposicion="panoramica"] .cocina__notas > .nota-lista { flex-basis: 100%; }
+}
+/* Mi despensa: contador, pestañas y buscador a la izquierda; la nota en el hueco de la derecha */
+@media (min-width: 900px) {
+  .despensa-arriba { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 360px); gap: 0 28px; align-items: start; }
+  .despensa-arriba .nota-lista .postit, .despensa-arriba .nota-lista__cerrada { margin-top: 0; }
+  .despensa-arriba .nota-lista__cerrada { text-align: right; }
+}
+.preferencia__casilla { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 700; }
+.preferencia__casilla input { width: 22px; height: 22px; flex: none; accent-color: var(--color-marca); }
+/* Lista: "Otra cantidad" (abre un campito debajo del renglón) y "Marcar todo como comprado" */
+.renglon { flex-wrap: wrap; }
+.renglon__otra { flex: none; }
+.renglon__otra summary {
+  cursor: pointer; list-style: none; font: 700 1.1rem/1 var(--fuente-mano); color: var(--color-azul);
+  text-decoration: underline dashed; text-underline-offset: 4px; padding: 6px 4px;
+}
+.renglon__otra summary::-webkit-details-marker { display: none; }
+.renglon__otra[open] { flex-basis: 100%; order: 3; padding: 0 0 8px 34px; }
+.renglon__otra-campos { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; }
+.renglon__otra-campos input { width: 110px; }
+.renglon__otra-campos select { width: auto; }
+.lista-compras__todo { margin-top: 14px; }
+@media print { .renglon__otra, .lista-compras__todo { display: none !important; } }

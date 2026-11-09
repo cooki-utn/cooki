@@ -77,6 +77,7 @@ erDiagram
 | `respuesta_ia` | Caché de la IA: la misma consulta no se paga dos veces durante 7 días. `clave` = sha256 del tipo y los datos | — | Entrega B |
 | `uso_ia` | Cada pedido a la IA: límites por día y panel de administración | → usuario (`SET NULL`) | Entrega B |
 | `sugerencia_reemplazo` | Reemplazos que sugirió la IA, para pasarlos a `sustitucion` | → ingrediente (`CASCADE`; el reemplazo, `SET NULL`) | Entrega B |
+| `usuario.nota_lista` (columna nueva, migración `008-nota-lista.sql`) | Cómo se ve la nota de la lista de compras en Mi cocina y Mi despensa: `abierta`, `cerrada` o `nunca` (DEC-019) | — | Entrega A: Mi cocina, Mi despensa, Mis preferencias |
 | `plan_comida` | Plan semanal: una receta (del recetario o de la IA) por día y comida. Único por usuario, fecha y momento | → usuario, → receta, → receta_ia (`CASCADE`) | Entrega C |
 
 ## Reglas importantes

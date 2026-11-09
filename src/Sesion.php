@@ -74,6 +74,7 @@ final class Sesion
             'color' => (string) ($usuario['color'] ?? 'verde'),
             'disposicion' => (string) ($usuario['disposicion'] ?? 'normal'),
             'volumen' => (int) ($usuario['volumen'] ?? 50),
+            'nota_lista' => (string) ($usuario['nota_lista'] ?? 'abierta'),
         ];
     }
 
@@ -81,6 +82,12 @@ final class Sesion
     public static function volumen(): int
     {
         return (int) (self::usuario()['volumen'] ?? 50);
+    }
+
+    /** La nota de la lista de compras del usuario logueado: 'abierta', 'cerrada' o 'nunca'. */
+    public static function notaLista(): string
+    {
+        return (string) (self::usuario()['nota_lista'] ?? 'abierta');
     }
 
     /** Disposición de la pantalla del usuario logueado: 'normal' o 'panoramica'. */
@@ -122,7 +129,7 @@ final class Sesion
     }
 
     /**
-     * Actualiza una preferencia guardada en la sesión ('color', 'disposicion' o 'volumen').
+     * Actualiza una preferencia guardada en la sesión ('color', 'disposicion', 'nota_lista' o 'volumen').
      * La base la actualiza UsuarioRepositorio::guardarPreferencia().
      */
     public static function cambiarPreferencia(string $clave, string $valor): void

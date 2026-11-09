@@ -17,6 +17,7 @@ use Cooki\Db;
 use Cooki\Dominio\Puntaje;
 use Cooki\Repositorios\CocinaRepositorio;
 use Cooki\Repositorios\DespensaRepositorio;
+use Cooki\Repositorios\ListaRepositorio;
 use Cooki\Repositorios\RecetaRepositorio;
 use Cooki\Sesion;
 
@@ -31,6 +32,7 @@ $porVencer = $despensa->porVencer($usuario['id'], 7);
 $vencidos = count(array_filter($porVencer, fn ($item) => (int) $item['dias'] < 0));
 $porVencer = array_values(array_filter($porVencer, fn ($item) => (int) $item['dias'] >= 0));
 $cocinando = (new CocinaRepositorio($db))->enCurso($usuario['id']);
+$notaLista = (new ListaRepositorio($db))->faltaComprar($usuario['id']);   // la nota de la lista de compras
 // Recomendaciones por grupo (hasta 6 en cada uno, las de más puntaje primero)
 $porGrupo = array_fill_keys(array_keys(Puntaje::GRUPOS), []);
 foreach ($recetas->recomendadas($usuario['id']) as $recomendada) {
@@ -69,6 +71,8 @@ require parcial('encabezado');
 <div class="cocina">
 <div class="cocina__lateral">
 
+<?php /* "Usalo pronto" y, al lado, la nota de la lista de compras (se puede cerrar o apagar en Mis preferencias) */ ?>
+<div class="cocina__notas">
 <section class="postit">
   <span class="postit__chinche" aria-hidden="true"></span>
   <div class="postit__titulo">
@@ -96,6 +100,8 @@ require parcial('encabezado');
     </ul>
   <?php endif; ?>
 </section>
+<?php require parcial('nota-lista'); ?>
+</div>
 
 <section class="selector" aria-labelledby="titulo-selector">
   <h2 id="titulo-selector">¿Qué querés usar?</h2>

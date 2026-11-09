@@ -169,3 +169,26 @@ if (marca && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     }
   });
 }
+
+// Nota de la lista de compras (Mi cocina y Mi despensa): "Cerrar" la deja como un recuadro chico y el recuadro
+// la vuelve a desplegar. Cambia en el momento y se guarda en la cuenta en segundo plano.
+// Sin JavaScript, cada botón envía su formulario a app/preferencias.php y la página se recarga.
+const notaLista = document.querySelector('.nota-lista');
+if (notaLista) {
+  const abierta = notaLista.querySelector('.nota-lista__abierta');
+  const cerrada = notaLista.querySelector('.nota-lista__cerrada');
+  notaLista.addEventListener('submit', (evento) => {
+    const boton = evento.submitter;
+    if (!boton || boton.name !== 'nota_lista') return;
+    evento.preventDefault();
+    const abrir = boton.value === 'abierta';
+    abierta.hidden = !abrir;
+    cerrada.hidden = abrir;
+    notaLista.dataset.estado = boton.value;
+    window.sonar?.(abrir ? 'nota-despega' : 'nota-pega');
+    (abrir ? abierta.querySelector('.nota-lista__cerrar') : cerrada.querySelector('button'))?.focus();
+    const datos = new FormData(evento.target);
+    datos.append('nota_lista', boton.value);
+    fetch(evento.target.action, { method: 'POST', body: datos, headers: { 'X-Requested-With': 'fetch' } });
+  });
+}

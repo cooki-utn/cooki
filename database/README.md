@@ -52,6 +52,7 @@ mysql -u cooki -p cooki < database/migraciones/004-tanda-heladera-4.sql
 mysql -u cooki -p cooki < database/migraciones/005-incremento-2-a.sql
 mysql -u cooki -p cooki < database/migraciones/006-incremento-2-b.sql
 mysql -u cooki -p cooki < database/migraciones/007-incremento-3.sql
+mysql -u cooki -p cooki < database/migraciones/008-nota-lista.sql
 mysql -u cooki -p cooki < database/recetas.sql                           # el recetario nuevo
 ```
 
