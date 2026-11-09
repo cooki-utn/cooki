@@ -346,6 +346,19 @@ img { max-width: 100%; }
   75% { transform: translateY(-4px) rotate(calc(var(--giro) - .6deg)); }
   100% { transform: translateY(-4px) rotate(calc(var(--giro) + 1.2deg)); }
 }
+/* Las notas que tienen algo para tocar (un enlace, un botón, un campo) no se hamacan mientras el mouse está encima:
+   se levantan y se quedan quietas en esa inclinación, así es fácil darle al enlace. Al soltarlas (cuando el mouse
+   sale), sitio.js les pone .nota--soltada y recién ahí se hamacan hasta volver a su lugar. */
+:is(.aviso, .postit):has(a, button, input, select, textarea, summary):hover { animation: none; }
+.nota--soltada { animation: hamacar-soltar 1.4s ease-out; }
+@keyframes hamacar-soltar {
+  0% { transform: translateY(-4px) rotate(calc(var(--giro) + 1.2deg)); }
+  20% { transform: translateY(-2px) rotate(calc(var(--giro) - 3deg)); }
+  40% { transform: rotate(calc(var(--giro) + 2.2deg)); }
+  60% { transform: rotate(calc(var(--giro) - 1.2deg)); }
+  80% { transform: rotate(calc(var(--giro) + .4deg)); }
+  100% { transform: rotate(var(--giro)); }
+}
 .aviso::before {   /* la chinche */
   content: ""; position: absolute; top: -9px; left: 50%; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #9FD3FF, var(--color-azul) 70%);

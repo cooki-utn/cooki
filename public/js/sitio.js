@@ -206,3 +206,23 @@ if (masLista) {
     }
   });
 }
+
+// 8. Las notas con algo para tocar (enlace, botón, campo) quedan quietas mientras el mouse está encima (estilos.css)
+//    y se hamacan recién cuando el mouse sale. Sin JavaScript o con "reducir movimiento", solo vuelven a su lugar.
+const NOTA_CON_ENLACE = ':is(.aviso, .postit):has(a, button, input, select, textarea, summary)';
+if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  document.addEventListener('mouseout', (evento) => {
+    const nota = evento.target.closest('.aviso, .postit');
+    if (!nota || nota.contains(evento.relatedTarget) || !nota.matches(NOTA_CON_ENLACE)) {
+      return;
+    }
+    nota.classList.remove('nota--soltada');
+    void nota.offsetWidth;   // vuelve a empezar la animación si se suelta otra vez antes de que termine
+    nota.classList.add('nota--soltada');
+  });
+  document.addEventListener('animationend', (evento) => {
+    if (evento.animationName === 'hamacar-soltar') {
+      evento.target.classList.remove('nota--soltada');
+    }
+  });
+}

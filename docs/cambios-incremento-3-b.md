@@ -12,6 +12,7 @@
 | HU-32 · ¿Con qué lo reemplazo? | En lo que falta y no tiene ⇄, **¿Con qué lo reemplazo? (IA)** responde abajo del ingrediente: "Usá leche: la misma cantidad (600 g)" y cómo cambia el resultado. Cada 5 reemplazos se gasta 1 pedido | P3 |
 | HU-33 · Límites, caché y privacidad | 5 pedidos por persona y 200 por sitio por día (solo descuenta lo que salió bien). La misma consulta, durante 7 días, sale de la caché y no gasta (en adaptaciones y reemplazos se marca "ya consultado · no gasta"). A Google se le mandan solo ingredientes y restricciones, nunca el nombre ni el correo; el aviso está al lado de cada botón. Sin `IA_CLAVE`, los botones no aparecen | P1 |
 | HU-34 · Administración de la IA | Nota **IA** en el panel y `admin/ia.php`: cómo está, uso de hoy y de 7 días por tipo (pedidos, caché, errores, tokens, tiempo) y los últimos errores. **Pasar al recetario** abre una receta guardada en el editor para revisarla (lo que no está en el catálogo queda afuera, con aviso). Los reemplazos sugeridos se **pasan a sustituciones** (calidad 3) o se **descartan** | P1 + P3 |
+| Notas más fáciles de usar | Las notas que tienen un enlace, un botón o un campo ("¿Y si inventamos algo?", la lista, los avisos con enlace) ya no se hamacan con el mouse encima: se levantan y se quedan quietas en esa inclinación. Se hamacan recién cuando el mouse sale. Las demás notas siguen igual | P2 |
 | API | `GET /ia`, `POST /ia/receta`, `POST /ia/adaptar/{id}`, `POST /ia/reemplazo` ([api.md](api.md)) | P3 |
 | Calidad | `RecetaIaTest` (13 pruebas de la validación), `ClienteGeminiTest` (5) e `IaTest` (16 de punta a punta) contra un Gemini de mentira (`servidor-ia-falso.php`, con respuestas lentas, 429 y basura); `PaginasTest` y `NavegacionTest` con las páginas nuevas | P4 revisa |
 
@@ -47,6 +48,7 @@ paso 7. Sin clave, todo lo demás anda igual.
 | `public/admin/ia.php` · `public/admin/index.php` · `public/admin/receta-editar.php` | **Nuevo.** La administración de la IA, su nota en el panel y "Pasar al recetario" |
 | `public/app/lista.php` · `src/Repositorios/ListaRepositorio.php` | Lo que falta de una receta de IA va a la lista |
 | `public/css/estilos.css` · `public/img/ia.svg` | La nota, el sello, los reemplazos y la administración; el dibujo de la IA |
+| `public/js/sitio.js` | Hamacar las notas con enlaces recién cuando el mouse sale |
 | `src/ayudas.php` | Las páginas de la IA en la flecha de volver |
 | `.env.example` | Las variables `IA_*` |
 
