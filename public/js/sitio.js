@@ -226,3 +226,88 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     }
   });
 }
+
+// 9. "Volver" deja la pantalla a la misma altura: antes de salir de cada página se anota hasta dónde se había
+//    bajado (por dirección: ruta + parámetros, sin "atras"). Al tocar una flecha de volver se anota adónde se va;
+//    si la página que se abre es esa, baja hasta la altura guardada, sin desplazamiento suave.
+//    No usa history.back(): si la receta se recargó (porciones, "+ lista"), volvería a la receta y no a Mi cocina.
+//    Sin JavaScript (o si el navegador no deja usar sessionStorage) la flecha lleva al principio, como siempre.
+const POSICIONES = 'cooki-posiciones';
+const VOLVIENDO = 'cooki-volviendo';
+
+function claveDePagina(direccion) {
+  const url = new URL(direccion, window.location.href);
+  url.searchParams.delete('atras');
+  url.searchParams.sort();
+  return url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '');
+}
+
+function leerAlmacen(nombre) {
+  try {
+    return window.sessionStorage.getItem(nombre);
+  } catch (error) {
+    return null;
+  }
+}
+
+function guardarAlmacen(nombre, valor) {
+  try {
+    if (valor === null) {
+      window.sessionStorage.removeItem(nombre);
+    } else {
+      window.sessionStorage.setItem(nombre, valor);
+    }
+  } catch (error) {
+    // Sin sessionStorage (ventana privada, sitio bloqueado): la flecha anda como sin JavaScript
+  }
+}
+
+function leerPosiciones() {
+  try {
+    const posiciones = JSON.parse(leerAlmacen(POSICIONES) || '{}');
+    return posiciones && typeof posiciones === 'object' ? posiciones : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+const paginaActual = claveDePagina(window.location.href);
+
+window.addEventListener('pagehide', () => {
+  const posiciones = leerPosiciones();
+  delete posiciones[paginaActual];
+  posiciones[paginaActual] = Math.round(window.scrollY);
+  // Solo las últimas 30 páginas, para no llenar el almacenamiento de la pestaña
+  const claves = Object.keys(posiciones);
+  claves.slice(0, Math.max(0, claves.length - 30)).forEach((clave) => delete posiciones[clave]);
+  guardarAlmacen(POSICIONES, JSON.stringify(posiciones));
+});
+
+document.addEventListener('click', (evento) => {
+  const flecha = evento.target.closest('a.volver');
+  if (flecha) {
+    guardarAlmacen(VOLVIENDO, claveDePagina(flecha.href));
+  }
+});
+
+// La marca se usa una sola vez: si la página que se abrió es otra (una redirección, por ejemplo), se olvida igual
+const volviendoA = leerAlmacen(VOLVIENDO);
+guardarAlmacen(VOLVIENDO, null);
+if (volviendoA === paginaActual) {
+  const altura = Number(leerPosiciones()[paginaActual]);
+  if (altura > 0 && !window.location.hash) {
+    const bajar = () => window.scrollTo({ top: altura, left: 0, behavior: 'instant' });
+    bajar();
+    // Las fotos que terminan de cargar pueden cambiar el alto: se vuelve a bajar si la persona no se movió
+    let tocada = false;
+    const marcar = () => { tocada = true; };
+    ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach((tipo) => {
+      window.addEventListener(tipo, marcar, { once: true, passive: true });
+    });
+    window.addEventListener('load', () => {
+      if (!tocada) {
+        bajar();
+      }
+    }, { once: true });
+  }
+}

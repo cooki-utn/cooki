@@ -6,12 +6,23 @@ Formato: decisiones tipo ADR (ver la guía de metodología del equipo, sección 
 
 ---
 
-## DEC-021 · AAAA-MM-DD · (título)
+## DEC-022 · AAAA-MM-DD · (título)
 - **Contexto:** 
 - **Decisión:** 
 - **Alternativas descartadas:** 
 - **Consecuencias:** 
 - **Participaron:** 
+
+---
+
+## DEC-021 · 2026-11-09 · "Volver" deja la pantalla a la misma altura
+- **Contexto:** la flecha de volver (DEC-017) sabe de qué página venís, pero te llevaba al principio. Si en Mi cocina bajabas hasta las recetas, abrías una y tocabas "Volver a Mi cocina", tenías que volver a bajar.
+- **Decisión:** un JavaScript chico para todo el sitio (`sitio.js`, sección 9). Antes de salir de cada página anota en `sessionStorage` hasta dónde se había bajado, por dirección (ruta y parámetros, sin `atras`; guarda las últimas 30). Al tocar una flecha `.volver` anota adónde se va; si la página que se abre es esa, baja a la altura guardada sin desplazamiento suave, y otra vez cuando terminan de cargar las fotos si la persona no se movió. La marca se usa una sola vez. Si `sessionStorage` no se puede usar (ventana privada, sitio bloqueado), todo está en `try/catch` y la flecha anda como antes.
+- **Alternativas descartadas:**
+  - `history.back()`: si la receta se recargó mientras la mirabas (porciones, "+ lista", favorita), vuelve a la misma receta y no a Mi cocina.
+  - Guardar la altura en la sesión de PHP o en la dirección (`#ancla`): hace falta un pedido más o ensucia los enlaces, y no sirve para las listas sin anclas.
+- **Consecuencias:** sin JavaScript la flecha lleva al principio de la página, como antes. Entrar a una página por el menú o por un enlace común la abre arriba, como siempre.
+- **Participaron:** P2 (pantallas y `sitio.js`)
 
 ---
 
