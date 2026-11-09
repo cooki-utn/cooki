@@ -1,0 +1,25 @@
+{
+  "titulo": "Revuelto de zapallitos",
+  "descripcion": "Rápido, suave y con lo que hay.",
+  "porciones": 2,
+  "minutos_prep": 10,
+  "minutos_coccion": 15,
+  "dificultad": 1,
+  "etiquetas": ["vegetariana"],
+  "ingredientes": [
+    { "nombre": "Zapallitos", "cantidad": 2, "unidad": "u", "peso": 3 },
+    { "nombre": "Huevo", "cantidad": 3, "unidad": "u", "peso": 2 },
+    { "nombre": "Cebolla", "cantidad": 1, "unidad": "u", "peso": 2 },
+    { "nombre": "Queso rallado", "cantidad": 30, "unidad": "g", "peso": 1 },
+    { "nombre": "Aceite", "cantidad": 1, "unidad": "cda", "peso": 1 },
+    { "nombre": "Sal", "cantidad": null, "unidad": "a gusto", "peso": 1 }
+  ],
+  "pasos": [
+    { "texto": "Cortá la cebolla en pluma y los zapallitos en cubos chicos.", "minutos": null },
+    { "texto": "Rehogá la cebolla en el aceite hasta que esté transparente.", "minutos": 5 },
+    { "texto": "Sumá los zapallitos y cociná hasta que estén tiernos.", "minutos": 8 },
+    { "texto": "Agregá los huevos batidos con sal y revolvé hasta que estén bien cocidos.", "minutos": 2 },
+    { "texto": "Serví con el queso rallado por arriba.", "minutos": null }
+  ],
+  "por_que": "Aprovecha el zapallito, que vence en 2 días, y los huevos que ya tenés."
+}

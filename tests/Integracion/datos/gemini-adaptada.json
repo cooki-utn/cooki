@@ -1,0 +1,24 @@
+{
+  "titulo": "Revuelto de zapallitos sin huevo",
+  "descripcion": "La misma idea, con fécula en lugar de huevo.",
+  "porciones": 2,
+  "minutos_prep": 10,
+  "minutos_coccion": 15,
+  "dificultad": 1,
+  "etiquetas": ["vegetariana"],
+  "ingredientes": [
+    { "nombre": "Zapallito", "cantidad": 2, "unidad": "u", "peso": 3 },
+    { "nombre": "Fécula de maíz", "cantidad": 2, "unidad": "cda", "peso": 2 },
+    { "nombre": "Cebolla", "cantidad": 1, "unidad": "u", "peso": 2 },
+    { "nombre": "Aceite", "cantidad": 1, "unidad": "cda", "peso": 1 },
+    { "nombre": "Sal", "cantidad": null, "unidad": "a gusto", "peso": 1 }
+  ],
+  "pasos": [
+    { "texto": "Cortá la cebolla y los zapallitos.", "minutos": null },
+    { "texto": "Rehogá todo en el aceite.", "minutos": 10 },
+    { "texto": "Disolvé la fécula en 4 cucharadas de agua, sumala y revolvé hasta que espese.", "minutos": 2 },
+    { "texto": "Salá y serví.", "minutos": null }
+  ],
+  "por_que": "Queda un poco menos firme, pero igual de sabroso.",
+  "cambios": ["Huevo → 2 cda de fécula de maíz con agua"]
+}
