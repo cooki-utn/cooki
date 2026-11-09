@@ -39,7 +39,11 @@
         return;
       }
       const json = await respuesta.json().catch(() => null);
-      if (respuesta.ok && json?.url) {
+      if (!json) {
+        form.submit();   // no vino JSON (por ejemplo, la protección del hosting): el formulario común
+        return;
+      }
+      if (respuesta.ok && json.url) {
         if (estado) estado.textContent = `¡Listo! ${json.titulo}. Abriendo la receta…`;
         window.sonar?.('sticker-pega');
         window.location.href = json.url;
@@ -51,7 +55,7 @@
       form.classList.remove('pensando');
       if (estado) {
         estado.className = 'nota-ia__estado nota-ia__estado--error';
-        estado.textContent = json?.error ?? 'La IA no está disponible ahora. Probá de nuevo en un rato.';
+        estado.textContent = json.error ?? 'La IA no está disponible ahora. Probá de nuevo en un rato.';
       }
       if (respuesta.status === 429) boton.disabled = true;   // ya no le quedan pedidos hoy
     });
