@@ -126,6 +126,7 @@ const PAGINAS_PARA_VOLVER = [
     'contacto.php' => 'Contacto',
     'app/index.php' => 'Mi cocina',
     'app/despensa.php' => 'Mi despensa',
+    'app/lista.php' => 'la lista de compras',
     'app/recetas.php' => 'Recetas',
     'app/receta.php' => 'la receta',
     'app/perfil.php' => 'Mi cuenta',

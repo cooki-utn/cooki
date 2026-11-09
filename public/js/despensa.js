@@ -52,144 +52,44 @@ function mostrarUnidad() {
   reflejarElegido();
 }
 
-// 5. Buscador con stickers: reemplaza a la lista desplegable (que sigue oculta y es la que se envía).
-//    Se escribe y quedan los dibujos que coinciden (también por sinónimo: "piña" encuentra Ananá).
+// 5. Buscador con stickers (elegir.js): reemplaza a la lista desplegable, que sigue oculta y es la que se envía.
 //    Si no está, "+ Agregar … como nuevo" completa el ingrediente propio (con el frasco).
-const normal = (texto) => normalizar(texto).trim();
-let elegido = null;
+let elegir = null;
 let dibujoNota = null;   // el dibujo grande del ingrediente elegido, pegado en la esquina de la nota
-let buscador = null;
-let botonNuevo = null;
 const detallesNuevo = document.querySelector('.nuevo-ingrediente');
 
 function reflejarElegido() {
-  if (!elegido) return;
-  const opcion = ingrediente.selectedOptions[0];
-  const imagen = elegido.querySelector('img');
-  const texto = elegido.querySelector('span');
+  if (!elegir) return;
+  const dibujo = elegir.reflejar();
   const esNuevo = !ingrediente.value && nombreNuevo?.value.trim();
-  if (opcion && ingrediente.value) {
-    imagen.src = opcion.dataset.dibujo;
-    texto.textContent = opcion.textContent;
-  } else if (esNuevo) {
-    imagen.src = detallesNuevo.querySelector('img').src;
-    texto.textContent = `${nombreNuevo.value.trim()} (nuevo)`;
-  } else {
-    imagen.src = detallesNuevo.querySelector('img').src;
-    texto.textContent = 'Todavía no elegiste';
-  }
-  elegido.classList.toggle('elegir__elegido--vacio', !ingrediente.value && !esNuevo);
   // El mismo dibujo, grande, en la esquina de la nota: se menea cada vez que cambia
-  if (dibujoNota && dibujoNota.getAttribute('src') !== imagen.getAttribute('src')) {
-    dibujoNota.src = imagen.src;
+  if (dibujoNota && dibujoNota.getAttribute('src') !== dibujo) {
+    dibujoNota.src = dibujo;
     dibujoNota.classList.remove('editor__dibujo--cambia');
     void dibujoNota.offsetWidth;
     dibujoNota.classList.add('editor__dibujo--cambia');
   }
   dibujoNota?.classList.toggle('editor__dibujo--vacio', !ingrediente.value && !esNuevo);
-  for (const boton of document.querySelectorAll('.elegir__opcion')) {
-    boton.setAttribute('aria-pressed', String(boton.dataset.id === ingrediente.value));
-  }
 }
 
 function limpiarNuevo() {
-  if (!nombreNuevo) return;
-  nombreNuevo.value = '';
-  detallesNuevo.open = false;
-  if (buscador) buscador.value = '';
-  filtrarOpciones();
+  elegir?.limpiar();
 }
 
-function filtrarOpciones() {
-  if (!buscador) return;
-  const buscado = normal(buscador.value);
-  let visibles = 0;
-  let exacto = false;
-  for (const boton of document.querySelectorAll('.elegir__opcion')) {
-    const nombres = boton.dataset.buscar.split(',').map(normal);
-    // Coincide si alguna palabra empieza con lo escrito ("tom" → Tomate y Puré de tomate; "piña" no trae Espinaca)
-    const coincide = buscado === '' || nombres.some((n) => n.startsWith(buscado) || n.split(' ').some((p) => p.startsWith(buscado)));
-    boton.hidden = !coincide;
-    if (coincide) visibles++;
-    if (nombres.includes(buscado)) exacto = true;
-  }
-  document.querySelector('.elegir__nada').hidden = visibles > 0;
-  document.querySelector('.elegir__opciones').hidden = visibles === 0;
-  botonNuevo.hidden = buscado.length < 2 || exacto;
-  botonNuevo.querySelector('b').textContent = buscador.value.trim();
-}
-
-if (ingrediente && nombreNuevo) {
-  const campo = ingrediente.closest('.campo');
-  ingrediente.classList.add('elegir__lista-oculta');
-  const caja = document.createElement('div');
-  caja.className = 'elegir';
-  caja.innerHTML = `
-    <div class="elegir__elegido"><img alt="" width="56" height="56"><span></span></div>
-    <input class="elegir__buscar" type="search" placeholder="Buscá: tomate, arroz, yerba…" autocomplete="off"
-           aria-label="Buscar el ingrediente">
-    <div class="elegir__opciones" role="group" aria-label="Ingredientes"></div>
-    <p class="elegir__nada" hidden>No está en la lista.</p>
-    <button class="boton boton--agregar boton--chico elegir__nuevo" type="button" hidden>+ Agregar “<b></b>” como nuevo</button>`;
-  ingrediente.after(caja);
-  elegido = caja.querySelector('.elegir__elegido');
+if (ingrediente && nombreNuevo && window.armarElegir) {
   dibujoNota = document.createElement('img');
   dibujoNota.className = 'editor__dibujo';
   dibujoNota.alt = '';
   dibujoNota.width = 96;
   dibujoNota.height = 96;
   document.querySelector('#formulario').append(dibujoNota);
-  buscador = caja.querySelector('.elegir__buscar');
-  botonNuevo = caja.querySelector('.elegir__nuevo');
-  const opciones = caja.querySelector('.elegir__opciones');
-  for (const opcion of ingrediente.querySelectorAll('option[value]:not([value=""])')) {
-    const boton = document.createElement('button');
-    boton.type = 'button';
-    boton.className = 'elegir__opcion' + (opcion.hasAttribute('data-propio') ? ' elegir__opcion--propio' : '');
-    boton.dataset.id = opcion.value;
-    boton.dataset.buscar = opcion.dataset.buscar;
-    boton.innerHTML = '<img alt="" width="48" height="48" loading="lazy"><span></span>';
-    boton.querySelector('img').src = opcion.dataset.dibujo;
-    boton.querySelector('span').textContent = opcion.textContent;
-    opciones.append(boton);
-  }
-  // La etiqueta "Ingrediente" apunta al buscador
-  campo.querySelector('label').htmlFor = '';
-  buscador.id = 'buscar-ingrediente';
-  campo.querySelector('label').htmlFor = 'buscar-ingrediente';
-
-  opciones.addEventListener('click', (evento) => {
-    const boton = evento.target.closest('.elegir__opcion');
-    if (!boton) return;
-    ingrediente.value = boton.dataset.id;
-    nombreNuevo.value = '';
-    detallesNuevo.open = false;
-    window.sonar?.('pop-arriba');
-    mostrarUnidad();
-  });
-  buscador.addEventListener('input', filtrarOpciones);
-  // Enter en el buscador: elige el primero que se ve (o agrega el nuevo), sin enviar el formulario
-  buscador.addEventListener('keydown', (evento) => {
-    if (evento.key !== 'Enter') return;
-    evento.preventDefault();
-    const primero = opciones.querySelector('.elegir__opcion:not([hidden])');
-    if (primero) primero.click();
-    else if (!botonNuevo.hidden) botonNuevo.click();
-  });
-  botonNuevo.addEventListener('click', () => {
-    ingrediente.value = '';
-    nombreNuevo.value = buscador.value.trim();
-    detallesNuevo.open = true;
-    window.sonar?.('pop-arriba');
-    mostrarUnidad();
-    document.querySelector('#categoria_nueva').focus();
-  });
-  nombreNuevo.addEventListener('input', () => {
-    if (nombreNuevo.value.trim()) ingrediente.value = '';
-    mostrarUnidad();
+  elegir = window.armarElegir(ingrediente, {
+    nuevo: nombreNuevo,
+    detalles: detallesNuevo,
+    alCambiar: () => mostrarUnidad(),
+    focoNuevo: document.querySelector('#categoria_nueva'),
   });
   unidadNueva.addEventListener('change', mostrarUnidad);
-  filtrarOpciones();
 }
 
 if (ingrediente && cantidad) {
@@ -219,7 +119,7 @@ if (seccion && typeof HTMLDialogElement === 'function') {
   const cancelar = seccion.querySelector('#cancelar-editor');
   cancelar.hidden = false;
 
-  const abrir = (foco = document.querySelector('.elegir__buscar') || ingrediente) => {
+  const abrir = (foco = elegir?.buscador || ingrediente) => {
     dialogo.showModal();
     window.sonar?.('nota-despega');
     foco.focus();

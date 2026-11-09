@@ -50,10 +50,43 @@ erDiagram
 
 Migración para bases existentes: `database/migraciones/006-incremento-2-b.sql`.
 
+## Incremento 3
+
+Las seis tablas se crean juntas en la entrega A (migración `database/migraciones/007-incremento-3.sql`), aunque
+la IA y el plan semanal se programan en las entregas B y C. Los datos con estructura van en `TEXT` con JSON adentro y
+las reglas entre columnas se validan en PHP, para que el esquema ande igual en MariaDB y en el MySQL del hosting (DEC-018).
+
+```mermaid
+erDiagram
+    USUARIO ||--o{ LISTA_COMPRA_ITEM : anota
+    INGREDIENTE ||--o{ LISTA_COMPRA_ITEM : "se compra"
+    RECETA |o--o{ LISTA_COMPRA_ITEM : "para"
+    USUARIO ||--o{ RECETA_IA : guarda
+    RECETA_IA |o--o{ LISTA_COMPRA_ITEM : "para"
+    USUARIO ||--o{ PLAN_COMIDA : planifica
+    RECETA |o--o{ PLAN_COMIDA : ""
+    RECETA_IA |o--o{ PLAN_COMIDA : ""
+    USUARIO |o--o{ USO_IA : pide
+    INGREDIENTE ||--o{ SUGERENCIA_REEMPLAZO : ""
+```
+
+| Tabla | Para qué | Relaciones | Se usa en |
+|---|---|---|---|
+| `lista_compra_item` | La lista de compras. Cada renglón tiene `ingrediente_id` (del catálogo) **o** `texto` (texto libre). `cantidad` NULL = sin cantidad. `comprado_en` NULL = falta comprar. `deshacer` = cómo estaba la despensa antes de comprar (JSON) | → usuario (`CASCADE`), → ingrediente (`CASCADE`), → receta y → receta_ia (`SET NULL`) | Entrega A: `app/lista.php`, receta, despensa, API |
+| `receta_ia` | Recetas que propuso la IA. `contenido` = la receta validada (JSON). `guardada` = la guardó la persona. `pasada_a` = la receta del recetario en la que la convirtió la administración | → usuario (`CASCADE`), `receta_base` y `pasada_a` → receta (`SET NULL`) | Entrega B |
+| `respuesta_ia` | Caché de la IA: la misma consulta no se paga dos veces durante 7 días. `clave` = sha256 del tipo y los datos | — | Entrega B |
+| `uso_ia` | Cada pedido a la IA: límites por día y panel de administración | → usuario (`SET NULL`) | Entrega B |
+| `sugerencia_reemplazo` | Reemplazos que sugirió la IA, para pasarlos a `sustitucion` | → ingrediente (`CASCADE`; el reemplazo, `SET NULL`) | Entrega B |
+| `plan_comida` | Plan semanal: una receta (del recetario o de la IA) por día y comida. Único por usuario, fecha y momento | → usuario, → receta, → receta_ia (`CASCADE`) | Entrega C |
+
 ## Reglas importantes
 
 - No se puede borrar un ingrediente que usa alguna receta o despensa (la clave foránea lo impide y la página lo avisa).
 - Al borrar una receta se borran solos sus ingredientes, pasos y etiquetas (`ON DELETE CASCADE`).
+- Un renglón de la lista tiene ingrediente o texto, nunca los dos ni ninguno: lo controla `ListaRepositorio::agregar()`.
+  Si el ingrediente ya está sin comprar con una unidad que se puede sumar, se suma en el mismo renglón.
+- Comprar (pasar a la despensa) y deshacer se hacen en una transacción: no queda nada a medias.
+- Un ingrediente que está en alguna lista de compras se puede borrar: se borra también de la lista (`CASCADE`).
 - Un usuario no puede tener dos veces el mismo ingrediente en la misma ubicación (`UNIQUE (usuario_id, ingrediente_id, ubicacion)`).
 - El nombre de un ingrediente no se repite en la lista general ni entre los propios de un mismo usuario (`UNIQUE (nombre, ambito)`, donde `ambito` = `usuario_id` o 0).
 - Las búsquedas ignoran tildes y mayúsculas gracias al cotejamiento `utf8mb4_unicode_ci` ("morron" encuentra "Morrón").

@@ -6,12 +6,32 @@ Formato: decisiones tipo ADR (ver la guía de metodología del equipo, sección 
 
 ---
 
-## DEC-018 · AAAA-MM-DD · (título)
+## DEC-019 · AAAA-MM-DD · (título)
 - **Contexto:** 
 - **Decisión:** 
 - **Alternativas descartadas:** 
 - **Consecuencias:** 
 - **Participaron:** 
+
+---
+
+## DEC-018 · 2026-11-09 · Tablas del incremento 3 y lista de compras
+- **Contexto:** el incremento 3 suma la lista de compras, el plan semanal y la IA. El hosting usa MySQL y Docker usa MariaDB 11.4, que guarda `JSON` como texto y trata algunos `CHECK` distinto. La lista tiene que conectarse con la despensa sin perder datos si algo falla.
+- **Decisión:**
+  - **Una sola migración** (`007-incremento-3.sql`) con las seis tablas, aunque la IA y el plan se programen después: en el hosting se importa una vez.
+  - **`TEXT` en lugar de `JSON`, y sin `CHECK` entre columnas:** lo que tiene estructura (la receta de la IA, la caché, el estado para "Deshacer") se guarda como JSON en un `TEXT`, y reglas como "un renglón tiene ingrediente o texto" se validan en PHP. Así el mismo archivo anda en las dos bases.
+  - **Sumar en la lista:** si el ingrediente ya está sin comprar con la misma unidad (o g con kg, ml con l), se suma en el mismo renglón; si no, va aparte. Tocar dos veces "Agregar lo que falta" de la misma receta no duplica.
+  - **Comprar:** al tildar, el ingrediente pasa a la despensa en una transacción. Queda en nivel "Normal" (o "Mucho" si ya lo tenía), vence hoy + vida útil y va a la ubicación que ya tenía. Si es nuevo: heladera para lácteos y carnes, y para verduras, frutas y huevos que duran 14 días o menos; alacena para el resto. Si se sabe cuánto había y cuánto se compró, se suman las cantidades.
+  - **Deshacer:** se guarda cómo estaba la despensa antes (en `deshacer`) y se puede volver atrás hasta que termina el día.
+  - **Lo que falta de una receta** no incluye lo que hay en la despensa, los básicos, lo de "Siempre tengo", lo que la persona no come ni lo opcional, y usa las cantidades de las porciones elegidas.
+  - **Compartir:** "Copiar la lista", un enlace `wa.me` con el texto (no se manda nada a otro servidor) y una vista de impresión con `@media print`.
+  - **El buscador de stickers** pasó de `despensa.js` a `elegir.js`, que usan la despensa y la lista.
+- **Alternativas descartadas:**
+  - Columnas `JSON` y `CHECK`: dependen de la versión de la base del hosting.
+  - Una tabla aparte para el historial de compras: alcanza con guardar el estado anterior en el mismo renglón.
+  - Que tildar solo marque y que la despensa se actualice recién con "Pasar todo": con JavaScript, tildar ya pasa el ingrediente (con Deshacer); "Pasar lo tildado a mi despensa" queda para cuando no hay JavaScript.
+- **Consecuencias:** las reglas que no controla la base tienen pruebas (`ListaComprasTest`, `ListaTest`). Si se borra un ingrediente que está en alguna lista, se borra también de la lista. Hay un imán nuevo, **Lista**, en el menú.
+- **Participaron:** P2 (lista de compras), P3 (base de datos)
 
 ---
 

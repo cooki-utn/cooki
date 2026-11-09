@@ -4,6 +4,8 @@
  * Detalle de una receta: ingredientes (marcando cuáles tiene el usuario y con qué reemplazar lo que falta)
  * y pasos. Se puede escalar a otra cantidad de porciones:
  *   receta.php?id=6&porciones=2 → cantidades y pasos ({ing:...}) recalculados (Dominio\Porciones)
+ * Lo que falta se manda a la lista de compras (app/lista.php) con las cantidades de esas porciones:
+ * de a uno ("+ lista") o todo junto ("Agregar lo que falta a la lista").
  */
 
 declare(strict_types=1);
@@ -11,8 +13,10 @@ declare(strict_types=1);
 require dirname(__DIR__, 2) . '/src/bootstrap.php';
 
 use Cooki\Db;
+use Cooki\Dominio\ListaCompras;
 use Cooki\Dominio\Porciones;
 use Cooki\Repositorios\CocinaRepositorio;
+use Cooki\Repositorios\ListaRepositorio;
 use Cooki\Repositorios\RecetaRepositorio;
 use Cooki\Sesion;
 
@@ -44,6 +48,10 @@ foreach ($receta['ingredientes'] as $ing) {
 $cocinando = (new CocinaRepositorio(Db::conexion()))->enCurso(Sesion::idUsuario());
 $sigue = $cocinando !== null && (int) $cocinando['receta_id'] === (int) $receta['id'] ? $cocinando : null;
 $enlacePorciones = fn (int $n): string => url('app/receta.php?id=' . $receta['id'] . '&porciones=' . $n) . '#ingredientes';
+// Lista de compras: qué falta (para el botón de todo junto) y qué ya está anotado
+$faltantes = ListaCompras::faltantes($receta['ingredientes'], $factor);
+$enLista = (new ListaRepositorio(Db::conexion()))->ingredientesPendientes(Sesion::idUsuario());
+$volverReceta = (string) ($_SERVER['REQUEST_URI'] ?? '') . '#ingredientes';
 
 $titulo = $receta['titulo'];
 require parcial('encabezado');
@@ -128,9 +136,37 @@ require parcial('encabezado');
             <?php if (!$tiene && $ing['sustituto'] !== null) : ?>
               <span class="cambio-ingrediente">⇄ Podés usar <?= e(mb_strtolower($ing['sustituto'])) ?></span>
             <?php endif; ?>
+            <?php if (!$tiene && !$ing['restringido']) : ?>
+              <?php if (in_array((int) $ing['ingrediente_id'], $enLista, true)) : ?>
+                <a class="etiqueta etiqueta--lista" href="<?= e(url('app/lista.php')) ?>">En tu lista</a>
+              <?php else : ?>
+                <?php /* "+ lista": sin JavaScript recarga y vuelve acá; con JavaScript (lista.js) se agrega sin recargar */ ?>
+                <form class="mas-lista" method="post" action="<?= e(url('app/lista.php')) ?>"<?= $ing['es_opcional'] ? ' data-opcional' : '' ?>>
+                  <?= Sesion::campoCsrf() ?>
+                  <input type="hidden" name="accion" value="agregar">
+                  <input type="hidden" name="ingrediente_id" value="<?= e($ing['ingrediente_id']) ?>">
+                  <input type="hidden" name="receta" value="<?= e($receta['id']) ?>">
+                  <input type="hidden" name="porciones" value="<?= $porciones ?>">
+                  <input type="hidden" name="volver" value="<?= e($volverReceta) ?>">
+                  <button class="mas-lista__boton" type="submit" title="Agregar a la lista de compras">
+                    + lista<span class="solo-lectores">: agregar <?= e($ing['nombre']) ?> a la lista de compras</span>
+                  </button>
+                </form>
+              <?php endif; ?>
+            <?php endif; ?>
           </li>
         <?php endforeach; ?>
       </ul>
+      <?php if ($faltantes !== []) : ?>
+        <form class="mas-lista mas-lista--todo" method="post" action="<?= e(url('app/lista.php')) ?>">
+          <?= Sesion::campoCsrf() ?>
+          <input type="hidden" name="accion" value="receta">
+          <input type="hidden" name="receta" value="<?= e($receta['id']) ?>">
+          <input type="hidden" name="porciones" value="<?= $porciones ?>">
+          <input type="hidden" name="volver" value="<?= e($volverReceta) ?>">
+          <button class="boton boton--secundario boton--chico" type="submit">Agregar lo que falta a la lista</button>
+        </form>
+      <?php endif; ?>
       <p class="texto-suave"><small>✓ = está en tu despensa, es un básico como sal o aceite, o lo marcaste en <a href="<?= e(url('app/mis-preferencias.php')) ?>">"Siempre tengo"</a>.</small></p>
     </section>
 
@@ -157,4 +193,5 @@ require parcial('encabezado');
   <?php endif; ?>
 </article>
 <script src="<?= e(recurso('js/receta.js')) ?>" defer></script>
+<script src="<?= e(recurso('js/lista.js')) ?>" defer></script>
 <?php require parcial('pie'); ?>

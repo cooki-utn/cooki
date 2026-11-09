@@ -11,6 +11,7 @@
  *   POST accion=guardar|borrar
  * El ingrediente se elige con un buscador de stickers (despensa.js); si no está en la lista,
  * se agrega como ingrediente propio (nombre_nuevo, categoria_nueva, unidad_nueva) con el dibujo del frasco.
+ * Lo agotado o con poco tiene "+ lista" para anotarlo en la lista de compras (app/lista.php).
  */
 
 declare(strict_types=1);
@@ -20,6 +21,7 @@ require dirname(__DIR__, 2) . '/src/bootstrap.php';
 use Cooki\Db;
 use Cooki\Repositorios\DespensaRepositorio;
 use Cooki\Repositorios\IngredienteRepositorio;
+use Cooki\Repositorios\ListaRepositorio;
 use Cooki\Sesion;
 
 Sesion::requiereLogin();
@@ -149,6 +151,7 @@ if ($estado !== '') {
     $items = array_values(array_filter($items, fn ($fila) => DespensaRepositorio::estado($fila) === $estado));
 }
 /** Dirección de la despensa con los filtros (ubicación y estado) que se pasen; los vacíos no van. */
+$enLista = (new ListaRepositorio($db))->ingredientesPendientes($usuarioId);
 $filtro = fn (string $ubic, string $est) => url('app/despensa.php' . (($q = http_build_query(array_filter(['ubicacion' => $ubic, 'estado' => $est]))) !== '' ? '?' . $q : ''));
 $error = fn (string $campo) => isset($errores[$campo]) ? '<p class="error-campo">' . e($errores[$campo]) . '</p>' : '';
 
@@ -331,6 +334,20 @@ require parcial('encabezado');
           <td><?= e(DespensaRepositorio::UBICACIONES[$fila['ubicacion']]) ?></td>
           <td>
             <div class="acciones">
+              <?php if ((int) $fila['nivel'] <= 1 && in_array((int) $fila['ingrediente_id'], $enLista, true)) : ?>
+                <a class="etiqueta etiqueta--lista" href="<?= e(url('app/lista.php')) ?>">En tu lista</a>
+              <?php elseif ((int) $fila['nivel'] <= 1) : ?>
+                <?php /* Agotado o poco: "+ lista" (sin JavaScript recarga; con JavaScript, lista.js lo agrega sin recargar) */ ?>
+                <form class="mas-lista" method="post" action="<?= e(url('app/lista.php')) ?>">
+                  <?= Sesion::campoCsrf() ?>
+                  <input type="hidden" name="accion" value="agregar">
+                  <input type="hidden" name="ingrediente_id" value="<?= e($fila['ingrediente_id']) ?>">
+                  <input type="hidden" name="volver" value="<?= e((string) ($_SERVER['REQUEST_URI'] ?? '')) ?>">
+                  <button class="mas-lista__boton" type="submit" title="Agregar a la lista de compras">
+                    + lista<span class="solo-lectores">: agregar <?= e($fila['nombre']) ?> a la lista de compras</span>
+                  </button>
+                </form>
+              <?php endif; ?>
               <a class="boton boton--secundario boton--chico" data-editar href="<?= e(url('app/despensa.php?editar=' . $fila['id'] . '#formulario')) ?>">Editar</a>
               <form method="post" data-confirmar="¿Quitar <?= e($fila['nombre']) ?> de tu despensa?" data-confirmar-si="Sí, quitar"
                     data-confirmar-dibujo="<?= e(iconoIngrediente($fila['nombre'], (bool) $fila['propio'])) ?>" data-sonido="sticker-arranca">
@@ -348,5 +365,7 @@ require parcial('encabezado');
   </div>
   <p class="vacio" id="sin-resultados" hidden>Nada coincide con lo que escribiste.</p>
 <?php endif; ?>
+<script src="<?= e(recurso('js/elegir.js')) ?>" defer></script>
 <script src="<?= e(recurso('js/despensa.js')) ?>" defer></script>
+<script src="<?= e(recurso('js/lista.js')) ?>" defer></script>
 <?php require parcial('pie'); ?>

@@ -142,7 +142,8 @@ final class ListaRepositorio
 
     /**
      * Agrega lo que falta de una receta (ListaCompras::faltantes()). Todo o nada, en una transacción.
-     * Devuelve cuántos ingredientes agregó.
+     * Lo que ya está en la lista sin comprar desde esa misma receta no se vuelve a agregar: así, tocar dos veces
+     * "Agregar lo que falta" no duplica las cantidades (de otra receta, sí se suma). Devuelve cuántos agregó.
      * @param list<array{ingrediente_id: int, cantidad: ?float, unidad: ?string}> $faltantes
      */
     public function agregarFaltantes(
@@ -156,8 +157,21 @@ final class ListaRepositorio
             $this->db->beginTransaction();
         }
         try {
+            $yaEstan = [];
+            if ($recetaId !== null || $recetaIaId !== null) {
+                $consulta = $this->db->prepare(
+                    'SELECT ingrediente_id FROM lista_compra_item
+                     WHERE usuario_id = :usuario AND comprado_en IS NULL
+                       AND (receta_id = :receta OR receta_ia_id = :receta_ia)'
+                );
+                $consulta->execute(['usuario' => $usuarioId, 'receta' => $recetaId, 'receta_ia' => $recetaIaId]);
+                $yaEstan = array_map('intval', $consulta->fetchAll(PDO::FETCH_COLUMN));
+            }
             $agregados = 0;
             foreach ($faltantes as $f) {
+                if (in_array($f['ingrediente_id'], $yaEstan, true)) {
+                    continue;
+                }
                 $hecho = $this->agregar(
                     $usuarioId,
                     $f['ingrediente_id'],
@@ -187,16 +201,6 @@ final class ListaRepositorio
         $consulta = $this->db->prepare('DELETE FROM lista_compra_item WHERE id = :id AND usuario_id = :usuario');
         $consulta->execute(['id' => $id, 'usuario' => $usuarioId]);
         return $consulta->rowCount() > 0;
-    }
-
-    /** Borra todo lo que ya se compró (también lo de hoy). Devuelve cuántos borró. */
-    public function borrarComprados(int $usuarioId): int
-    {
-        $consulta = $this->db->prepare(
-            'DELETE FROM lista_compra_item WHERE usuario_id = :usuario AND comprado_en IS NOT NULL'
-        );
-        $consulta->execute(['usuario' => $usuarioId]);
-        return $consulta->rowCount();
     }
 
     /**

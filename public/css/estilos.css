@@ -1536,3 +1536,71 @@ a.paginacion__numero:hover, .paginacion__flecha:hover { transform: translateY(-2
   margin-right: 10px; min-height: 36px; padding: 0 14px; border-radius: 99px; border: 2px solid var(--color-texto);
   background: var(--color-superficie); color: var(--color-texto); font: 800 .85rem var(--fuente); cursor: pointer;
 }
+
+/* ══════════ Incremento 3 · Lista de compras (P2) ══════════ */
+/* Sexto imán del menú (con Administración, la barra tiene seis) */
+.menu li:nth-child(6) a::before { --claro: #FFC48A; --base: #D9731A; }
+/* "+ lista" en la receta y en Mi despensa: un papelito chico con borde de birome */
+.mas-lista { display: inline; margin: 0; }
+.mas-lista__boton {
+  min-height: 32px; padding: 0 10px; border: 2px dashed var(--color-azul); border-radius: 8px;
+  background: var(--color-superficie); color: var(--color-azul); font: 700 1.1rem/1 var(--fuente-mano);
+  cursor: pointer; transform: rotate(-2deg); transition: transform .2s cubic-bezier(.3, 1.6, .5, 1);
+}
+.mas-lista__boton:hover { transform: rotate(1deg) scale(1.05); background: #EAF2FB; }
+.mas-lista__boton:disabled { opacity: .5; cursor: wait; }
+.mas-lista--todo { display: block; margin: 8px 0 4px; }
+.etiqueta--lista { background: #DCEBFA; color: var(--color-azul); text-decoration: none; }
+a.etiqueta--lista:hover { text-decoration: underline; }
+#tabla-despensa .acciones .etiqueta--lista { align-self: center; }
+
+/* La lista: una hoja de cuaderno con un renglón por cosa, agrupada por góndola */
+.lista-agregar .nuevo-ingrediente__nota { margin-top: 4px; }
+.lista-compras {
+  position: relative; background-color: var(--color-superficie); box-shadow: var(--sombra);
+  background-image: repeating-linear-gradient(180deg, transparent 0 47px, var(--color-renglon) 47px 48px);
+  padding: 20px 20px 24px 46px; margin-bottom: 28px;
+}
+.lista-compras::before { content: ""; position: absolute; top: 0; bottom: 0; left: 30px; width: 2px; background: var(--color-margen); }
+.lista-compras__compartir { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.lista-compras__copiado { font: 700 1.2rem var(--fuente-mano); color: var(--color-exito); }
+.lista-compras__grupo h2, .lista-compras__comprado h2 {
+  margin: 14px 0 4px; font: 700 1.6rem/1.2 var(--fuente-mano); color: var(--color-marca);
+}
+.lista-compras__items { list-style: none; margin: 0; padding: 0; }
+.renglon { display: flex; align-items: center; gap: 10px; min-height: 48px; }
+.renglon__tilde { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; cursor: pointer; }
+.renglon__tilde input { width: 24px; height: 24px; flex: none; }
+.renglon__dibujo { width: 44px; height: 44px; flex: none; filter: drop-shadow(0 1px 2px rgb(0 0 0 / 18%)); }
+.renglon__texto { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-width: 0; }
+.renglon__cantidad { font: 700 1.25rem/1 var(--fuente-mano); color: var(--color-azul); }
+.renglon__receta { color: var(--color-suave); }
+.renglon__quitar {
+  flex: none; width: 36px; height: 36px; border: none; border-radius: 50%; background: transparent;
+  color: var(--color-suave); font-size: 1.1rem; cursor: pointer;
+}
+.renglon__quitar:hover { background: var(--color-error-fondo); color: var(--color-error); }
+.renglon--comprado .renglon__dibujo { filter: grayscale(1) opacity(.5); }
+.renglon--comprado strong, .renglon--comprado s { text-decoration: line-through 2px var(--color-marca); color: var(--color-suave); }
+.renglon--comprado .renglon__cantidad { color: var(--color-suave); }
+.lista-compras__comprado { margin-top: 18px; padding-top: 6px; border-top: 2px dashed var(--color-borde); }
+.lista-compras__comprado .renglon__texto { flex: 1; }
+.lista-compras__pasar { margin-top: 14px; }
+@media (max-width: 520px) {
+  .lista-compras { padding: 16px 10px 20px 38px; }
+  .lista-compras::before { left: 24px; }
+  .renglon__dibujo { width: 36px; height: 36px; }
+}
+
+/* Imprimir la lista: solo los renglones, sin menú, botones ni decoración */
+@media print {
+  body { background: #fff; padding: 0; }
+  .barra, .manija, .pie, .encabezado-pagina .boton, .lista-agregar, .lista-compras__compartir,
+  .renglon__quitar, .renglon__deshacer, .lista-compras__pasar, .lista-compras__comprado, .aviso { display: none !important; }
+  .contenido { border: none; margin: 0; padding: 0; width: auto; }
+  .lista-compras { box-shadow: none; background: none; padding: 0; }
+  .lista-compras::before { display: none; }
+  .lista-compras__grupo { break-inside: avoid; }
+  .renglon { min-height: 32px; }
+  .renglon__dibujo { width: 24px; height: 24px; filter: none; }
+}

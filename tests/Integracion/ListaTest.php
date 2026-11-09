@@ -124,4 +124,96 @@ final class ListaTest extends TestCase
         $this->assertFalse($this->lista->borrar($juan, $mio));
         $this->assertSame(1, $this->lista->pendientes($this->usuario));
     }
+
+    public function testDesdeLaRecetaConPorcionesALaListaYDeAhiALaDespensa(): void
+    {
+        $web = new Navegador();
+        $web->ingresar($this->email, 'Usuario1234');
+        [, $html] = $web->get('app/receta.php?id=1&porciones=2');
+        $this->assertStringContainsString('Agregar lo que falta a la lista', $html);
+        $this->assertStringContainsString('+ lista', $html);
+
+        $volver = '/app/receta.php?id=1&porciones=2';
+        $pedido = ['accion' => 'receta', 'receta' => 1, 'porciones' => 2, 'volver' => $volver];
+        [$estado, , $destino] = $web->post('app/lista.php', $pedido);
+        $this->assertSame(302, $estado);
+        $this->assertStringEndsWith('/app/receta.php?id=1&porciones=2', $destino);
+        // Tocarlo dos veces no duplica las cantidades
+        $web->get('app/receta.php?id=1&porciones=2');
+        $web->post('app/lista.php', $pedido);
+        $papa = array_values(array_filter($this->lista->listar($this->usuario), fn ($i) => $i['nombre'] === 'Papa'));
+        $this->assertCount(1, $papa);
+        $this->assertSame(['300.00', 'g'], [$papa[0]['cantidad'], $papa[0]['unidad']], 'La mitad de 600 g');
+        $nombres = array_column($this->lista->listar($this->usuario), 'nombre');
+        $this->assertNotContains('Sal', $nombres, 'La sal es un básico: no va a la lista');
+
+        [, $html] = $web->get('app/receta.php?id=1&porciones=2');
+        $this->assertStringContainsString('En tu lista', $html);
+        [$estado, $html] = $web->get('app/lista.php');
+        $this->assertSame(200, $estado);
+        $this->assertStringContainsString('para: Tortilla de papas', $html);
+        $this->assertStringContainsString('https://wa.me/?text=', $html);
+        $this->assertStringContainsString('Verduras', $html);
+
+        [$estado, , $destino] = $web->post('app/lista.php', ['accion' => 'comprar', 'ids' => [$papa[0]['id']]]);
+        $this->assertStringEndsWith('app/lista.php', $destino);
+        $despensa = $this->despensa();
+        $papaEnDespensa = [$despensa[1]['cantidad'], $despensa[1]['unidad']];
+        $this->assertSame(['2.00', 'u'], $papaEnDespensa, '300 g = 2 papas de 150 g');
+        [, $html] = $web->get('app/lista.php');
+        $this->assertStringContainsString('Comprado hoy', $html);
+        $this->assertStringContainsString('Ya está en tu despensa', $html);
+    }
+
+    public function testAgregarAManoQuitarYSinSesion(): void
+    {
+        [, , $destino] = (new Navegador())->get('app/lista.php');
+        $this->assertStringEndsWith('error.php?motivo=sin-sesion', $destino);
+
+        $web = new Navegador();
+        $web->ingresar($this->email, 'Usuario1234');
+        $web->get('app/lista.php');
+        $web->post('app/lista.php', ['accion' => 'agregar', 'ingrediente_id' => '', 'texto' => 'Servilletas']);
+        $web->post('app/lista.php', ['accion' => 'agregar', 'ingrediente_id' => 4, 'cantidad' => '2', 'unidad' => 'u']);
+        [, $html] = $web->get('app/lista.php');
+        $this->assertStringContainsString('Servilletas', $html);
+        $this->assertStringContainsString('2 unidades', $html);
+        $this->assertSame(2, $this->lista->pendientes($this->usuario));
+
+        $items = $this->lista->listar($this->usuario);
+        $tomate = array_values(array_filter($items, fn ($i) => $i['nombre'] === 'Tomate'))[0];
+        $web->post('app/lista.php', ['quitar' => $tomate['id']]);
+        $this->assertSame(1, $this->lista->pendientes($this->usuario));
+    }
+
+    public function testLaListaPorLaApi(): void
+    {
+        $api = new ClienteApi();
+        ClienteApi::iniciar();
+        $this->assertSame(401, $api->pedir('GET', '/lista')[0]);
+        $api->pedir('POST', '/sesion', ['email' => $this->email, 'contrasena' => 'Usuario1234']);
+
+        $this->assertSame(201, $api->pedir('POST', '/lista', ['texto' => 'Servilletas'])[0]);
+        [$estado, $tomate] = $api->pedir('POST', '/lista', ['ingrediente_id' => 4, 'cantidad' => 2, 'unidad' => 'u']);
+        $this->assertSame(201, $estado);
+        [$estado, $datos] = $api->pedir('POST', '/lista', ['ingrediente_id' => 4, 'cantidad' => 2, 'unidad' => 'u']);
+        $this->assertSame([200, true], [$estado, $datos['sumado']]);
+        $enTazas = ['ingrediente_id' => 4, 'cantidad' => 2, 'unidad' => 'taza'];
+        $this->assertSame(400, $api->pedir('POST', '/lista', $enTazas)[0]);
+        $this->assertSame(400, $api->pedir('POST', '/lista', [])[0]);
+
+        [$estado, $datos] = $api->pedir('GET', '/lista');
+        $this->assertSame(200, $estado);
+        $this->assertSame(['Verduras', 'Otros'], array_column($datos['pendientes'], 'categoria'));
+        $this->assertStringContainsString('- Tomate · 4 unidades', $datos['texto']);
+
+        $id = $tomate['id'];
+        $this->assertSame(200, $api->pedir('POST', "/lista/{$id}/comprado")[0]);
+        $this->assertSame(404, $api->pedir('POST', "/lista/{$id}/comprado")[0], 'Ya está comprado');
+        $this->assertArrayHasKey(4, $this->despensa());
+        $this->assertSame(200, $api->pedir('DELETE', "/lista/{$id}/comprado")[0]);
+        $this->assertArrayNotHasKey(4, $this->despensa(), 'Deshacer saca de la despensa lo que era nuevo');
+        $this->assertSame(200, $api->pedir('DELETE', "/lista/{$id}")[0]);
+        $this->assertSame(404, $api->pedir('DELETE', "/lista/{$id}")[0]);
+    }
 }
