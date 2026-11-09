@@ -37,12 +37,14 @@ if (esPost()) {
     redirigir('admin/correo.php');
 }
 
-$host = Config::get('MAIL_HOST');
-$seguridad = Config::get('MAIL_SEGURIDAD', 'ninguna');
-$usuario = Config::get('MAIL_USUARIO');
-$remitente = Config::get('MAIL_REMITENTE', 'no-responder@cooki.test');
+// Con prefijo "correo": el encabezado común define $usuario (la sesión) y pisaría una variable con ese nombre
+$correoHost = Config::get('MAIL_HOST');
+$correoSeguridad = Config::get('MAIL_SEGURIDAD', 'ninguna');
+$correoUsuario = Config::get('MAIL_USUARIO');
+$correoRemitente = Config::get('MAIL_REMITENTE', 'no-responder@cooki.test');
 // Gmail cambia el remitente por la cuenta que inicia sesión: conviene que sean la misma dirección
-$avisoRemitente = str_contains($host, 'gmail.com') && $usuario !== '' && strcasecmp($usuario, $remitente) !== 0;
+$avisoRemitente = str_contains($correoHost, 'gmail.com') && $correoUsuario !== ''
+    && strcasecmp($correoUsuario, $correoRemitente) !== 0;
 
 $titulo = 'Correo · Administración';
 require parcial('encabezado');
@@ -54,20 +56,20 @@ require parcial('encabezado');
   <h2 id="titulo-config">Configuración actual</h2>
   <dl class="datos-correo">
     <dt>Servidor</dt>
-    <dd><?= $host !== '' ? e($host . ':' . Config::get('MAIL_PORT')) : 'Sin MAIL_HOST: se usa mail() de PHP' ?></dd>
+    <dd><?= $correoHost !== '' ? e($correoHost . ':' . Config::get('MAIL_PORT')) : 'Sin MAIL_HOST: se usa mail() de PHP' ?></dd>
     <dt>Seguridad</dt>
-    <dd><?= e($seguridad) ?></dd>
+    <dd><?= e($correoSeguridad) ?></dd>
     <dt>Usuario</dt>
-    <dd><?= $usuario !== '' ? e($usuario) : 'sin usuario' ?></dd>
+    <dd><?= $correoUsuario !== '' ? e($correoUsuario) : 'sin usuario' ?></dd>
     <dt>Contraseña</dt>
     <dd><?= Config::get('MAIL_CONTRASENA') !== '' ? 'cargada (no se muestra)' : 'vacía' ?></dd>
     <dt>Remitente</dt>
-    <dd><?= e($remitente) ?></dd>
+    <dd><?= e($correoRemitente) ?></dd>
     <dt>Consultas de contacto a</dt>
     <dd><?= e(Config::get('MAIL_CONTACTO')) ?></dd>
   </dl>
   <?php if ($avisoRemitente) : ?>
-    <p class="aviso aviso--info">Gmail manda los correos a nombre de <strong><?= e($usuario) ?></strong>. Poné esa misma dirección en MAIL_REMITENTE.</p>
+    <p class="aviso aviso--info">Gmail manda los correos a nombre de <strong><?= e($correoUsuario) ?></strong>. Poné esa misma dirección en MAIL_REMITENTE.</p>
   <?php endif; ?>
   <p class="texto-suave"><small>Se cambia en el <code>.env</code> del servidor. La guía está en <code>docs/publicar.md</code>.</small></p>
 </section>

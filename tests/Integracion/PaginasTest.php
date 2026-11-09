@@ -122,6 +122,29 @@ final class PaginasTest extends TestCase
         $this->assertMatchesRegularExpression($resultado, $html);
     }
 
+    public function testProbarElCorreoConLaConfiguracionDeGmailDelHosting(): void
+    {
+        // Como en el hosting: con MAIL_USUARIO cargado (el encabezado común usa $usuario y lo pisaba)
+        $web = new Navegador(ClienteApi::servidorCon([
+            'APP_ENV' => 'produccion',
+            'MAIL_HOST' => 'smtp.gmail.com',
+            'MAIL_PORT' => '587',
+            'MAIL_SEGURIDAD' => 'tls',
+            'MAIL_USUARIO' => 'cuenta.del.proyecto@gmail.com',
+            'MAIL_CONTRASENA' => 'clavedeaplicacion',
+            'MAIL_REMITENTE' => 'otra@cooki.test',
+        ]));
+        $web->ingresar('admin@cooki.test', 'Admin1234');
+        [$estado, $html] = $web->get('admin/correo.php');
+        $this->assertSame(200, $estado);
+        $this->assertStringNotContainsString('error inesperado', $html);
+        $this->assertStringContainsString('<dd>cuenta.del.proyecto@gmail.com</dd>', $html);
+        $this->assertStringContainsString('cargada (no se muestra)', $html);
+        $this->assertStringNotContainsString('clavedeaplicacion', $html, 'La contraseña nunca se muestra');
+        $this->assertStringContainsString('Poné esa misma dirección en MAIL_REMITENTE', $html);
+        $this->assertStringContainsString('Mandarme un correo de prueba', $html, 'La página llega hasta el final');
+    }
+
     public function testUsuarioGeneralNoPuedeProbarElCorreo(): void
     {
         $web = new Navegador();
