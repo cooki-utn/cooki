@@ -160,9 +160,43 @@ $error = fn (string $campo) => isset($errores[$campo]) ? '<p class="error-campo"
 $titulo = 'Mi despensa';
 require parcial('encabezado');
 ?>
-<div class="encabezado-pagina">
-  <h1>Mi despensa</h1>
-  <a class="boton boton--agregar" href="#formulario" id="abrir-editor">+ Agregar producto</a>
+<?php /* Arriba, en una grilla: título, contador, pestañas y buscador a la izquierda; la nota de la lista de compras
+         en el medio y "+ Agregar producto" a la derecha. En el celular: título y botón, filtros y la nota abajo */ ?>
+<div class="despensa-arriba">
+<h1 class="despensa-arriba__titulo">Mi despensa</h1>
+<a class="boton boton--agregar despensa-arriba__boton" href="#formulario" id="abrir-editor">+ Agregar producto</a>
+<div class="despensa-arriba__filtros">
+<?php if (array_sum($resumen) > 0) : ?>
+  <?php /* Cada número es un filtro: tocarlo muestra solo esos; tocarlo de nuevo, todos */ ?>
+  <nav class="contador" aria-label="Filtrar por estado">
+    <?php foreach (DespensaRepositorio::ESTADOS as $clave => $texto) : ?>
+      <?php if ($clave === 'agotados' && $resumen['agotados'] === 0) {
+          continue;
+      } ?>
+      <?php $activo = $estado === $clave; ?>
+      <a class="contador__item contador__item--<?= e(str_replace('_', '-', $clave)) ?>"
+         href="<?= e($filtro($ubicacion, $activo ? '' : $clave)) ?>"<?= $activo ? ' aria-current="true"' : '' ?>
+         title="<?= $activo ? 'Ver todos' : 'Ver solo los que están ' . e($texto) ?>">
+        <strong><?= $resumen[$clave] ?></strong> <?= e($resumen[$clave] === 1 ? rtrim($texto, 's') : $texto) ?>
+      </a>
+    <?php endforeach; ?>
+  </nav>
+<?php endif; ?>
+
+<nav class="pestanas" aria-label="Filtrar por ubicación">
+  <a href="<?= e($filtro('', $estado)) ?>"<?= $ubicacion === '' ? ' aria-current="page"' : '' ?>>Todo</a>
+  <?php foreach (DespensaRepositorio::UBICACIONES as $valor => $texto) : ?>
+    <a href="<?= e($filtro($valor, $estado)) ?>"<?= $ubicacion === $valor ? ' aria-current="page"' : '' ?>><?= e($texto) ?></a>
+  <?php endforeach; ?>
+</nav>
+<?php if ($items !== []) : ?>
+  <div class="campo filtro-rapido">
+    <label for="filtro">Buscar en mi despensa</label>
+    <input id="filtro" type="search" placeholder="Escribí para filtrar la lista" autocomplete="off">
+  </div>
+<?php endif; ?>
+</div>
+<?php require parcial('nota-lista'); ?>
 </div>
 
 <?php /* data-abrir: despensa.js abre la nota sola si se está editando o si hay errores */ ?>
@@ -264,42 +298,6 @@ require parcial('encabezado');
     </div>
   </form>
 </section>
-
-<?php /* Contador, pestañas y buscador a la izquierda; la nota de la lista de compras en el hueco de la derecha */ ?>
-<div class="despensa-arriba">
-<div class="despensa-arriba__filtros">
-<?php if (array_sum($resumen) > 0) : ?>
-  <?php /* Cada número es un filtro: tocarlo muestra solo esos; tocarlo de nuevo, todos */ ?>
-  <nav class="contador" aria-label="Filtrar por estado">
-    <?php foreach (DespensaRepositorio::ESTADOS as $clave => $texto) : ?>
-      <?php if ($clave === 'agotados' && $resumen['agotados'] === 0) {
-          continue;
-      } ?>
-      <?php $activo = $estado === $clave; ?>
-      <a class="contador__item contador__item--<?= e(str_replace('_', '-', $clave)) ?>"
-         href="<?= e($filtro($ubicacion, $activo ? '' : $clave)) ?>"<?= $activo ? ' aria-current="true"' : '' ?>
-         title="<?= $activo ? 'Ver todos' : 'Ver solo los que están ' . e($texto) ?>">
-        <strong><?= $resumen[$clave] ?></strong> <?= e($resumen[$clave] === 1 ? rtrim($texto, 's') : $texto) ?>
-      </a>
-    <?php endforeach; ?>
-  </nav>
-<?php endif; ?>
-
-<nav class="pestanas" aria-label="Filtrar por ubicación">
-  <a href="<?= e($filtro('', $estado)) ?>"<?= $ubicacion === '' ? ' aria-current="page"' : '' ?>>Todo</a>
-  <?php foreach (DespensaRepositorio::UBICACIONES as $valor => $texto) : ?>
-    <a href="<?= e($filtro($valor, $estado)) ?>"<?= $ubicacion === $valor ? ' aria-current="page"' : '' ?>><?= e($texto) ?></a>
-  <?php endforeach; ?>
-</nav>
-<?php if ($items !== []) : ?>
-  <div class="campo filtro-rapido">
-    <label for="filtro">Buscar en mi despensa</label>
-    <input id="filtro" type="search" placeholder="Escribí para filtrar la lista" autocomplete="off">
-  </div>
-<?php endif; ?>
-</div>
-<?php require parcial('nota-lista'); ?>
-</div>
 
 <?php if ($items === []) : ?>
   <p class="vacio">

@@ -1621,7 +1621,21 @@ a.etiqueta--lista:hover { text-decoration: underline; }
 .nota-lista__items li:last-child { border-bottom: none; }
 .nota-lista__items strong { font: 700 1.4rem/1 var(--fuente-mano); }
 .nota-lista__items span { color: var(--color-azul); font-weight: 700; }
-.nota-lista__ir { display: inline-block; margin-top: 8px; font-weight: 700; }
+.nota-lista { position: relative; z-index: 5; }   /* así el desplegable queda por encima de lo que hay abajo */
+.nota-lista__pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; margin-top: 8px; }
+.nota-lista__ir { font-weight: 700; }
+/* "Ver N más": el resto cuelga debajo del post-it, por encima de la página (no la empuja hacia abajo) */
+.nota-lista__mas summary {
+  cursor: pointer; list-style: none; font: 700 1.2rem/1 var(--fuente-mano); color: var(--color-azul);
+  text-decoration: underline dashed; text-underline-offset: 4px; padding: 4px 0;
+}
+.nota-lista__mas summary::-webkit-details-marker { display: none; }
+.nota-lista__mas[open] summary span { display: inline-block; transform: rotate(180deg); }
+.nota-lista__desplegable {
+  position: absolute; left: 0; right: 0; top: calc(100% - 4px); max-height: 320px; overflow-y: auto;
+  padding: 6px 22px 14px; background: #CFE0F2; box-shadow: 0 14px 22px rgb(0 0 0 / 22%);
+  border-top: 2px dashed rgb(30 43 38 / 25%);
+}
 .nota-lista__cerrada { margin: 10px 0 24px; }
 .nota-lista__asomada {
   display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 16px 6px 14px;
@@ -1642,11 +1656,24 @@ a.etiqueta--lista:hover { text-decoration: underline; }
 @media (min-width: 1100px) {
   [data-disposicion="panoramica"] .cocina__notas > .postit, [data-disposicion="panoramica"] .cocina__notas > .nota-lista { flex-basis: 100%; }
 }
-/* Mi despensa: contador, pestañas y buscador a la izquierda; la nota en el hueco de la derecha */
+/* Mi despensa, arriba: título y filtros a la izquierda, la nota en el medio y "+ Agregar producto" a la derecha.
+   En el celular: título y botón arriba, los filtros y la nota abajo */
+.despensa-arriba {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 0 20px; margin-bottom: 8px;
+  grid-template-areas: "titulo boton" "filtros filtros" "nota nota";
+}
+.despensa-arriba__titulo { grid-area: titulo; margin: 0 0 14px; }
+.despensa-arriba__boton { grid-area: boton; }
+.despensa-arriba__filtros { grid-area: filtros; min-width: 0; }
+.despensa-arriba > .nota-lista { grid-area: nota; }
 @media (min-width: 900px) {
-  .despensa-arriba { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 360px); gap: 0 28px; align-items: start; }
-  .despensa-arriba .nota-lista .postit, .despensa-arriba .nota-lista__cerrada { margin-top: 0; }
-  .despensa-arriba .nota-lista__cerrada { text-align: right; }
+  .despensa-arriba {
+    grid-template-columns: fit-content(540px) minmax(280px, 1fr) auto; gap: 0 28px;
+    grid-template-areas: "titulo nota boton" "filtros nota boton";
+  }
+  .despensa-arriba > .nota-lista { justify-self: center; width: min(400px, 100%); }
+  .despensa-arriba .nota-lista .postit, .despensa-arriba .nota-lista__cerrada { margin-top: 0; margin-bottom: 18px; }
+  .despensa-arriba .nota-lista__cerrada { text-align: center; }
 }
 .preferencia__casilla { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 700; }
 .preferencia__casilla input { width: 22px; height: 22px; flex: none; accent-color: var(--color-marca); }
@@ -1664,3 +1691,5 @@ a.etiqueta--lista:hover { text-decoration: underline; }
 .renglon__otra-campos select { width: auto; }
 .lista-compras__todo { margin-top: 14px; }
 @media print { .renglon__otra, .lista-compras__todo { display: none !important; } }
+.nota-lista .postit__titulo { flex-wrap: nowrap; }
+.nota-lista .postit__titulo h2 { font-size: 1.9rem; }

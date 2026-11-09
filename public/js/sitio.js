@@ -192,3 +192,17 @@ if (notaLista) {
     fetch(evento.target.action, { method: 'POST', body: datos, headers: { 'X-Requested-With': 'fetch' } });
   });
 }
+
+// "Ver N más" de la nota de la lista: se cierra al tocar afuera o con Escape (sin JavaScript se cierra con el mismo botón)
+const masLista = document.querySelector('.nota-lista__mas');
+if (masLista) {
+  document.addEventListener('click', (evento) => {
+    if (masLista.open && !masLista.contains(evento.target)) masLista.open = false;
+  });
+  document.addEventListener('keydown', (evento) => {
+    if (evento.key === 'Escape' && masLista.open) {
+      masLista.open = false;
+      masLista.querySelector('summary').focus();
+    }
+  });
+}

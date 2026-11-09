@@ -260,6 +260,21 @@ final class ListaTest extends TestCase
         $this->assertArrayHasKey(4, $this->despensa());
     }
 
+    public function testLaNotaMuestraCuatroYElRestoEnVerMas(): void
+    {
+        foreach ([1, 2, 3, 4, 5, 6] as $ingrediente) {
+            $this->lista->agregar($this->usuario, $ingrediente, null, 1.0, 'u');
+        }
+        $web = new Navegador();
+        $web->ingresar($this->email, 'Usuario1234');
+        [, $html] = $web->get('app/despensa.php');
+        $this->assertStringContainsString('Ver 2 más', $html);
+        $this->assertStringContainsString('Ir a mi lista', $html);
+        $nota = substr($html, (int) strpos($html, 'class="nota-lista"'));
+        $visibles = substr($nota, 0, (int) strpos($nota, 'nota-lista__mas'));
+        $this->assertSame(4, substr_count($visibles, '<li>'), 'A la vista quedan 4');
+    }
+
     public function testLaNotaDeLaListaEnMiCocinaYMiDespensa(): void
     {
         $this->lista->agregar($this->usuario, 4, null, 2.0, 'u');

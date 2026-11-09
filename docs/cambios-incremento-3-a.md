@@ -1,7 +1,7 @@
 # Incremento 3 · Entrega A: qué cambió y de quién es cada parte
 
 > **Base:** `main` con el arreglo de los dibujos con tilde (#49).
-> **Pruebas:** **144 en verde** (2 se saltean si PHP no tiene GD). El lint queda limpio.
+> **Pruebas:** **145 en verde** (2 se saltean si PHP no tiene GD). El lint queda limpio.
 
 ## 1. Qué trae
 
@@ -13,7 +13,7 @@
 | HU-27 · A mano y desde la despensa | `app/lista.php` agrega con el mismo buscador de stickers de Mi despensa (`elegir.js`); lo que no está en el catálogo va como texto libre, con el frasco. En Mi despensa, lo agotado o con poco tiene "+ lista" | P2 |
 | HU-28 · Lo compré | Al tildar, el ingrediente pasa a la despensa: nivel "Normal", vencimiento estimado con la vida útil y la ubicación que ya tenía (o la sugerida). Queda en "Comprado hoy" con **Deshacer** hasta el día siguiente. Sin JavaScript: "Pasar lo tildado a mi despensa" | P2 |
 | HU-28 · Otra cantidad y todo junto | "Otra cantidad" en cada renglón anota lo que de verdad se compró (eso pasa a la despensa; "Deshacer" vuelve a lo previsto). **Marcar todo como comprado** pasa todo junto (DEC-019) | P2 |
-| La lista a mano | Una nota con la lista al lado de "Usalo pronto" en Mi cocina y a la derecha de los filtros en Mi despensa. Se cierra y queda un recuadro chico; en **Mis preferencias** se apaga del todo (DEC-019). En Mi despensa, "+ lista" va al lado de la cantidad | P2 + P1 |
+| La lista a mano | Una nota con la lista al lado de "Usalo pronto" en Mi cocina y arriba en el medio en Mi despensa (entre los filtros y "+ Agregar producto"). Muestra 4 cosas y "Ver N más" despliega el resto por encima, sin empujar la página. Se cierra y queda un recuadro chico; en **Mis preferencias** se apaga del todo (DEC-019). En Mi despensa, "+ lista" va al lado de la cantidad | P2 + P1 |
 | HU-29 · Compartir e imprimir | La lista se ordena por góndola. **Copiar la lista**, **Mandar por WhatsApp** (un enlace `wa.me` con el texto) e **Imprimir** (sin menú ni decoración) | P2 |
 | API | `GET /lista`, `POST /lista`, `POST` y `DELETE /lista/{id}/comprado`, `DELETE /lista/{id}` ([api.md](api.md)) | P3 |
 | Calidad | `ListaComprasTest` (11 pruebas de la lógica) y `ListaTest` (7 de punta a punta: repositorio, páginas y API) | P4 revisa |
