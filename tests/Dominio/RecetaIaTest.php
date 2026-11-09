@@ -213,6 +213,17 @@ final class RecetaIaTest extends TestCase
         $this->assertSame([], RecetaIa::adaptacionesPara([['nombre' => 'Zapallito', 'categoria_id' => 1]], false));
     }
 
+    public function testLaFraseDelReemplazo(): void
+    {
+        $this->assertSame('la misma cantidad', RecetaIa::proporcion(1.0));
+        $this->assertSame('la mitad', RecetaIa::proporcion(0.5));
+        $this->assertSame('el doble', RecetaIa::proporcion(2));
+        $this->assertSame('1,5 veces la cantidad', RecetaIa::proporcion(1.5));
+        $this->assertSame('0,8 veces la cantidad', RecetaIa::proporcion(0.8));
+        $this->assertSame('Usá leche: la mitad (100 ml).', RecetaIa::frase('Leche', 0.5, '100 ml'));
+        $this->assertSame('Usá fécula de maíz: la misma cantidad.', RecetaIa::frase('Fécula de maíz', 1, null));
+    }
+
     public function testLaClaveDeLaCacheNoDependeDelOrden(): void
     {
         $a = RecetaIa::clave('receta', [

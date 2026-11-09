@@ -7,6 +7,8 @@
  *   POST accion=pedir             → receta nueva con lo que tenés (porciones, minutos, tipo). Viene de Mi cocina
  *   POST accion=otra id=N         → "Pedir otra": las mismas opciones, sin repetir las que ya vio
  *   POST accion=adaptar receta=N  → "Adaptar con IA" (HU-31): adaptacion y porciones. Viene de app/receta.php
+ *   POST accion=reemplazo         → "¿Con qué lo reemplazo? (IA)" (HU-32): receta, ingrediente y porciones.
+ *                                   La respuesta se guarda en la sesión y se ve una vez en app/receta.php
  *   POST accion=guardar|quitar    → la guarda en "Mis recetas de IA" (o la saca)
  *   POST accion=borrar            → la borra
  * Lo que falta va a la lista con los formularios de app/lista.php (receta_ia=N). Con JavaScript (ia.js) los pedidos
@@ -70,6 +72,22 @@ if (esPost()) {
             Sesion::avisar('error', $e->paraUsuario());
             redirigir('app/receta.php?id=' . $recetaId . '&porciones=' . $porciones . '#adaptar');
         }
+    }
+    if ($accion === 'reemplazo') {
+        $recetaId = (int) ($_POST['receta'] ?? 0);
+        $ingredienteId = (int) ($_POST['ingrediente'] ?? 0);
+        $original = (new RecetaRepositorio($db))->obtener($recetaId, $usuarioId);
+        if ($original === null) {
+            redirigir('error.php?motivo=no-encontrado');
+        }
+        $porciones = (int) ($_POST['porciones'] ?? $original['porciones_base']);
+        try {
+            $_SESSION['reemplazo_ia'][$recetaId][$ingredienteId] = (new Ia($db))
+                ->reemplazo($usuarioId, $original, $ingredienteId, $porciones);
+        } catch (ErrorIa $e) {
+            Sesion::avisar('error', $e->paraUsuario());
+        }
+        redirigir('app/receta.php?id=' . $recetaId . '&porciones=' . $porciones . '#ing-' . $ingredienteId);
     }
     if ($accion === 'guardar' || $accion === 'quitar') {
         $iaRepo->marcarGuardada($usuarioId, $id, $accion === 'guardar');

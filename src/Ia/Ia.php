@@ -27,6 +27,8 @@ final class Ia
     private IaRepositorio $repo;
     private ?ProveedorIa $proveedor;
     private float $inicio;
+    /** Si el último pedido salió de la caché (así no se cuenta dos veces un reemplazo sugerido). */
+    private bool $desdeCache = false;
 
     /**
      * @param ?ProveedorIa $proveedor otro proveedor (por ejemplo, en una prueba); si no, Gemini con el .env
@@ -191,6 +193,78 @@ final class Ia
     }
 
     /**
+     * HU-32: con qué reemplazar un ingrediente que le falta de una receta del recetario (preferentemente algo de su
+     * despensa). Lo sugerido se anota para la administración (sugerencia_reemplazo).
+     * @param array<string, mixed> $receta como la devuelve RecetaRepositorio::obtener() para la persona
+     * @return array{texto: string, ingrediente_id: ?int, ratio: float, nota: string, frase: string, tengo: bool}
+     * @throws ErrorIa
+     */
+    public function reemplazo(int $usuarioId, array $receta, int $ingredienteId, int $porciones): array
+    {
+        $falta = null;
+        foreach ($receta['ingredientes'] as $ing) {
+            if ((int) $ing['ingrediente_id'] === $ingredienteId) {
+                $falta = $ing;
+            }
+        }
+        if ($falta === null) {
+            throw new ErrorIa(ErrorIa::DATOS, 'Ese ingrediente no está en la receta.');
+        }
+        if ($falta['en_despensa'] || $falta['es_basico']) {
+            throw new ErrorIa(ErrorIa::DATOS, "Ya tenés {$falta['nombre']}: no hace falta reemplazarlo.");
+        }
+        $factor = Porciones::factor(
+            (int) $receta['porciones_base'],
+            max(Porciones::MINIMO, min(Porciones::MAXIMO, $porciones))
+        );
+        $restricciones = $this->repo->restricciones($usuarioId);
+        $idsRestringidos = array_column($restricciones, 'id');
+        $datos = [
+            'falta' => array_filter([
+                'nombre' => $falta['nombre'],
+                'cantidad' => $falta['cantidad'] === null ? null : round((float) $falta['cantidad'] * $factor, 2),
+                'unidad' => $falta['unidad'] ?: null,
+            ], fn ($v) => $v !== null),
+            'receta' => [
+                'titulo' => $receta['titulo'],
+                'ingredientes' => array_column($receta['ingredientes'], 'nombre'),
+            ],
+            'despensa' => array_column(array_filter(
+                $this->repo->despensa($usuarioId),
+                fn (array $i) => !in_array($i['id'], $idsRestringidos, true)
+            ), 'nombre'),
+            'basicos' => array_column($this->repo->basicos($usuarioId), 'nombre'),
+            'no_usar' => array_column($restricciones, 'nombre'),
+        ];
+        $reemplazo = $this->pedir(
+            $usuarioId,
+            'reemplazo',
+            $datos,
+            Instrucciones::reemplazo(),
+            Instrucciones::esquemaReemplazo(),
+            function (RecetaIa $validador, array $json) use ($idsRestringidos, $ingredienteId, $falta) {
+                $resultado = $validador->validarReemplazo($json, $idsRestringidos);
+                // validarReemplazo() ya lo cruzó con el catálogo (por nombre o sinónimo)
+                if (($resultado['reemplazo']['ingrediente_id'] ?? null) === $ingredienteId) {
+                    return ['reemplazo' => null, 'error' => "La IA propuso el mismo ingrediente ({$falta['nombre']})."];
+                }
+                return $resultado;
+            }
+        );
+        if (!$this->desdeCache) {
+            $this->repo->sumarSugerencia($ingredienteId, $reemplazo);
+        }
+        $cantidad = $falta['cantidad'] === null
+            ? null
+            : Porciones::texto((float) $falta['cantidad'] * $reemplazo['ratio'], $falta['unidad'], $factor);
+        return $reemplazo + [
+            'frase' => RecetaIa::frase($reemplazo['texto'], $reemplazo['ratio'], $cantidad),
+            'tengo' => $reemplazo['ingrediente_id'] !== null
+                && in_array($reemplazo['ingrediente_id'], $this->repo->idsQueTengo($usuarioId), true),
+        ];
+    }
+
+    /**
      * Los nombres de lo que le falta de una receta del recetario (sin contar lo opcional).
      * @param array<string, mixed> $receta como la devuelve RecetaRepositorio::obtener()
      * @return list<string>
@@ -241,6 +315,7 @@ final class Ia
         if ($this->proveedor === null) {
             throw new ErrorIa(ErrorIa::APAGADA, 'La IA no está disponible ahora. El resto del sitio anda igual.');
         }
+        $this->desdeCache = false;
         $validador = new RecetaIa($this->repo->catalogo($usuarioId), $this->repo->sinonimos());
         $clave = RecetaIa::clave($tipo, $datos);
 
@@ -248,6 +323,7 @@ final class Ia
         if ($guardada !== null) {
             $resultado = $validar($validador, $guardada);
             if ($resultado['error'] === null) {
+                $this->desdeCache = true;
                 $this->repo->registrarUso($usuarioId, $tipo, true, true);
                 return self::sinError($resultado);
             }

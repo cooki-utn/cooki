@@ -67,6 +67,8 @@ final class IaTest extends TestCase
         if ($this->usuario) {
             $this->db->prepare('DELETE FROM despensa_item WHERE usuario_id = ?')->execute([$this->usuario]);
             $this->db->prepare('DELETE FROM restriccion_usuario WHERE usuario_id = ?')->execute([$this->usuario]);
+            // La sugerencia que dejan las pruebas del reemplazo (el Gemini de mentira siempre dice leche)
+            $this->db->exec("DELETE FROM sugerencia_reemplazo WHERE ingrediente_id = 1 AND reemplazo_texto = 'Leche'");
             $this->db->prepare('DELETE FROM usuario WHERE id = ?')->execute([$this->usuario]);
         }
     }
@@ -268,6 +270,45 @@ final class IaTest extends TestCase
         )->fetchColumn());
     }
 
+    public function testConQueLoReemplazoYQuedaAnotadoParaLaAdministracion(): void
+    {
+        $tortilla = (new RecetaRepositorio($this->db))->obtener(1, $this->usuario);   // le falta la papa (id 1)
+        $veces = fn () => (int) $this->db->query(
+            "SELECT COALESCE(SUM(veces), 0) FROM sugerencia_reemplazo
+             WHERE ingrediente_id = 1 AND reemplazo_texto = 'Leche'"
+        )->fetchColumn();
+        $antes = $veces();
+        $ia = $this->ia();
+        $r = $ia->reemplazo($this->usuario, $tortilla, 1, 2);
+        $this->assertSame('Leche', $r['texto']);
+        $this->assertSame(24, $r['ingrediente_id']);
+        $this->assertSame('Usá leche: la misma cantidad (300 g).', $r['frase'], '600 g para 4 → 300 g para 2');
+        $this->assertFalse($r['tengo']);
+        $this->assertStringContainsString('liviana', $r['nota']);
+        $this->assertSame($antes + 1, $veces());
+
+        $datos = $this->datosDelPedido(0);
+        $this->assertEquals(['nombre' => 'Papa', 'cantidad' => 300, 'unidad' => 'g'], $datos['falta']);
+        $this->assertContains('Zapallito', $datos['despensa']);
+        $this->assertSame('Tortilla de papas', $datos['receta']['titulo']);
+
+        // La misma pregunta sale de la caché: no llama ni se anota otra vez
+        $ia->reemplazo($this->usuario, $tortilla, 1, 2);
+        $this->assertCount(1, ServidorIaFalso::pedidos($this->registro));
+        $this->assertSame($antes + 1, $veces());
+
+        // Lo que ya tiene no se reemplaza
+        $error = $this->falla(fn () => $ia->reemplazo($this->usuario, $tortilla, 15, 2));
+        $this->assertSame(ErrorIa::DATOS, $error['motivo']);
+        $this->assertStringContainsString('Ya tenés Huevo', $error['mensaje']);
+
+        // Si no toma leche, la respuesta (leche) se rechaza
+        (new PreferenciasRepositorio($this->db))->agregar($this->usuario, 'restricciones', 24);
+        $error = $this->falla(fn () => $ia->reemplazo($this->usuario, $tortilla, 1, 2));
+        $this->assertSame(ErrorIa::FORMATO, $error['motivo']);
+        $this->assertSame($antes + 1, $veces());
+    }
+
     /** @return array<string, mixed> los datos que se le mandaron a la IA en el pedido número $n */
     private function datosDelPedido(int $n): array
     {
@@ -331,6 +372,24 @@ final class IaTest extends TestCase
         $this->assertSame(422, $estado);
         [$estado] = $web->json('POST', 'api/ia/adaptar/999999', ['adaptacion' => 'sin_huevo']);
         $this->assertSame(404, $estado);
+
+        // ¿Con qué lo reemplazo? (HU-32): sin JavaScript, la respuesta aparece una vez en el ingrediente
+        [, $html] = $web->get('app/receta.php?id=1');
+        $this->assertStringContainsString('¿Con qué lo reemplazo? (IA)', $html);
+        [$estado, , $destino] = $web->post('app/receta-ia.php', ['accion' => 'reemplazo', 'receta' => '1',
+            'ingrediente' => '1', 'porciones' => '4']);
+        $this->assertSame(302, $estado);
+        $this->assertStringEndsWith('app/receta.php?id=1&porciones=4#ing-1', $destino);
+        [, $html] = $web->get('app/receta.php?id=1&porciones=4');
+        $this->assertStringContainsString('Usá leche: la misma cantidad (600 g).', $html);
+        [, $html] = $web->get('app/receta.php?id=1&porciones=4');
+        $this->assertStringNotContainsString('Usá leche', $html, 'Se muestra una sola vez');
+        [$estado, $json] = $web->json('POST', 'api/ia/reemplazo', ['receta' => 1, 'ingrediente' => 1,
+            'porciones' => 4]);
+        $this->assertSame(200, $estado);
+        $this->assertSame('Usá leche: la misma cantidad (600 g).', $json['frase']);
+        [$estado] = $web->json('POST', 'api/ia/reemplazo', ['receta' => 1, 'ingrediente' => 15]);
+        $this->assertSame(422, $estado, 'El huevo ya lo tiene');
 
         // Otra persona no la puede ver
         $otro = new Navegador($base);

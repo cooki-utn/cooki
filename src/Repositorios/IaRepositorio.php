@@ -273,4 +273,27 @@ final class IaRepositorio
         $consulta->execute(['usuario' => $usuarioId]);
         return $consulta->fetchAll();
     }
+
+    // ───────────── Reemplazos sugeridos (HU-32) ─────────────
+
+    /**
+     * Anota un reemplazo que sugirió la IA, para que la administración lo pase a la tabla sustitucion.
+     * Si ya estaba, suma una vez más (y se queda con la proporción y la nota más nuevas).
+     * @param array{texto: string, ingrediente_id: ?int, ratio: float, nota: string} $reemplazo
+     */
+    public function sumarSugerencia(int $ingredienteId, array $reemplazo): void
+    {
+        $this->db->prepare(
+            'INSERT INTO sugerencia_reemplazo (ingrediente_id, reemplazo_id, reemplazo_texto, ratio, nota)
+             VALUES (:ingrediente, :reemplazo, :texto, :ratio, :nota)
+             ON DUPLICATE KEY UPDATE veces = veces + 1, reemplazo_id = VALUES(reemplazo_id),
+                                     ratio = VALUES(ratio), nota = VALUES(nota)'
+        )->execute([
+            'ingrediente' => $ingredienteId,
+            'reemplazo' => $reemplazo['ingrediente_id'],
+            'texto' => mb_substr($reemplazo['texto'], 0, 80),
+            'ratio' => $reemplazo['ratio'],
+            'nota' => $reemplazo['nota'] === '' ? null : mb_substr($reemplazo['nota'], 0, 200),
+        ]);
+    }
 }

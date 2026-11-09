@@ -23,6 +23,8 @@ use PDO;
  *   POST /api/ia/adaptar/{id}       adapta una receta del recetario: {adaptacion, porciones}
  *                                   (adaptacion: sin_huevo, sin_tacc, sin_lactosa, vegetariana o con_lo_que_tengo)
  *                                   → 201 {id, titulo, url, restantes}
+ *   POST /api/ia/reemplazo          con qué reemplazar un ingrediente que falta: {receta, ingrediente, porciones}
+ *                                   → 200 {reemplazo, ingrediente_id, ratio, nota, frase, tengo, restantes}
  * Si la IA no puede, responde el error con un mensaje para mostrar tal cual:
  *   503 sin IA configurada · 429 límite del día · 422 faltan datos (despensa vacía) · 504 tardó demasiado ·
  *   502 la IA falló o respondió algo que no sirve.
@@ -85,6 +87,37 @@ final class IaControlador
             throw self::errorHttp($e);
         }
         self::creada($ia, $db, $usuario, $id);
+    }
+
+    public static function reemplazo(): void
+    {
+        $usuario = SesionControlador::requiereSesion();
+        $datos = Respuesta::cuerpo();
+        $db = Db::conexion();
+        $receta = (new RecetaRepositorio($db))->obtener((int) ($datos['receta'] ?? 0), $usuario);
+        if ($receta === null) {
+            throw new ErrorHttp('No encontramos esa receta', 404);
+        }
+        $ia = new Ia($db);
+        try {
+            $r = $ia->reemplazo(
+                $usuario,
+                $receta,
+                (int) ($datos['ingrediente'] ?? 0),
+                (int) ($datos['porciones'] ?? $receta['porciones_base'])
+            );
+        } catch (ErrorIa $e) {
+            throw self::errorHttp($e);
+        }
+        Respuesta::json([
+            'reemplazo' => $r['texto'],
+            'ingrediente_id' => $r['ingrediente_id'],
+            'ratio' => $r['ratio'],
+            'nota' => $r['nota'],
+            'frase' => $r['frase'],
+            'tengo' => $r['tengo'],
+            'restantes' => $ia->restantesHoy($usuario),
+        ]);
     }
 
     private static function creada(Ia $ia, PDO $db, int $usuario, int $id): void

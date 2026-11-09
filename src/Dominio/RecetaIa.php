@@ -400,6 +400,30 @@ final class RecetaIa
         return $sirven;
     }
 
+    /**
+     * Cómo se dice la proporción de un reemplazo (HU-32): 1 → "la misma cantidad", 0.5 → "la mitad".
+     */
+    public static function proporcion(float $ratio): string
+    {
+        $conocidas = ['1' => 'la misma cantidad', '0.5' => 'la mitad', '2' => 'el doble', '0.25' => 'un cuarto',
+            '0.75' => 'tres cuartos', '3' => 'el triple'];
+        $clave = rtrim(rtrim(number_format($ratio, 2, '.', ''), '0'), '.');
+        if (isset($conocidas[$clave])) {
+            return $conocidas[$clave];
+        }
+        return str_replace('.', ',', $clave) . ' veces la cantidad';
+    }
+
+    /**
+     * La frase del reemplazo (HU-32): "Usá leche: la misma cantidad (200 ml)."
+     * @param ?string $cantidad la cantidad ya calculada para las porciones elegidas, si la receta la tiene
+     */
+    public static function frase(string $reemplazo, float $ratio, ?string $cantidad): string
+    {
+        $frase = 'Usá ' . mb_strtolower($reemplazo) . ': ' . self::proporcion($ratio);
+        return $frase . ($cantidad === null || $cantidad === '' ? '' : " ({$cantidad})") . '.';
+    }
+
     /** @param list<array{nombre: string, categoria_id: ?int}> $ingredientes */
     private static function revisarAdaptacion(array $ingredientes, string $adaptacion): ?string
     {

@@ -6,7 +6,8 @@
  *   receta.php?id=6&porciones=2 → cantidades y pasos ({ing:...}) recalculados (Dominio\Porciones)
  * Lo que falta se manda a la lista de compras (app/lista.php) con las cantidades de esas porciones:
  * de a uno ("+ lista") o todo junto ("Agregar lo que falta a la lista").
- * Si la IA está configurada: "Adaptar con IA" (HU-31, solo con las adaptaciones que hacen falta).
+ * Si la IA está configurada: "Adaptar con IA" (HU-31, solo con las adaptaciones que hacen falta) y
+ * "¿Con qué lo reemplazo? (IA)" (HU-32) en lo que falta y no tiene un reemplazo de la tabla a mano.
  */
 
 declare(strict_types=1);
@@ -56,9 +57,13 @@ $faltantes = ListaCompras::faltantes($receta['ingredientes'], $factor);
 $enLista = (new ListaRepositorio(Db::conexion()))->ingredientesPendientes(Sesion::idUsuario());
 $volverReceta = (string) ($_SERVER['REQUEST_URI'] ?? '') . '#ingredientes';
 // IA: solo si está configurada (si no, no aparece nada y la receta anda igual)
+$iaDisponible = Ia::disponible();
 $adaptaciones = [];
 $iaRestantes = 0;
-if (Ia::disponible()) {
+// La respuesta de "¿Con qué lo reemplazo?" sin JavaScript: viene de app/receta-ia.php y se muestra una vez
+$reemplazosIa = $_SESSION['reemplazo_ia'][(int) $receta['id']] ?? [];
+unset($_SESSION['reemplazo_ia'][(int) $receta['id']]);
+if ($iaDisponible) {
     $adaptaciones = RecetaIa::adaptacionesPara($receta['ingredientes'], Ia::faltantes($receta) !== []);
     $iaRestantes = (new Ia(Db::conexion()))->restantesHoy(Sesion::idUsuario());
 }
@@ -173,7 +178,7 @@ require parcial('encabezado');
       <ul class="lista-ingredientes">
         <?php foreach ($receta['ingredientes'] as $ing) : ?>
           <?php $tiene = $ing['en_despensa'] || $ing['es_basico']; ?>
-          <li class="<?= $tiene ? 'tengo' : 'falta' ?><?= $ing['restringido'] ? ' no-como' : '' ?>">
+          <li id="ing-<?= e($ing['ingrediente_id']) ?>" class="<?= $tiene ? 'tengo' : 'falta' ?><?= $ing['restringido'] ? ' no-como' : '' ?>">
             <span aria-hidden="true"><?= $tiene ? '✓' : '✗' ?></span>
             <span class="solo-lectores"><?= $tiene ? 'Lo tenés:' : 'Te falta:' ?></span>
             <img class="icono-chico" src="<?= e(iconoIngrediente($ing['nombre'])) ?>" alt="" width="28" height="28">
@@ -202,6 +207,28 @@ require parcial('encabezado');
                   </button>
                 </form>
               <?php endif; ?>
+            <?php endif; ?>
+            <?php $reemplazoIa = $reemplazosIa[(int) $ing['ingrediente_id']] ?? null; ?>
+            <?php if ($reemplazoIa !== null) : ?>
+              <span class="reemplazo-ia">
+                <strong>IA:</strong> <?= e($reemplazoIa['frase']) ?>
+                <?php if ($reemplazoIa['tengo']) : ?><span class="etiqueta">Lo tenés</span><?php endif; ?>
+                <?php if ($reemplazoIa['nota'] !== '') : ?><small><?= e($reemplazoIa['nota']) ?></small><?php endif; ?>
+              </span>
+            <?php elseif ($iaDisponible && !$tiene && $ing['sustituto'] === null && !$ing['es_opcional']) : ?>
+              <?php /* HU-32: sin JavaScript recarga y la respuesta aparece acá; con JavaScript (ia.js), sin recargar */ ?>
+              <form class="reemplazo-ia-form" method="post" action="<?= e(url('app/receta-ia.php')) ?>"
+                    data-ia="<?= e(url('api/ia/reemplazo')) ?>" data-pensando="Buscando un reemplazo…">
+                <?= Sesion::campoCsrf() ?>
+                <input type="hidden" name="accion" value="reemplazo">
+                <input type="hidden" name="receta" value="<?= e($receta['id']) ?>">
+                <input type="hidden" name="ingrediente" value="<?= e($ing['ingrediente_id']) ?>">
+                <input type="hidden" name="porciones" value="<?= $porciones ?>">
+                <button class="reemplazo-ia-form__boton" type="submit"<?= $iaRestantes === 0 ? ' disabled title="' . e(Ia::textoRestantes(0)) . '"' : '' ?>>
+                  ¿Con qué lo reemplazo? (IA)<span class="solo-lectores">: <?= e($ing['nombre']) ?></span>
+                </button>
+                <span class="nota-ia__estado" role="status" aria-live="polite"></span>
+              </form>
             <?php endif; ?>
           </li>
         <?php endforeach; ?>
@@ -243,7 +270,7 @@ require parcial('encabezado');
 </article>
 <script src="<?= e(recurso('js/receta.js')) ?>" defer></script>
 <script src="<?= e(recurso('js/lista.js')) ?>" defer></script>
-<?php if (Ia::disponible()) : ?>
+<?php if ($iaDisponible) : ?>
   <script src="<?= e(recurso('js/ia.js')) ?>" defer></script>
 <?php endif; ?>
 <?php require parcial('pie'); ?>

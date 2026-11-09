@@ -1735,6 +1735,21 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
 .adaptar-ia[open] > summary { margin-bottom: 14px; }
 .adaptar-ia__nota { max-width: 640px; }
 
+/* "¿Con qué lo reemplazo? (IA)" (HU-32): un botón chico en lo que falta y la respuesta en un renglón propio */
+.reemplazo-ia-form { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; }
+.reemplazo-ia-form__boton {
+  min-height: 32px; padding: 0 10px; border: 2px dashed #3B8F55; border-radius: 8px; background: #EAF7EE;
+  color: #23633A; font: 700 1.05rem/1 var(--fuente-mano); cursor: pointer;
+}
+.reemplazo-ia-form__boton:hover { background: #D7F2DD; }
+.reemplazo-ia-form__boton:disabled { opacity: .5; cursor: not-allowed; }
+.reemplazo-ia-form .nota-ia__estado { font-size: 1.1rem; }
+.reemplazo-ia {
+  flex-basis: 100%; margin: 2px 0 8px 26px; padding: 6px 10px; border-left: 4px solid #3B8F55;
+  background: #EAF7EE; color: #1E3B28; line-height: 1.4;
+}
+.reemplazo-ia small { display: block; color: #3D5A46; }
+
 /* Una receta de IA: el sello "Sugerida por IA · revisala antes de cocinar" y "Por qué esta receta" */
 .sello-ia {
   display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 6px 14px 6px 8px;
