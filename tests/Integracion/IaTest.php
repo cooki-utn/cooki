@@ -448,6 +448,113 @@ final class IaTest extends TestCase
         $this->assertStringContainsString('error.php', $destino);
     }
 
+    public function testLaAdministracionVeElUsoPasaRecetasAlRecetarioYReemplazosASustituciones(): void
+    {
+        $repo = new IaRepositorio($this->db);
+        $repo->registrarUso($this->usuario, 'receta', false, false, 'Gemini no respondió en 12 s.');
+        $idIa = $repo->crearReceta($this->usuario, 'nueva', null, [
+            'titulo' => 'Tarta de prueba ' . $this->unico, 'descripcion' => 'De prueba.', 'porciones' => 2,
+            'minutos_prep' => 10, 'minutos_coccion' => 20, 'dificultad' => 1, 'etiquetas' => ['vegetariana'],
+            'ingredientes' => [
+                ['id' => 5, 'nombre' => 'Zapallito', 'categoria_id' => 1, 'cantidad' => 2.0, 'unidad' => 'u',
+                    'peso' => 3],
+                ['id' => $this->hongo, 'nombre' => $this->unico, 'categoria_id' => 1, 'cantidad' => 100.0,
+                    'unidad' => 'g', 'peso' => 2],
+                ['id' => null, 'nombre' => 'Polvo mágico', 'categoria_id' => null, 'cantidad' => null, 'unidad' => '',
+                    'peso' => 1],
+            ],
+            'pasos' => [['texto' => 'Cortá todo.', 'minutos' => null], ['texto' => 'Horneá.', 'minutos' => 20]],
+            'por_que' => '', 'cambios' => [],
+        ]);
+        $repo->marcarGuardada($this->usuario, $idIa, true);
+        $raro = 'Polvo ' . $this->unico;
+        $repo->sumarSugerencia(2, ['texto' => 'Zapallito', 'ingrediente_id' => 5, 'ratio' => 1.0,
+            'nota' => 'Más suave.']);
+        $repo->sumarSugerencia(2, ['texto' => $raro, 'ingrediente_id' => null, 'ratio' => 0.5, 'nota' => '']);
+        $sustituciones = fn (): int => (int) $this->db
+            ->query('SELECT COUNT(*) FROM sustitucion WHERE ingrediente_id = 2 AND reemplazo_id = 5')->fetchColumn();
+        $habia = $sustituciones();
+
+        $web = new Navegador(ClienteApi::servidorCon(['IA_CLAVE' => 'clave-de-prueba']));
+        $web->ingresar('admin@cooki.test', 'Admin1234');
+        [, $html] = $web->get('admin/index.php');
+        $this->assertStringContainsString('admin/ia.php', $html, 'El panel tiene la nota de la IA');
+        $this->assertMatchesRegularExpression('/\d+ pedidos? hoy · \d+ con error/', $html);
+        [$estado, $html] = $web->get('admin/ia.php');
+        $this->assertSame(200, $estado);
+        $this->assertStringContainsString('Prendida', $html);
+        $this->assertStringContainsString('Últimos 7 días', $html);
+        $this->assertStringContainsString('Gemini no respondió en 12 s.', $html);
+        $this->assertStringContainsString('Tarta de prueba ' . $this->unico, $html);
+        $this->assertStringNotContainsString('Martina Inventora', $html, 'No dice quién la guardó');
+        $this->assertStringContainsString('admin/receta-editar.php?desde_ia=' . $idIa, $html);
+
+        // "Pasar al recetario": el editor viene lleno, sin lo que no está en el catálogo general
+        [$estado, $html] = $web->get('admin/receta-editar.php?desde_ia=' . $idIa);
+        $this->assertSame(200, $estado);
+        $this->assertStringContainsString('<h1>Pasar al recetario</h1>', $html);
+        $this->assertStringContainsString('value="Tarta de prueba ' . $this->unico . '"', $html);
+        $afuera = 'quedaron afuera: <strong>' . $this->unico . ', Polvo mágico</strong>';
+        $this->assertStringContainsString($afuera, $html);
+        $this->assertStringContainsString('Horneá. [⏱ 20 min]', $html);
+        $this->assertStringContainsString('name="desde_ia" value="' . $idIa . '"', $html);
+        $web->post('admin/receta-editar.php', ['desde_ia' => (string) $idIa, 'id' => '0',
+            'titulo' => 'Tarta de prueba ' . $this->unico, 'descripcion' => 'Revisada.', 'porciones_base' => '2',
+            'minutos_prep' => '10', 'minutos_coccion' => '20', 'dificultad' => '1',
+            'ingredientes' => [['id' => '5', 'cantidad' => '2', 'unidad' => 'u', 'peso' => '3']],
+            'pasos' => "Cortá todo.\nHorneá. [⏱ 20 min]"]);
+        $pasada = (int) $this->db->query('SELECT pasada_a FROM receta_ia WHERE id = ' . $idIa)->fetchColumn();
+        $this->assertGreaterThan(0, $pasada, 'Quedó anotada en qué receta se convirtió');
+        try {
+            $guardada = (new RecetaRepositorio($this->db))->obtener($pasada);
+            $this->assertSame('Tarta de prueba ' . $this->unico, $guardada['titulo']);
+            [, $html] = $web->get('admin/ia.php');
+            $this->assertStringContainsString('app/receta.php?id=' . $pasada, $html);
+            [, , $destino] = $web->get('admin/receta-editar.php?desde_ia=' . $idIa);
+            $this->assertStringContainsString('admin/ia.php', $destino, 'No se pasa dos veces');
+        } finally {
+            (new RecetaRepositorio($this->db))->borrar($pasada);
+        }
+
+        // Reemplazos: el que está en el catálogo se pasa; el que no, solo se descarta
+        $pendientesPorTexto = fn (): array => array_column($repo->sugerenciasPendientes(), null, 'reemplazo_texto');
+        $pendientes = $pendientesPorTexto();
+        $this->assertArrayHasKey($raro, $pendientes);
+        $web->get('admin/ia.php');
+        [, , $destino] = $web->post('admin/ia.php', ['accion' => 'pasar', 'id' => (string) $pendientes[$raro]['id']]);
+        $this->assertStringEndsWith('admin/ia.php#reemplazos', $destino);
+        [, $html] = $web->get('admin/ia.php');
+        $this->assertStringContainsString('no está en el catálogo: cargalo primero en Ingredientes', $html);
+        $web->post('admin/ia.php', ['accion' => 'pasar', 'id' => (string) $pendientes['Zapallito']['id']]);
+        $web->get('admin/ia.php');
+        $web->post('admin/ia.php', ['accion' => 'descartar', 'id' => (string) $pendientes[$raro]['id']]);
+        try {
+            $this->assertSame(max(1, $habia), $sustituciones());
+            $this->assertArrayNotHasKey('Zapallito', $pendientesPorTexto());
+            $this->assertArrayNotHasKey($raro, $pendientesPorTexto());
+            $repo->sumarSugerencia(2, ['texto' => $raro, 'ingrediente_id' => null, 'ratio' => 0.5, 'nota' => '']);
+            $this->assertArrayNotHasKey(
+                $raro,
+                $pendientesPorTexto(),
+                'Lo descartado no vuelve aunque la IA lo sugiera otra vez'
+            );
+        } finally {
+            if ($habia === 0) {
+                $this->db->exec('DELETE FROM sustitucion WHERE ingrediente_id = 2 AND reemplazo_id = 5');
+            }
+            $borrar = $this->db->prepare(
+                'DELETE FROM sugerencia_reemplazo WHERE ingrediente_id = 2 AND reemplazo_texto IN (?, ?)'
+            );
+            $borrar->execute(['Zapallito', $raro]);
+        }
+
+        // Una persona sin rol de administración no entra
+        $otro = new Navegador();
+        $otro->ingresar($this->email, 'Usuario1234');
+        [, , $destino] = $otro->get('admin/ia.php');
+        $this->assertStringContainsString('error.php', $destino);
+    }
+
     public function testSinIaNoAparecenLosBotonesYLaApiLoDice(): void
     {
         $web = new Navegador(ClienteApi::servidorCon(['IA_PROVEEDOR' => 'ninguno']));

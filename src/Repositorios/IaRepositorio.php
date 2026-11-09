@@ -334,4 +334,171 @@ final class IaRepositorio
             'nota' => $reemplazo['nota'] === '' ? null : mb_substr($reemplazo['nota'], 0, 200),
         ]);
     }
+
+    // ───────────── Administración (HU-34) ─────────────
+
+    /**
+     * El uso desde hace $dias días (1 = hoy), por tipo: pedidos, cuántos salieron de la caché, errores,
+     * tokens y el tiempo promedio de las llamadas reales que salieron bien.
+     * @return array<string, array{pedidos: int, cache: int, errores: int, tokens: int, ms: ?int}>
+     */
+    public function usoPorTipo(int $dias): array
+    {
+        $consulta = $this->db->prepare(
+            'SELECT tipo, COUNT(*) AS pedidos, COALESCE(SUM(desde_cache), 0) AS cache,
+                    COALESCE(SUM(ok = 0), 0) AS errores,
+                    COALESCE(SUM(tokens_entrada), 0) + COALESCE(SUM(tokens_salida), 0) AS tokens,
+                    AVG(CASE WHEN ok = 1 AND desde_cache = 0 THEN milisegundos END) AS ms
+             FROM uso_ia WHERE creado_en >= CURDATE() - INTERVAL :dias DAY
+             GROUP BY tipo ORDER BY tipo'
+        );
+        $consulta->execute(['dias' => max(1, $dias) - 1]);
+        $uso = [];
+        foreach ($consulta->fetchAll() as $f) {
+            $uso[$f['tipo']] = [
+                'pedidos' => (int) $f['pedidos'],
+                'cache' => (int) $f['cache'],
+                'errores' => (int) $f['errores'],
+                'tokens' => (int) $f['tokens'],
+                'ms' => $f['ms'] === null ? null : (int) round((float) $f['ms']),
+            ];
+        }
+        return $uso;
+    }
+
+    /**
+     * Los últimos errores (los mensajes de ErrorIa: nunca la clave ni datos de la persona).
+     * @return list<array{creado_en: string, tipo: string, error: ?string}>
+     */
+    public function ultimosErrores(int $cuantos = 10): array
+    {
+        return $this->db->query(
+            'SELECT creado_en, tipo, error FROM uso_ia WHERE ok = 0
+             ORDER BY creado_en DESC, id DESC LIMIT ' . max(1, $cuantos)
+        )->fetchAll();
+    }
+
+    /**
+     * Las recetas de IA que guardaron las personas, para revisarlas (sin decir quién las guardó).
+     * Primero las que todavía no se pasaron al recetario.
+     * @return list<array<string, mixed>>
+     */
+    public function recetasParaRevisar(): array
+    {
+        return $this->paraRevisar('1 = 1', []);
+    }
+
+    /**
+     * Una receta de IA guardada, de cualquier persona (solo para la administración).
+     * @return array<string, mixed>|null
+     */
+    public function recetaParaRevisar(int $id): ?array
+    {
+        return $this->paraRevisar('r.id = :id', ['id' => $id])[0] ?? null;
+    }
+
+    /**
+     * @param array<string, int> $parametros
+     * @return list<array<string, mixed>>
+     */
+    private function paraRevisar(string $condicion, array $parametros): array
+    {
+        $consulta = $this->db->prepare(
+            "SELECT r.id, r.tipo, r.titulo, r.contenido, r.creado_en, r.pasada_a, b.titulo AS titulo_base,
+                    p.titulo AS titulo_pasada
+             FROM receta_ia r
+             LEFT JOIN receta b ON b.id = r.receta_base
+             LEFT JOIN receta p ON p.id = r.pasada_a
+             WHERE r.guardada = 1 AND {$condicion}
+             ORDER BY r.pasada_a IS NOT NULL, r.creado_en DESC, r.id DESC
+             LIMIT 100"
+        );
+        $consulta->execute($parametros);
+        $filas = $consulta->fetchAll();
+        foreach ($filas as &$f) {
+            $f['contenido'] = json_decode((string) $f['contenido'], true) ?: [];
+        }
+        return $filas;
+    }
+
+    /** Anota en qué receta del recetario quedó la receta de IA (después de guardarla en receta-editar.php). */
+    public function marcarPasada(int $id, int $recetaId): void
+    {
+        $this->db->prepare('UPDATE receta_ia SET pasada_a = :receta WHERE id = :id')
+            ->execute(['receta' => $recetaId, 'id' => $id]);
+    }
+
+    /**
+     * Los reemplazos que sugirió la IA y que la administración todavía no revisó, los más pedidos primero.
+     * "pasada" = ya revisada: se pasó a sustitucion o se descartó (no vuelve aunque la IA la sugiera otra vez).
+     * @return list<array{id: int, ingrediente_id: int, ingrediente: string, reemplazo_id: ?int,
+     *     reemplazo_texto: string, ratio: ?string, nota: ?string, veces: int}>
+     */
+    public function sugerenciasPendientes(): array
+    {
+        $filas = $this->db->query(
+            'SELECT s.id, s.ingrediente_id, i.nombre AS ingrediente, s.reemplazo_id, s.reemplazo_texto, s.ratio,
+                    s.nota, s.veces
+             FROM sugerencia_reemplazo s JOIN ingrediente i ON i.id = s.ingrediente_id
+             WHERE s.pasada = 0
+             ORDER BY s.veces DESC, i.nombre, s.reemplazo_texto
+             LIMIT 100'
+        )->fetchAll();
+        return array_map(fn (array $f) => ['id' => (int) $f['id'], 'ingrediente_id' => (int) $f['ingrediente_id'],
+            'reemplazo_id' => $f['reemplazo_id'] === null ? null : (int) $f['reemplazo_id'],
+            'veces' => (int) $f['veces']] + $f, $filas);
+    }
+
+    /** @return array<string, mixed>|null una sugerencia pendiente */
+    public function sugerencia(int $id): ?array
+    {
+        foreach ($this->sugerenciasPendientes() as $s) {
+            if ($s['id'] === $id) {
+                return $s;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * "Pasar a sustituciones": agrega el reemplazo a la tabla sustitucion (calidad 3, como en el recetario) y la
+     * marca como revisada. Si ese par ya estaba en sustitucion, no lo repite. Devuelve false si ya estaba.
+     */
+    public function pasarSugerencia(int $id, int $ingredienteId, int $reemplazoId, ?float $ratio, ?string $nota): bool
+    {
+        $this->db->beginTransaction();
+        try {
+            $existe = $this->db->prepare(
+                'SELECT 1 FROM sustitucion WHERE ingrediente_id = :ingrediente AND reemplazo_id = :reemplazo'
+            );
+            $existe->execute(['ingrediente' => $ingredienteId, 'reemplazo' => $reemplazoId]);
+            $nueva = $existe->fetchColumn() === false;
+            if ($nueva) {
+                $this->db->prepare(
+                    'INSERT INTO sustitucion (ingrediente_id, reemplazo_id, ratio, nota, calidad)
+                     VALUES (:ingrediente, :reemplazo, :ratio, :nota, 3)'
+                )->execute([
+                    'ingrediente' => $ingredienteId,
+                    'reemplazo' => $reemplazoId,
+                    'ratio' => $ratio ?? 1,
+                    'nota' => $nota,
+                ]);
+            }
+            $this->db->prepare('UPDATE sugerencia_reemplazo SET pasada = 1, reemplazo_id = :reemplazo WHERE id = :id')
+                ->execute(['reemplazo' => $reemplazoId, 'id' => $id]);
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+        return $nueva;
+    }
+
+    /** "Descartar": queda revisada sin pasarla (no vuelve a la lista aunque la IA la sugiera otra vez). */
+    public function descartarSugerencia(int $id): bool
+    {
+        $consulta = $this->db->prepare('UPDATE sugerencia_reemplazo SET pasada = 1 WHERE id = :id AND pasada = 0');
+        $consulta->execute(['id' => $id]);
+        return $consulta->rowCount() > 0;
+    }
 }

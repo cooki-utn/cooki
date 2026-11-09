@@ -92,7 +92,7 @@ final class PaginasTest extends TestCase
         $this->assertStringEndsWith('admin/index.php', $web->ingresar('admin@cooki.test', 'Admin1234'));
         $paginas = ['admin/index.php', 'admin/recetas.php', 'admin/receta-editar.php', 'admin/ingredientes.php',
             'admin/ingredientes.php?nuevo', 'admin/usuarios.php', 'admin/usuarios.php?nuevo', 'admin/consultas.php',
-            'admin/correo.php'];
+            'admin/correo.php', 'admin/ia.php'];
         foreach ($paginas as $pagina) {
             $this->assertSame(200, $web->get($pagina)[0], "{$pagina} tiene que responder 200 (sin composer install)");
         }
@@ -339,7 +339,7 @@ final class PaginasTest extends TestCase
         $web->ingresar('admin@cooki.test', 'Admin1234');
         [, $html] = $web->get('admin/index.php');
         $notas = substr_count($html, 'class="postit postit--');
-        $this->assertSame(5, $notas, 'Recetas, ingredientes, consultas, usuarios y correo');
+        $this->assertSame(6, $notas, 'Recetas, ingredientes, consultas, usuarios, correo e IA');
         [, $html] = $web->get('admin/ingredientes.php?q=manzana');
         $this->assertStringContainsString('img/ingredientes/manzana.svg', $html);
         [, $html] = $web->get('admin/ingredientes.php?editar=1');

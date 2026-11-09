@@ -424,6 +424,60 @@ final class RecetaIa
         return $frase . ($cantidad === null || $cantidad === '' ? '' : " ({$cantidad})") . '.';
     }
 
+    /**
+     * "Pasar al recetario" (HU-34): la receta de IA con los mismos campos y unidades que el importador JSON,
+     * lista para el formulario de admin/receta-editar.php. Nada se guarda acá: la administración la revisa.
+     * Los ingredientes que no son del catálogo general (inventados o propios de una persona) quedan afuera
+     * y se devuelven en "afuera" para avisar; el importador rechazaría la receta entera.
+     * @param array<string, mixed> $contenido receta_ia.contenido (lo que devolvió validar())
+     * @param list<int> $idsCatalogo ids del catálogo general (ingrediente.usuario_id IS NULL)
+     * @return array{receta: array<string, mixed>, ingredientes: list<array<string, mixed>>,
+     *     pasos: list<array{texto: string, segundos: ?int}>, etiquetas: list<string>, afuera: list<string>}
+     */
+    public static function paraRecetario(array $contenido, array $idsCatalogo): array
+    {
+        $catalogo = array_flip($idsCatalogo);
+        $ingredientes = [];
+        $afuera = [];
+        foreach ((array) ($contenido['ingredientes'] ?? []) as $ing) {
+            $id = isset($ing['id']) ? (int) $ing['id'] : 0;
+            if (!isset($catalogo[$id])) {
+                $afuera[] = (string) $ing['nombre'];
+                continue;
+            }
+            $cantidad = $ing['cantidad'] ?? null;
+            $ingredientes[] = [
+                'id' => $id,
+                'cantidad' => $cantidad === null ? null : (float) $cantidad,
+                'unidad' => $cantidad === null ? '' : (string) ($ing['unidad'] ?? ''),
+                'peso' => isset(Puntaje::PESOS[(int) ($ing['peso'] ?? 2)]) ? (int) $ing['peso'] : 2,
+                'opcional' => false,
+                'nota' => '',
+            ];
+        }
+        $pasos = [];
+        foreach ((array) ($contenido['pasos'] ?? []) as $paso) {
+            $minutos = $paso['minutos'] ?? null;
+            $segundos = $minutos === null ? null : (int) $minutos * 60;
+            $pasos[] = ['texto' => (string) $paso['texto'], 'segundos' => $segundos];
+        }
+        return [
+            'receta' => [
+                'titulo' => (string) ($contenido['titulo'] ?? ''),
+                'descripcion' => (string) ($contenido['descripcion'] ?? ''),
+                'porciones_base' => (int) ($contenido['porciones'] ?? 4),
+                'minutos_prep' => (int) ($contenido['minutos_prep'] ?? 15),
+                'minutos_coccion' => (int) ($contenido['minutos_coccion'] ?? 0),
+                'dificultad' => (int) ($contenido['dificultad'] ?? 1),
+                'imagen' => null,
+            ],
+            'ingredientes' => $ingredientes,
+            'pasos' => $pasos,
+            'etiquetas' => array_values(array_intersect(self::ETIQUETAS, (array) ($contenido['etiquetas'] ?? []))),
+            'afuera' => $afuera,
+        ];
+    }
+
     /** @param list<array{nombre: string, categoria_id: ?int}> $ingredientes */
     private static function revisarAdaptacion(array $ingredientes, string $adaptacion): ?string
     {

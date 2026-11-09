@@ -10,14 +10,22 @@ require dirname(__DIR__, 2) . '/src/bootstrap.php';
 
 use Cooki\Config;
 use Cooki\Db;
+use Cooki\Ia\Ia;
+use Cooki\Repositorios\IaRepositorio;
 use Cooki\Repositorios\ResumenRepositorio;
 use Cooki\Sesion;
 
 Sesion::requiereAdmin();
 
 $totales = (new ResumenRepositorio(Db::conexion()))->totales();
+$ia = new IaRepositorio(Db::conexion());
+$usoIa = $ia->usoPorTipo(1);
+$pedidosIa = array_sum(array_column($usoIa, 'pedidos'));
+$erroresIa = array_sum(array_column($usoIa, 'errores'));
+$paraRevisar = count(array_filter($ia->recetasParaRevisar(), fn ($r) => $r['pasada_a'] === null))
+    + count($ia->sugerenciasPendientes());
 
-// [página, nombre, dato, descripción, dibujo, color de la nota]
+// [página, nombre, dato, descripción, dibujo (un sticker o una ruta), color de la nota]
 $secciones = [
     ['recetas.php', 'Recetas', $totales['recetas'] . ' cargadas', 'Alta, baja y modificación del recetario.', 'fideos', 'amarillo'],
     ['ingredientes.php', 'Ingredientes', $totales['ingredientes'] . ' en el catálogo',
@@ -28,6 +36,11 @@ $secciones = [
         'Cuentas, roles y contraseñas.', 'manzana', 'verde'],
     ['correo.php', 'Correo', Config::get('MAIL_HOST') !== '' ? Config::get('MAIL_HOST') : 'sin servidor configurado',
         'Ver la configuración y mandar un correo de prueba.', 'limon', 'amarillo'],
+    ['ia.php', 'IA', Ia::disponible()
+        ? $pedidosIa . ' pedido' . ($pedidosIa === 1 ? '' : 's') . ' hoy · ' . $erroresIa . ' con error'
+        : 'apagada (falta IA_CLAVE)',
+        $paraRevisar > 0 ? $paraRevisar . ' para revisar: recetas guardadas y reemplazos sugeridos.'
+            : 'Uso por día, recetas de IA guardadas y reemplazos sugeridos.', 'img/ia.svg', 'rosa'],
 ];
 
 $titulo = 'Administración';
@@ -39,7 +52,7 @@ require parcial('encabezado');
   <?php foreach ($secciones as [$ruta, $nombre, $dato, $descripcion, $dibujo, $color]) : ?>
     <article class="postit postit--<?= e($color) ?> nota-panel">
       <span class="postit__chinche" aria-hidden="true"></span>
-      <img class="nota-panel__dibujo" src="<?= e(url('img/ingredientes/' . $dibujo . '.svg')) ?>" alt="" width="72" height="72">
+      <img class="nota-panel__dibujo" src="<?= e(url(str_contains($dibujo, '/') ? $dibujo : 'img/ingredientes/' . $dibujo . '.svg')) ?>" alt="" width="72" height="72">
       <h2><a href="<?= e(url('admin/' . $ruta)) ?>"><?= e($nombre) ?></a></h2>
       <p class="nota-panel__dato"><?= e($dato) ?></p>
       <p><?= e($descripcion) ?></p>

@@ -224,6 +224,27 @@ final class RecetaIaTest extends TestCase
         $this->assertSame('Usá fécula de maíz: la misma cantidad.', RecetaIa::frase('Fécula de maíz', 1, null));
     }
 
+    public function testPasarAlRecetarioDejaAfueraLoQueNoEsDelCatalogoGeneral(): void
+    {
+        $contenido = $this->ia->validar($this->receta())['receta'];
+        // El huevo (15) es, por ejemplo, un ingrediente propio de la persona: no está en el catálogo general
+        $r = RecetaIa::paraRecetario($contenido, [5, 30, 12]);
+        $this->assertSame('Revuelto de zapallitos', $r['receta']['titulo']);
+        $this->assertSame(2, $r['receta']['porciones_base']);
+        $this->assertSame(10, $r['receta']['minutos_prep']);
+        $this->assertSame(['vegetariana'], $r['etiquetas']);
+        $this->assertSame([5, 30], array_column($r['ingredientes'], 'id'));
+        $this->assertSame(['id' => 5, 'cantidad' => 2.0, 'unidad' => 'u', 'peso' => 3, 'opcional' => false,
+            'nota' => ''], $r['ingredientes'][0]);
+        $this->assertSame(['cantidad' => null, 'unidad' => ''], array_intersect_key(
+            $r['ingredientes'][1],
+            ['cantidad' => 0, 'unidad' => 0]
+        ), 'La sal a gusto queda sin cantidad ni unidad');
+        $this->assertSame(['Huevo', 'Orégano fresco'], $r['afuera']);
+        $this->assertSame(['texto' => 'Saltealos.', 'segundos' => 600], $r['pasos'][1]);
+        $this->assertNull($r['pasos'][0]['segundos']);
+    }
+
     public function testLaClaveDeLaCacheNoDependeDelOrden(): void
     {
         $a = RecetaIa::clave('receta', [
