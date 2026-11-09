@@ -10,6 +10,8 @@ use Cooki\Http\Respuesta;
 use Cooki\Ia\ErrorIa;
 use Cooki\Ia\Ia;
 use Cooki\Repositorios\IaRepositorio;
+use Cooki\Repositorios\RecetaRepositorio;
+use PDO;
 
 /**
  * La IA por la API (incremento 3 · HU-30 a HU-33). Todas piden sesión; las que piden algo a la IA, además,
@@ -17,6 +19,9 @@ use Cooki\Repositorios\IaRepositorio;
  *   GET  /api/ia                    {disponible, restantes, limite}: si hay IA y cuántos pedidos le quedan hoy
  *   POST /api/ia/receta             receta nueva con lo que tiene: {porciones, minutos, tipo}
  *                                   o "Pedir otra" de una que ya vio: {otra_de: id}
+ *                                   → 201 {id, titulo, url, restantes}
+ *   POST /api/ia/adaptar/{id}       adapta una receta del recetario: {adaptacion, porciones}
+ *                                   (adaptacion: sin_huevo, sin_tacc, sin_lactosa, vegetariana o con_lo_que_tengo)
  *                                   → 201 {id, titulo, url, restantes}
  * Si la IA no puede, responde el error con un mensaje para mostrar tal cual:
  *   503 sin IA configurada · 429 límite del día · 422 faltan datos (despensa vacía) · 504 tardó demasiado ·
@@ -55,6 +60,35 @@ final class IaControlador
         } catch (ErrorIa $e) {
             throw self::errorHttp($e);
         }
+        self::creada($ia, $db, $usuario, $id);
+    }
+
+    /** @param array{id: string} $parametros */
+    public static function adaptar(array $parametros): void
+    {
+        $usuario = SesionControlador::requiereSesion();
+        $datos = Respuesta::cuerpo();
+        $db = Db::conexion();
+        $receta = (new RecetaRepositorio($db))->obtener((int) $parametros['id'], $usuario);
+        if ($receta === null) {
+            throw new ErrorHttp('No encontramos esa receta', 404);
+        }
+        $ia = new Ia($db);
+        try {
+            $id = $ia->adaptar(
+                $usuario,
+                $receta,
+                (string) ($datos['adaptacion'] ?? ''),
+                (int) ($datos['porciones'] ?? $receta['porciones_base'])
+            );
+        } catch (ErrorIa $e) {
+            throw self::errorHttp($e);
+        }
+        self::creada($ia, $db, $usuario, $id);
+    }
+
+    private static function creada(Ia $ia, PDO $db, int $usuario, int $id): void
+    {
         $receta = (new IaRepositorio($db))->receta($usuario, $id);
         Respuesta::json([
             'id' => $id,

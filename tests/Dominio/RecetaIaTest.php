@@ -188,6 +188,31 @@ final class RecetaIaTest extends TestCase
         $this->assertNotNull($this->ia->validarReemplazo(['reemplazo' => 'Leche', 'ratio' => 0])['error']);
     }
 
+    public function testSoloOfreceLasAdaptacionesQueHacenFalta(): void
+    {
+        $tortilla = [
+            ['nombre' => 'Huevo', 'categoria_id' => '5'],
+            ['nombre' => 'Papa', 'categoria_id' => '1'],
+            ['nombre' => 'Cebolla', 'categoria_id' => '1'],
+        ];
+        $this->assertSame(['sin_huevo'], array_keys(RecetaIa::adaptacionesPara($tortilla, false)));
+        $this->assertSame(
+            ['sin_huevo', 'con_lo_que_tengo'],
+            array_keys(RecetaIa::adaptacionesPara($tortilla, true)),
+            '"Con lo que tengo" solo si falta algo'
+        );
+        $milanesas = [
+            ['nombre' => 'Pollo', 'categoria_id' => 4],
+            ['nombre' => 'Pan rallado', 'categoria_id' => null],
+            ['nombre' => 'Queso rallado', 'categoria_id' => 3],
+        ];
+        $this->assertSame(
+            ['sin_tacc', 'sin_lactosa', 'vegetariana'],
+            array_keys(RecetaIa::adaptacionesPara($milanesas, false))
+        );
+        $this->assertSame([], RecetaIa::adaptacionesPara([['nombre' => 'Zapallito', 'categoria_id' => 1]], false));
+    }
+
     public function testLaClaveDeLaCacheNoDependeDelOrden(): void
     {
         $a = RecetaIa::clave('receta', [

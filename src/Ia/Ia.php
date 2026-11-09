@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cooki\Ia;
 
 use Cooki\Config;
+use Cooki\Dominio\Porciones;
 use Cooki\Dominio\RecetaIa;
 use Cooki\Repositorios\IaRepositorio;
 use PDO;
@@ -52,6 +53,14 @@ final class Ia
     public static function limiteGlobal(): int
     {
         return max(1, (int) Config::get('IA_LIMITE_GLOBAL_DIA', '200'));
+    }
+
+    /** "Te quedan 3 pedidos hoy." o el aviso de que ya no le quedan (al lado de cada botón de la IA). */
+    public static function textoRestantes(int $restantes): string
+    {
+        return $restantes === 0
+            ? 'Por hoy ya usaste tus ' . self::limiteUsuario() . ' pedidos. Mañana podés pedir más.'
+            : 'Te quedan ' . $restantes . ' pedido' . ($restantes === 1 ? '' : 's') . ' hoy.';
     }
 
     /** Pedidos que le quedan hoy a la persona. */
@@ -112,6 +121,89 @@ final class Ia
         );
         $receta['pedido'] = ['opciones' => $opciones, 'evitar' => $evitar];
         return $this->repo->crearReceta($usuarioId, 'nueva', null, $receta);
+    }
+
+    /**
+     * HU-31: adapta una receta del recetario (sin huevo, sin TACC, sin lactosa, vegetariana o con lo que tiene).
+     * La original no cambia: se crea una receta de IA "adaptada". Devuelve su id.
+     * @param array<string, mixed> $receta la receta como la devuelve RecetaRepositorio::obtener() para la persona
+     * @param int $porciones las porciones que estaba mirando (la adaptada sale con esas)
+     * @throws ErrorIa
+     */
+    public function adaptar(int $usuarioId, array $receta, string $adaptacion, int $porciones): int
+    {
+        $faltan = self::faltantes($receta);
+        if (!isset(RecetaIa::adaptacionesPara($receta['ingredientes'], $faltan !== [])[$adaptacion])) {
+            throw new ErrorIa(ErrorIa::DATOS, 'Esa adaptación no hace falta en esta receta: ya la cumple.');
+        }
+        $porciones = max(Porciones::MINIMO, min(Porciones::MAXIMO, $porciones));
+        $factor = Porciones::factor((int) $receta['porciones_base'], $porciones);
+        $porSlug = [];
+        foreach ($receta['ingredientes'] as $ing) {
+            $porSlug[Porciones::slug($ing['nombre'])] = [
+                'nombre' => $ing['nombre'],
+                'cantidad' => $ing['cantidad'] === null ? null : (float) $ing['cantidad'],
+                'unidad' => $ing['unidad'],
+            ];
+        }
+        $restricciones = $this->repo->restricciones($usuarioId);
+        $idsRestringidos = array_column($restricciones, 'id');
+        $datos = [
+            'receta' => [
+                'titulo' => $receta['titulo'],
+                'porciones' => $porciones,
+                'ingredientes' => array_map(fn (array $i) => array_filter([
+                    'nombre' => $i['nombre'],
+                    'cantidad' => $i['cantidad'] === null ? null : round((float) $i['cantidad'] * $factor, 2),
+                    'unidad' => $i['unidad'] ?: null,
+                    'opcional' => $i['es_opcional'] ? true : null,
+                ], fn ($v) => $v !== null), $receta['ingredientes']),
+                'pasos' => array_map(
+                    fn (array $p) => Porciones::pasoConCantidades($p['instruccion'], $porSlug, $factor),
+                    $receta['pasos']
+                ),
+            ],
+            'adaptacion' => $adaptacion,
+            'no_usar' => array_column($restricciones, 'nombre'),
+        ];
+        // Solo "con lo que tengo" necesita la despensa: así las otras adaptaciones se reusan entre personas (caché)
+        if ($adaptacion === 'con_lo_que_tengo') {
+            $datos['falta'] = $faltan;
+            $datos['despensa'] = array_values(array_diff(
+                array_column(array_filter(
+                    $this->repo->despensa($usuarioId),
+                    fn (array $i) => !in_array($i['id'], $idsRestringidos, true)
+                ), 'nombre'),
+                $datos['no_usar']
+            ));
+            $datos['basicos'] = array_column($this->repo->basicos($usuarioId), 'nombre');
+        }
+        $resultado = $this->pedir(
+            $usuarioId,
+            'adaptar',
+            $datos,
+            Instrucciones::adaptar(),
+            Instrucciones::esquemaReceta(true),
+            fn (RecetaIa $validador, array $json) => $validador->validar($json, $idsRestringidos, $adaptacion)
+        );
+        $resultado['pedido'] = ['adaptacion' => $adaptacion, 'porciones' => $porciones];
+        return $this->repo->crearReceta($usuarioId, 'adaptada', (int) $receta['id'], $resultado);
+    }
+
+    /**
+     * Los nombres de lo que le falta de una receta del recetario (sin contar lo opcional).
+     * @param array<string, mixed> $receta como la devuelve RecetaRepositorio::obtener()
+     * @return list<string>
+     */
+    public static function faltantes(array $receta): array
+    {
+        $faltan = [];
+        foreach ($receta['ingredientes'] as $ing) {
+            if (!$ing['en_despensa'] && !$ing['es_basico'] && !$ing['es_opcional']) {
+                $faltan[] = (string) $ing['nombre'];
+            }
+        }
+        return $faltan;
     }
 
     /**

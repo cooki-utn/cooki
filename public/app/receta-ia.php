@@ -6,6 +6,7 @@
  *                                   "Por qué esta receta" (o "Qué cambió", si es adaptada) y el sello "Sugerida por IA"
  *   POST accion=pedir             → receta nueva con lo que tenés (porciones, minutos, tipo). Viene de Mi cocina
  *   POST accion=otra id=N         → "Pedir otra": las mismas opciones, sin repetir las que ya vio
+ *   POST accion=adaptar receta=N  → "Adaptar con IA" (HU-31): adaptacion y porciones. Viene de app/receta.php
  *   POST accion=guardar|quitar    → la guarda en "Mis recetas de IA" (o la saca)
  *   POST accion=borrar            → la borra
  * Lo que falta va a la lista con los formularios de app/lista.php (receta_ia=N). Con JavaScript (ia.js) los pedidos
@@ -53,6 +54,21 @@ if (esPost()) {
         } catch (ErrorIa $e) {
             Sesion::avisar('error', $e->paraUsuario());
             redirigir($accion === 'otra' ? 'app/receta-ia.php?id=' . $id : 'app/index.php#ia');
+        }
+    }
+    if ($accion === 'adaptar') {
+        $recetaId = (int) ($_POST['receta'] ?? 0);
+        $original = (new RecetaRepositorio($db))->obtener($recetaId, $usuarioId);
+        if ($original === null) {
+            redirigir('error.php?motivo=no-encontrado');
+        }
+        $porciones = (int) ($_POST['porciones'] ?? $original['porciones_base']);
+        try {
+            $nueva = (new Ia($db))->adaptar($usuarioId, $original, campo('adaptacion'), $porciones);
+            redirigir('app/receta-ia.php?id=' . $nueva);
+        } catch (ErrorIa $e) {
+            Sesion::avisar('error', $e->paraUsuario());
+            redirigir('app/receta.php?id=' . $recetaId . '&porciones=' . $porciones . '#adaptar');
         }
     }
     if ($accion === 'guardar' || $accion === 'quitar') {

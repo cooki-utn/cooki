@@ -6,6 +6,7 @@
  *   receta.php?id=6&porciones=2 → cantidades y pasos ({ing:...}) recalculados (Dominio\Porciones)
  * Lo que falta se manda a la lista de compras (app/lista.php) con las cantidades de esas porciones:
  * de a uno ("+ lista") o todo junto ("Agregar lo que falta a la lista").
+ * Si la IA está configurada: "Adaptar con IA" (HU-31, solo con las adaptaciones que hacen falta).
  */
 
 declare(strict_types=1);
@@ -15,6 +16,8 @@ require dirname(__DIR__, 2) . '/src/bootstrap.php';
 use Cooki\Db;
 use Cooki\Dominio\ListaCompras;
 use Cooki\Dominio\Porciones;
+use Cooki\Dominio\RecetaIa;
+use Cooki\Ia\Ia;
 use Cooki\Repositorios\CocinaRepositorio;
 use Cooki\Repositorios\ListaRepositorio;
 use Cooki\Repositorios\RecetaRepositorio;
@@ -52,6 +55,13 @@ $enlacePorciones = fn (int $n): string => url('app/receta.php?id=' . $receta['id
 $faltantes = ListaCompras::faltantes($receta['ingredientes'], $factor);
 $enLista = (new ListaRepositorio(Db::conexion()))->ingredientesPendientes(Sesion::idUsuario());
 $volverReceta = (string) ($_SERVER['REQUEST_URI'] ?? '') . '#ingredientes';
+// IA: solo si está configurada (si no, no aparece nada y la receta anda igual)
+$adaptaciones = [];
+$iaRestantes = 0;
+if (Ia::disponible()) {
+    $adaptaciones = RecetaIa::adaptacionesPara($receta['ingredientes'], Ia::faltantes($receta) !== []);
+    $iaRestantes = (new Ia(Db::conexion()))->restantesHoy(Sesion::idUsuario());
+}
 
 $titulo = $receta['titulo'];
 require parcial('encabezado');
@@ -88,6 +98,45 @@ require parcial('encabezado');
       <span class="etiqueta"><?= e(str_replace('_', ' ', $etiqueta['nombre'])) ?></span>
     <?php endforeach; ?>
   </p>
+
+  <?php if ($adaptaciones !== []) : ?>
+    <?php /* Adaptar con IA (HU-31). Sin JavaScript es un formulario común a app/receta-ia.php; con JavaScript (ia.js)
+             va por la API y muestra "Pensando…". Solo opciones, sin texto libre. */ ?>
+    <details class="adaptar-ia" id="adaptar">
+      <summary class="boton boton--secundario">
+        <img src="<?= e(url('img/ia.svg')) ?>" alt="" width="28" height="28"> Adaptar con IA
+      </summary>
+      <div class="postit nota-ia adaptar-ia__nota">
+        <span class="postit__chinche" aria-hidden="true"></span>
+        <form class="nota-ia__form" method="post" action="<?= e(url('app/receta-ia.php')) ?>"
+              data-ia="<?= e(url('api/ia/adaptar/' . $receta['id'])) ?>"
+              data-pensando="Adaptando la receta… puede tardar unos segundos.">
+          <?= Sesion::campoCsrf() ?>
+          <input type="hidden" name="accion" value="adaptar">
+          <input type="hidden" name="receta" value="<?= e($receta['id']) ?>">
+          <input type="hidden" name="porciones" value="<?= $porciones ?>">
+          <fieldset class="chips">
+            <legend>¿Cómo la querés?</legend>
+            <?php foreach (array_keys($adaptaciones) as $n => $clave) : ?>
+              <label class="chip">
+                <input type="radio" name="adaptacion" value="<?= e($clave) ?>"<?= $n === 0 ? ' checked' : '' ?>>
+                <span><?= e($adaptaciones[$clave]) ?></span>
+              </label>
+            <?php endforeach; ?>
+          </fieldset>
+          <p class="nota-ia__boton">
+            <button class="boton" type="submit"<?= $iaRestantes === 0 ? ' disabled' : '' ?>>Adaptar la receta</button>
+            <small class="nota-ia__quedan"><?= e(Ia::textoRestantes($iaRestantes)) ?></small>
+          </p>
+          <p class="nota-ia__estado" role="status" aria-live="polite"></p>
+        </form>
+        <p class="nota-ia__privacidad">
+          <small>La receta original no cambia. Se envían a Google (Gemini) solo la receta, tus ingredientes y
+          restricciones, nunca tu nombre ni tu correo.</small>
+        </p>
+      </div>
+    </details>
+  <?php endif; ?>
 
   <?php /* Modo cocina: paso a paso con letra grande, temporizadores y descuento de la despensa al terminar */ ?>
   <div class="empezar-cocina">
@@ -194,4 +243,7 @@ require parcial('encabezado');
 </article>
 <script src="<?= e(recurso('js/receta.js')) ?>" defer></script>
 <script src="<?= e(recurso('js/lista.js')) ?>" defer></script>
+<?php if (Ia::disponible()) : ?>
+  <script src="<?= e(recurso('js/ia.js')) ?>" defer></script>
+<?php endif; ?>
 <?php require parcial('pie'); ?>

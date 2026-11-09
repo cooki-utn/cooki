@@ -44,6 +44,7 @@ $router->delete('/lista/{id}', fn (array $p) => ListaControlador::quitar($p));
 // Incremento 3: IA en las recetas
 $router->get('/ia', fn () => IaControlador::estado());
 $router->post('/ia/receta', fn () => IaControlador::receta());
+$router->post('/ia/adaptar/{id}', fn (array $p) => IaControlador::adaptar($p));
 
 $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 

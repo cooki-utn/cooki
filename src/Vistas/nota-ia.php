@@ -53,11 +53,7 @@ use Cooki\Sesion;
     </div>
     <p class="nota-ia__boton">
       <button class="boton" type="submit"<?= $iaRestantes === 0 ? ' disabled' : '' ?>>Pedirle una receta a la IA</button>
-      <small class="nota-ia__quedan">
-        <?= $iaRestantes === 0
-            ? 'Por hoy ya usaste tus ' . Ia::limiteUsuario() . ' pedidos. Mañana podés pedir más.'
-            : 'Te quedan ' . $iaRestantes . ' pedido' . ($iaRestantes === 1 ? '' : 's') . ' hoy.' ?>
-      </small>
+      <small class="nota-ia__quedan"><?= e(Ia::textoRestantes($iaRestantes)) ?></small>
     </p>
     <p class="nota-ia__estado" role="status" aria-live="polite"></p>
   </form>

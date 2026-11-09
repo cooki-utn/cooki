@@ -232,7 +232,8 @@ final class RecetaRepositorio
         }
 
         $consulta = $this->db->prepare(
-            'SELECT ri.ingrediente_id, i.nombre, ri.cantidad, ri.unidad, ri.peso, ri.es_opcional, ri.nota,
+            'SELECT ri.ingrediente_id, i.nombre, i.categoria_id, ri.cantidad, ri.unidad, ri.peso, ri.es_opcional,
+                    ri.nota,
                     (i.es_basico = 1 OR EXISTS (SELECT 1 FROM usuario_basico ub
                         WHERE ub.usuario_id = :usuario3 AND ub.ingrediente_id = ri.ingrediente_id)) AS es_basico,
                     EXISTS (SELECT 1 FROM restriccion_usuario ru

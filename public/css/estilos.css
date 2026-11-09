@@ -1725,6 +1725,16 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
 @keyframes pensar { from { transform: rotate(-6deg) translateY(0); } to { transform: rotate(10deg) translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) { .nota-ia:has(form.pensando) .nota-ia__dibujo { animation: none; } }
 
+/* "Adaptar con IA" en una receta (HU-31): un botón que despliega una nota verde con las opciones */
+.adaptar-ia { margin: 0 0 20px; }
+.adaptar-ia > summary { display: inline-flex; align-items: center; gap: 8px; list-style: none; cursor: pointer; }
+.adaptar-ia > summary::-webkit-details-marker { display: none; }
+.adaptar-ia > summary::after { content: "▾"; font-size: .9em; }
+.adaptar-ia[open] > summary::after { content: "▴"; }
+.adaptar-ia > summary img { width: 28px; height: 28px; }
+.adaptar-ia[open] > summary { margin-bottom: 14px; }
+.adaptar-ia__nota { max-width: 640px; }
+
 /* Una receta de IA: el sello "Sugerida por IA · revisala antes de cocinar" y "Por qué esta receta" */
 .sello-ia {
   display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 6px 14px 6px 8px;

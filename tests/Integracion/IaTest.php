@@ -13,6 +13,7 @@ use Cooki\Repositorios\IaRepositorio;
 use Cooki\Repositorios\IngredienteRepositorio;
 use Cooki\Repositorios\ListaRepositorio;
 use Cooki\Repositorios\PreferenciasRepositorio;
+use Cooki\Repositorios\RecetaRepositorio;
 use Cooki\Repositorios\UsuarioRepositorio;
 use PDO;
 use PDOException;
@@ -30,6 +31,7 @@ final class IaTest extends TestCase
     private string $registro = '';
     /** Un ingrediente propio con nombre único: así la caché de otras corridas no interfiere. */
     private string $unico = '';
+    private int $hongo = 0;
 
     protected function setUp(): void
     {
@@ -45,6 +47,7 @@ final class IaTest extends TestCase
         $this->usuario = (new UsuarioRepositorio($this->db))->crear('Martina Inventora', $this->email, 'Usuario1234');
         $this->unico = 'Hongo ' . bin2hex(random_bytes(4));
         $hongo = (new IngredienteRepositorio($this->db))->crearPropio($this->usuario, $this->unico, 1, 'g');
+        $this->hongo = $hongo;
         // Zapallito que vence en 2 días, huevos y cebolla (y el hongo propio)
         $alta = $this->db->prepare(
             'INSERT INTO despensa_item (usuario_id, ingrediente_id, nivel, fecha_vencimiento, ubicacion)
@@ -63,6 +66,7 @@ final class IaTest extends TestCase
         putenv('IA_LIMITE_GLOBAL_DIA');
         if ($this->usuario) {
             $this->db->prepare('DELETE FROM despensa_item WHERE usuario_id = ?')->execute([$this->usuario]);
+            $this->db->prepare('DELETE FROM restriccion_usuario WHERE usuario_id = ?')->execute([$this->usuario]);
             $this->db->prepare('DELETE FROM usuario WHERE id = ?')->execute([$this->usuario]);
         }
     }
@@ -211,6 +215,66 @@ final class IaTest extends TestCase
         $this->assertSame(['30.00', 'g'], [$items[0]['cantidad'], $items[0]['unidad']]);
     }
 
+    public function testAdaptarUnaRecetaSinTocarLaOriginal(): void
+    {
+        // El hongo único como restricción: así la caché de otras corridas no interfiere
+        (new PreferenciasRepositorio($this->db))->agregar($this->usuario, 'restricciones', $this->hongo);
+        $recetas = new RecetaRepositorio($this->db);
+        $tortilla = $recetas->obtener(1, $this->usuario);   // Tortilla de papas: lleva huevo y le falta la papa
+        $ia = $this->ia();
+        $id = $ia->adaptar($this->usuario, $tortilla, 'sin_huevo', 2);
+        $adaptada = (new IaRepositorio($this->db))->receta($this->usuario, $id);
+        $this->assertSame('adaptada', $adaptada['tipo']);
+        $this->assertSame(1, (int) $adaptada['receta_base']);
+        $this->assertSame('Tortilla de papas', $adaptada['titulo_base']);
+        $this->assertSame(['Huevo → 2 cda de fécula de maíz con agua'], $adaptada['contenido']['cambios']);
+        $this->assertSame(['adaptacion' => 'sin_huevo', 'porciones' => 2], $adaptada['contenido']['pedido']);
+        $this->assertEquals($tortilla['ingredientes'], $recetas->obtener(1, $this->usuario)['ingredientes']);
+
+        $datos = $this->datosDelPedido(0);
+        $this->assertSame('sin_huevo', $datos['adaptacion']);
+        $this->assertSame(2, $datos['receta']['porciones']);
+        $original = array_column($tortilla['ingredientes'], 'cantidad', 'nombre');
+        $enviada = array_column($datos['receta']['ingredientes'], 'cantidad', 'nombre');
+        $this->assertEqualsWithDelta(
+            (float) $original['Huevo'] / 2,
+            $enviada['Huevo'],
+            0.01,
+            'Las cantidades van con las porciones elegidas (4 → 2)'
+        );
+        $this->assertArrayNotHasKey('despensa', $datos, 'Sin huevo no necesita la despensa (la caché sirve a todos)');
+
+        // "Con lo que tengo" sí manda la despensa y lo que falta
+        $ia->adaptar($this->usuario, $tortilla, 'con_lo_que_tengo', 4);
+        $datos = $this->datosDelPedido(1);
+        $this->assertContains('Papa', $datos['falta']);
+        $this->assertContains('Zapallito', $datos['despensa']);
+
+        // La tortilla ya es vegetariana: no se le pide nada a la IA
+        $error = $this->falla(fn () => $ia->adaptar($this->usuario, $tortilla, 'vegetariana', 4));
+        $this->assertSame(ErrorIa::DATOS, $error['motivo']);
+        $this->assertCount(2, ServidorIaFalso::pedidos($this->registro));
+    }
+
+    public function testAdaptarRechazaLoQueNoCumple(): void
+    {
+        // La adaptada del Gemini de mentira lleva cebolla: si la persona no come cebolla, se rechaza
+        (new PreferenciasRepositorio($this->db))->agregar($this->usuario, 'restricciones', 2);   // Cebolla
+        $tortilla = (new RecetaRepositorio($this->db))->obtener(1, $this->usuario);
+        $error = $this->falla(fn () => $this->ia()->adaptar($this->usuario, $tortilla, 'sin_huevo', 4));
+        $this->assertSame(ErrorIa::FORMATO, $error['motivo']);
+        $this->assertSame(0, (int) $this->db->query(
+            "SELECT COUNT(*) FROM receta_ia WHERE usuario_id = {$this->usuario}"
+        )->fetchColumn());
+    }
+
+    /** @return array<string, mixed> los datos que se le mandaron a la IA en el pedido número $n */
+    private function datosDelPedido(int $n): array
+    {
+        $texto = ServidorIaFalso::pedidos($this->registro)[$n]['pedido']['contents'][0]['parts'][0]['text'];
+        return json_decode(substr($texto, strlen("Datos del pedido:\n")), true);
+    }
+
     public function testPaginasYApiConElGeminiDeMentira(): void
     {
         $base = ClienteApi::servidorCon([
@@ -250,6 +314,24 @@ final class IaTest extends TestCase
         [$estado, $json] = $web->json('GET', 'api/ia');
         $this->assertSame(['disponible' => true, 'restantes' => 3, 'limite' => 5], $json);
 
+        // Adaptar con IA (HU-31): sin JavaScript y por la API
+        [, $html] = $web->get('app/receta.php?id=1&porciones=2');
+        $this->assertStringContainsString('Adaptar con IA', $html);
+        $this->assertStringContainsString('value="sin_huevo"', $html);
+        $this->assertStringNotContainsString('value="vegetariana"', $html, 'La tortilla ya es vegetariana');
+        [$estado, , $destino] = $web->post('app/receta-ia.php', ['accion' => 'adaptar', 'receta' => '1',
+            'adaptacion' => 'sin_huevo', 'porciones' => '2']);
+        $this->assertSame(302, $estado);
+        [, $html] = $web->get(substr($destino, (int) strpos($destino, 'app/')));
+        $this->assertStringContainsString('Qué cambió', $html);
+        $this->assertStringContainsString('Adaptada de', $html);
+        [$estado] = $web->json('POST', 'api/ia/adaptar/1', ['adaptacion' => 'sin_huevo', 'porciones' => 2]);
+        $this->assertSame(201, $estado, 'La segunda vez sale de la caché');
+        [$estado] = $web->json('POST', 'api/ia/adaptar/1', ['adaptacion' => 'vegetariana']);
+        $this->assertSame(422, $estado);
+        [$estado] = $web->json('POST', 'api/ia/adaptar/999999', ['adaptacion' => 'sin_huevo']);
+        $this->assertSame(404, $estado);
+
         // Otra persona no la puede ver
         $otro = new Navegador($base);
         $otro->ingresar('maria@cooki.test', 'Usuario1234');
@@ -264,6 +346,8 @@ final class IaTest extends TestCase
         $web->ingresar($this->email, 'Usuario1234');
         [, $html] = $web->get('app/index.php');
         $this->assertStringNotContainsString('¿Y si inventamos algo?', $html);
+        [, $html] = $web->get('app/receta.php?id=1');
+        $this->assertStringNotContainsString('Adaptar con IA', $html);
         [$estado, $json] = $web->json('POST', 'api/ia/receta', []);
         $this->assertSame(503, $estado);
         $this->assertSame('La IA no está disponible ahora. El resto del sitio anda igual.', $json['error']);

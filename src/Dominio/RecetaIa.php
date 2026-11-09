@@ -133,7 +133,7 @@ final class RecetaIa
             return self::rechazo($error);
         }
         $error = $this->revisarRestricciones($ingredientes, $restringidos)
-            ?? ($adaptacion === null ? null : $this->revisarAdaptacion($ingredientes, $adaptacion));
+            ?? ($adaptacion === null ? null : self::revisarAdaptacion($ingredientes, $adaptacion));
         if ($error !== null) {
             return self::rechazo($error);
         }
@@ -376,8 +376,32 @@ final class RecetaIa
         return null;
     }
 
-    /** @param list<array{id: ?int, nombre: string, categoria_id: ?int}> $ingredientes */
-    private function revisarAdaptacion(array $ingredientes, string $adaptacion): ?string
+    /**
+     * "Adaptar con IA" (HU-31): las adaptaciones que tienen sentido para una receta. Se dejan afuera las que ya
+     * cumple ("Sin huevo" si no lleva huevo) y "Con lo que tengo" si no le falta nada.
+     * @param list<array{nombre: string, categoria_id: int|string|null}> $ingredientes
+     * @return array<string, string> clave → nombre, en el orden de ADAPTACIONES
+     */
+    public static function adaptacionesPara(array $ingredientes, bool $faltaAlgo): array
+    {
+        $ingredientes = array_map(fn (array $i) => [
+            'nombre' => (string) $i['nombre'],
+            'categoria_id' => $i['categoria_id'] === null ? null : (int) $i['categoria_id'],
+        ], $ingredientes);
+        $sirven = [];
+        foreach (self::ADAPTACIONES as $clave => $nombre) {
+            $sirve = $clave === 'con_lo_que_tengo'
+                ? $faltaAlgo
+                : self::revisarAdaptacion($ingredientes, $clave) !== null;
+            if ($sirve) {
+                $sirven[$clave] = $nombre;
+            }
+        }
+        return $sirven;
+    }
+
+    /** @param list<array{nombre: string, categoria_id: ?int}> $ingredientes */
+    private static function revisarAdaptacion(array $ingredientes, string $adaptacion): ?string
     {
         $palabras = self::PALABRAS_PROHIBIDAS[$adaptacion] ?? [];
         foreach ($ingredientes as $ing) {

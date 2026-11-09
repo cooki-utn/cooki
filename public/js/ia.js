@@ -1,4 +1,5 @@
-// Pedidos a la IA (Mi cocina → "Pedirle una receta a la IA" y "Pedir otra" en una receta de IA).
+// Pedidos a la IA (Mi cocina → "Pedirle una receta a la IA", "Pedir otra" en una receta de IA y
+// "Adaptar con IA" en una receta del recetario).
 // Sin JavaScript son formularios comunes a app/receta-ia.php. Acá van por la API (data-ia = su dirección),
 // se muestra "Pensando…" (aria-live, para los lectores de pantalla), se bloquea el botón para no pedir dos veces
 // y al terminar se abre la receta. Si la IA no puede, se muestra su mensaje y el botón vuelve a andar.
@@ -12,10 +13,11 @@
       evento.preventDefault();
       if (boton.disabled) return;
       const datos = Object.fromEntries(new FormData(form));
-      // "Pedir otra" manda el id de la receta que ya vio; el pedido nuevo, las opciones
-      const cuerpo = datos.accion === 'otra'
-        ? { otra_de: Number(datos.id) }
-        : { porciones: Number(datos.porciones), minutos: Number(datos.minutos), tipo: datos.tipo };
+      // "Pedir otra" manda el id de la receta que ya vio; "Adaptar", la adaptación; el pedido nuevo, las opciones
+      let cuerpo;
+      if (datos.accion === 'otra') cuerpo = { otra_de: Number(datos.id) };
+      else if (datos.accion === 'adaptar') cuerpo = { adaptacion: datos.adaptacion, porciones: Number(datos.porciones) };
+      else cuerpo = { porciones: Number(datos.porciones), minutos: Number(datos.minutos), tipo: datos.tipo };
 
       const textoBoton = boton.textContent;
       boton.disabled = true;
@@ -24,7 +26,8 @@
       form.classList.add('pensando');
       if (estado) {
         estado.className = 'nota-ia__estado';
-        estado.textContent = 'Pensando una receta con lo que tenés… puede tardar unos segundos.';
+        estado.textContent = form.dataset.pensando
+          ?? 'Pensando una receta con lo que tenés… puede tardar unos segundos.';
       }
 
       let respuesta;
