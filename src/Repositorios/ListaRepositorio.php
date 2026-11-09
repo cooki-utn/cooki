@@ -154,7 +154,8 @@ final class ListaRepositorio
      * Agrega lo que falta de una receta (ListaCompras::faltantes()). Todo o nada, en una transacción.
      * Lo que ya está en la lista sin comprar desde esa misma receta no se vuelve a agregar: así, tocar dos veces
      * "Agregar lo que falta" no duplica las cantidades (de otra receta, sí se suma). Devuelve cuántos agregó.
-     * @param list<array{ingrediente_id: int, cantidad: ?float, unidad: ?string}> $faltantes
+     * Las recetas de IA pueden traer ingredientes fuera del catálogo: van con ingrediente_id null y su "texto".
+     * @param list<array{ingrediente_id: ?int, texto?: ?string, cantidad: ?float, unidad: ?string}> $faltantes
      */
     public function agregarFaltantes(
         int $usuarioId,
@@ -170,22 +171,23 @@ final class ListaRepositorio
             $yaEstan = [];
             if ($recetaId !== null || $recetaIaId !== null) {
                 $consulta = $this->db->prepare(
-                    'SELECT ingrediente_id FROM lista_compra_item
+                    'SELECT COALESCE(ingrediente_id, texto) FROM lista_compra_item
                      WHERE usuario_id = :usuario AND comprado_en IS NULL
                        AND (receta_id = :receta OR receta_ia_id = :receta_ia)'
                 );
                 $consulta->execute(['usuario' => $usuarioId, 'receta' => $recetaId, 'receta_ia' => $recetaIaId]);
-                $yaEstan = array_map('intval', $consulta->fetchAll(PDO::FETCH_COLUMN));
+                $yaEstan = array_map('strval', $consulta->fetchAll(PDO::FETCH_COLUMN));
             }
             $agregados = 0;
             foreach ($faltantes as $f) {
-                if (in_array($f['ingrediente_id'], $yaEstan, true)) {
+                $texto = $f['ingrediente_id'] === null ? (string) ($f['texto'] ?? '') : null;
+                if (in_array((string) ($f['ingrediente_id'] ?? $texto), $yaEstan, true)) {
                     continue;
                 }
                 $hecho = $this->agregar(
                     $usuarioId,
                     $f['ingrediente_id'],
-                    null,
+                    $texto,
                     $f['cantidad'],
                     $f['unidad'],
                     $recetaId,

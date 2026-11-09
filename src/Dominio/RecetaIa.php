@@ -218,6 +218,28 @@ final class RecetaIa
     }
 
     /**
+     * Lo que falta de una receta de IA ya marcada, para la lista de compras (como ListaCompras::faltantes()).
+     * Los ingredientes fuera del catálogo van como texto libre; la pizca y lo "a gusto", sin cantidad.
+     * @param array<string, mixed> $receta lo que devolvió marcar()
+     * @return list<array{ingrediente_id: ?int, texto: ?string, nombre: string, cantidad: ?float, unidad: ?string}>
+     */
+    public static function faltantes(array $receta): array
+    {
+        $lista = [];
+        foreach ($receta['ingredientes'] as $ing) {
+            if ($ing['tengo']) {
+                continue;
+            }
+            $lista[] = [
+                'ingrediente_id' => $ing['id'],
+                'texto' => $ing['id'] === null ? $ing['nombre'] : null,
+                'nombre' => $ing['nombre'],
+            ] + ListaCompras::escalar($ing['cantidad'], $ing['unidad'] === '' ? null : $ing['unidad']);
+        }
+        return $lista;
+    }
+
+    /**
      * La clave de la caché: sha256 del tipo y de los datos normalizados (claves ordenadas, listas ordenadas).
      * Los mismos datos en otro orden dan la misma clave.
      * @param array<array-key, mixed> $datos

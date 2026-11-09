@@ -1693,3 +1693,50 @@ a.etiqueta--lista:hover { text-decoration: underline; }
 @media print { .renglon__otra, .lista-compras__todo { display: none !important; } }
 .nota-lista .postit__titulo { flex-wrap: nowrap; }
 .nota-lista .postit__titulo h2 { font-size: 1.9rem; }
+
+/* ══════════ Incremento 3 · IA en las recetas ══════════ */
+/* Mi cocina: "¿Y si inventamos algo?" es un post-it verde con el gorro y la chispa */
+.nota-ia { background: #D7F2DD; --giro: .7deg; max-width: none; }
+.nota-ia .postit__chinche { background: radial-gradient(circle at 35% 30%, #9FD3FF, var(--color-azul) 70%); }
+.nota-ia h2 { padding-right: 70px; }
+.nota-ia__dibujo { position: absolute; top: 10px; right: 14px; width: 64px; height: 64px; transform: rotate(8deg); }
+.nota-ia p { margin: 0 0 10px; }
+.nota-ia__form { display: grid; gap: 10px; }
+.nota-ia__opciones { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: flex-end; }
+.nota-ia__porciones { display: grid; gap: 4px; font-weight: 800; }
+.nota-ia__porciones select { width: auto; min-width: 72px; }
+.nota-ia fieldset.chips { border: none; padding: 0; margin: 0; gap: 6px; }
+.nota-ia fieldset.chips legend { width: 100%; padding: 0; margin-bottom: 4px; font-weight: 800; }
+.nota-ia .chip { position: relative; padding: 0; cursor: pointer; }
+.nota-ia .chip input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.nota-ia .chip span { display: inline-block; padding: 8px 12px; min-height: 40px; line-height: 1.5; border-radius: 99px; }
+.nota-ia .chip:has(input:checked) { background: var(--color-texto); color: #fff; }
+.nota-ia .chip:has(input:focus-visible) { outline: 3px solid var(--color-azul); outline-offset: 2px; }
+.nota-ia__boton { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 4px 0 0 !important; }
+.nota-ia__quedan { color: var(--color-suave); font-weight: 600; }
+.nota-ia__estado { margin: 0 !important; font: 700 1.3rem/1.2 var(--fuente-mano); color: var(--color-azul); }
+.nota-ia__estado:empty { display: none; }
+.nota-ia__estado--error { color: var(--color-error); }
+.nota-ia__privacidad { color: var(--color-suave); }
+.nota-ia__mis { margin: 0 !important; font-weight: 700; }
+/* Mientras piensa, el gorro se mueve (no se mueve con "reducir movimiento") */
+form.pensando button[aria-busy="true"] { cursor: progress; }
+.nota-ia:has(form.pensando) .nota-ia__dibujo { animation: pensar 1s ease-in-out infinite alternate; }
+@keyframes pensar { from { transform: rotate(-6deg) translateY(0); } to { transform: rotate(10deg) translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .nota-ia:has(form.pensando) .nota-ia__dibujo { animation: none; } }
+
+/* Una receta de IA: el sello "Sugerida por IA · revisala antes de cocinar" y "Por qué esta receta" */
+.sello-ia {
+  display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 6px 14px 6px 8px;
+  background: #FFF4C2; border: 2px dashed var(--color-texto); border-radius: 12px; transform: rotate(-1deg);
+  font-weight: 700;
+}
+.receta-ia__porque { background: #D7F2DD; --giro: -.6deg; max-width: 760px; }
+.receta-ia__porque h2 { font-size: 1.8rem; }
+.receta-ia__porque ul { margin: 0 0 8px; padding-left: 20px; }
+.receta-ia__porque p { margin: 0; }
+.receta-ia__acciones { align-items: flex-start; margin: 0 0 24px; }
+.receta-ia__acciones form { margin: 0; display: grid; gap: 6px; }
+.receta-ia .lista-pasos .paso { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.receta-ia__borrar { margin-top: 24px; }
+.tarjeta-ia h2 a { color: inherit; }

@@ -83,6 +83,17 @@ final class Navegador
         return $this->pedir('POST', $ruta, $cuerpo, 'multipart/form-data; boundary=' . $limite);
     }
 
+    /**
+     * Un pedido JSON a la API de este servidor, con la sesión del navegador (como lo hace el JavaScript).
+     * @param array<string, mixed> $cuerpo
+     * @return array{0: int, 1: array<mixed>} [código HTTP, JSON de la respuesta]
+     */
+    public function json(string $metodo, string $ruta, array $cuerpo = []): array
+    {
+        [$codigo, $texto] = $this->pedir($metodo, $ruta, (string) json_encode($cuerpo), 'application/json');
+        return [$codigo, json_decode($texto, true) ?? []];
+    }
+
     public function ingresar(string $email, string $contrasena): string
     {
         $this->get('login.php');

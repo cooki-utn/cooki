@@ -21,6 +21,7 @@ final class ErrorIa extends RuntimeException
     public const CONEXION = 'conexion';   // no se pudo conectar
     public const LIMITE = 'limite';       // se llegó al límite diario del sitio o de la persona
     public const APAGADA = 'apagada';     // sin IA_CLAVE
+    public const DATOS = 'datos';         // falta algo de la persona (por ejemplo, la despensa está vacía)
 
     public function __construct(public readonly string $motivo, string $mensaje)
     {
@@ -33,7 +34,7 @@ final class ErrorIa extends RuntimeException
             self::TIEMPO => 'La IA tardó demasiado en responder. Probá de nuevo en un rato.',
             self::CUPO => 'La IA está muy pedida en este momento. Probá de nuevo en unos minutos.',
             self::FORMATO => 'La IA respondió algo que no pudimos usar. Probá de nuevo o cambiá las opciones.',
-            self::LIMITE, self::APAGADA => $this->getMessage(),
+            self::LIMITE, self::APAGADA, self::DATOS => $this->getMessage(),
             default => 'La IA no está disponible ahora. El resto del sitio anda igual.',
         };
     }
