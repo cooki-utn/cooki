@@ -180,6 +180,33 @@ final class PlanTest extends TestCase
         $this->assertSame('Anotado para el almuerzo de hoy.', $datos['mensaje']);
     }
 
+    public function testLaNotaHoySeCierraYSeApagaEnMisPreferencias(): void
+    {
+        [, $html] = $this->web->get('app/index.php');
+        $this->assertStringContainsString('id="titulo-hoy"', $html);
+        $this->assertStringContainsString('data-campo="nota_hoy" data-estado="abierta"', $html);
+
+        // Cerrar: queda el recuadro chico (la nota entera, oculta)
+        $this->web->post('app/preferencias.php', ['nota_hoy' => 'cerrada', 'volver' => '/app/index.php']);
+        [, $html] = $this->web->get('app/index.php');
+        $this->assertStringContainsString('data-campo="nota_hoy" data-estado="cerrada"', $html);
+        $this->assertMatchesRegularExpression('/nota-hoy nota-plegable__abierta"[^>]*hidden/', $html);
+
+        // Apagada en Mis preferencias: no aparece; la de la lista no cambia
+        [, $html] = $this->web->get('app/mis-preferencias.php');
+        $this->assertStringContainsString('Mostrar la nota “Hoy”', $html);
+        $this->web->post('app/preferencias.php', ['nota_hoy' => 'nunca', 'avisar' => '1', 'volver' => '/']);
+        [, $html] = $this->web->get('app/index.php');
+        $this->assertStringNotContainsString('nota-hoy-plegable', $html);
+        $this->assertStringContainsString('class="nota-lista"', $html);
+        $guardado = Db::conexion()->prepare('SELECT nota_hoy, nota_lista FROM usuario WHERE id = ?');
+        $guardado->execute([$this->usuario]);
+        $this->assertSame(['nota_hoy' => 'nunca', 'nota_lista' => 'abierta'], $guardado->fetch());
+        $this->web->post('app/preferencias.php', ['nota_hoy' => 'cualquiera', 'volver' => '/']);
+        $guardado->execute([$this->usuario]);
+        $this->assertSame('nunca', $guardado->fetch()['nota_hoy'], 'Un valor inválido no se guarda');
+    }
+
     public function testArmarLaSemanaCompletaTodoSinRepetirNiUsarLoQueNoCome(): void
     {
         $db = Db::conexion();

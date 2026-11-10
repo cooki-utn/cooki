@@ -27,6 +27,7 @@ CREATE TABLE usuario (
     disposicion      VARCHAR(12)  NOT NULL DEFAULT 'normal', -- 'normal' o 'panoramica' (UsuarioRepositorio::DISPOSICIONES)
     volumen          TINYINT UNSIGNED NOT NULL DEFAULT 50,   -- volumen de los sonidos, de 0 a 100
     nota_lista       VARCHAR(10)  NOT NULL DEFAULT 'abierta', -- nota de la lista de compras: abierta, cerrada o nunca
+    nota_hoy         VARCHAR(10)  NOT NULL DEFAULT 'abierta', -- nota "Hoy" del plan en Mi cocina: abierta, cerrada o nunca
     creado_en        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Cuentas de usuario. La identidad la maneja la propia app (sesiones PHP).';

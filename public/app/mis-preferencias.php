@@ -161,6 +161,23 @@ $bloque = function (string $lista, string $id, string $tituloBloque, string $exp
   </form>
 </section>
 
+<?php /* La nota "Hoy" del plan semanal en Mi cocina (igual que la de la lista) */ ?>
+<section class="tarjeta preferencia" id="nota-hoy">
+  <h2>Plan de la semana</h2>
+  <form class="preferencia__nota-lista" method="post" action="<?= e(url('app/preferencias.php')) ?>">
+    <?= Sesion::campoCsrf() ?>
+    <input type="hidden" name="volver" value="<?= e(url('app/mis-preferencias.php#nota-hoy')) ?>">
+    <input type="hidden" name="avisar" value="1">
+    <input type="hidden" name="nota_hoy" value="nunca">
+    <label class="preferencia__casilla">
+      <input type="checkbox" name="nota_hoy" value="abierta"<?= Sesion::notaHoy() !== 'nunca' ? ' checked' : '' ?>>
+      Mostrar la nota “Hoy” con el almuerzo y la cena del plan en Mi cocina
+    </label>
+    <p class="texto-suave">Si la apagás, no aparece ni siquiera cerrada. El plan sigue en el imán <a href="<?= e(url('app/plan.php')) ?>">Plan</a>.</p>
+    <button class="boton boton--chico" type="submit">Guardar</button>
+  </form>
+</section>
+
 <section id="favoritas" aria-labelledby="titulo-favoritas">
   <h2 id="titulo-favoritas" class="titulo-mano">Mis favoritas ♥</h2>
   <?php if ($favoritas === []) : ?>

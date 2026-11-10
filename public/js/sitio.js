@@ -170,28 +170,32 @@ if (marca && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   });
 }
 
-// Nota de la lista de compras (Mi cocina y Mi despensa): "Cerrar" la deja como un recuadro chico y el recuadro
-// la vuelve a desplegar. Cambia en el momento y se guarda en la cuenta en segundo plano.
-// Sin JavaScript, cada botón envía su formulario a app/preferencias.php y la página se recarga.
-const notaLista = document.querySelector('.nota-lista');
-if (notaLista) {
-  const abierta = notaLista.querySelector('.nota-lista__abierta');
-  const cerrada = notaLista.querySelector('.nota-lista__cerrada');
-  notaLista.addEventListener('submit', (evento) => {
+// Notas que se pliegan: la de la lista de compras (Mi cocina y Mi despensa) y la de "Hoy" del plan (Mi cocina).
+// "Cerrar" la deja como un recuadro chico y el recuadro la vuelve a desplegar. Cambia en el momento y se guarda en
+// la cuenta en segundo plano. Sin JavaScript, cada botón envía su formulario a app/preferencias.php y se recarga.
+function notaPlegable(nota, campo, abierta, cerrada) {
+  if (!nota || !abierta || !cerrada) return;
+  nota.addEventListener('submit', (evento) => {
     const boton = evento.submitter;
-    if (!boton || boton.name !== 'nota_lista') return;
+    if (!boton || boton.name !== campo) return;
     evento.preventDefault();
     const abrir = boton.value === 'abierta';
     abierta.hidden = !abrir;
     cerrada.hidden = abrir;
-    notaLista.dataset.estado = boton.value;
+    nota.dataset.estado = boton.value;
     window.sonar?.(abrir ? 'nota-despega' : 'nota-pega');
     (abrir ? abierta.querySelector('.nota-lista__cerrar') : cerrada.querySelector('button'))?.focus();
     const datos = new FormData(evento.target);
-    datos.append('nota_lista', boton.value);
+    datos.append(campo, boton.value);
     fetch(evento.target.action, { method: 'POST', body: datos, headers: { 'X-Requested-With': 'fetch' } });
   });
 }
+const notaLista = document.querySelector('.nota-lista');
+notaLista && notaPlegable(notaLista, 'nota_lista', notaLista.querySelector('.nota-lista__abierta'),
+  notaLista.querySelector('.nota-lista__cerrada'));
+const notaHoy = document.querySelector('.nota-hoy-plegable');
+notaHoy && notaPlegable(notaHoy, 'nota_hoy', notaHoy.querySelector('.nota-plegable__abierta'),
+  notaHoy.querySelector('.nota-plegable__cerrada'));
 
 // "Ver N más" de la nota de la lista: se cierra al tocar afuera o con Escape (sin JavaScript se cierra con el mismo botón)
 const masLista = document.querySelector('.nota-lista__mas');

@@ -25,8 +25,8 @@ final class UsuarioRepositorio
     ];
 
     /**
-     * La nota de la lista de compras en Mi cocina y Mi despensa: entera, cerrada (un recuadro chico para
-     * desplegarla) o nunca (se apaga en Mis preferencias).
+     * La nota de la lista de compras en Mi cocina y Mi despensa (y la nota "Hoy" del plan en Mi cocina): entera,
+     * cerrada (un recuadro chico para desplegarla) o nunca (se apaga en Mis preferencias).
      */
     public const NOTAS_LISTA = [
         'abierta' => 'Abierta',
@@ -113,7 +113,7 @@ final class UsuarioRepositorio
 
     /**
      * Guarda una preferencia de pantalla: 'color' (uno de COLORES), 'disposicion' (una de DISPOSICIONES),
-     * 'nota_lista' (una de NOTAS_LISTA) o 'volumen' (un entero de 0 a 100).
+     * 'nota_lista' y 'nota_hoy' (una de NOTAS_LISTA) o 'volumen' (un entero de 0 a 100).
      * Devuelve false si la preferencia o el valor no son válidos.
      */
     public function guardarPreferencia(int $id, string $clave, string $valor): bool
@@ -127,12 +127,13 @@ final class UsuarioRepositorio
         } else {
             $validos = [
                 'color' => self::COLORES, 'disposicion' => self::DISPOSICIONES, 'nota_lista' => self::NOTAS_LISTA,
+                'nota_hoy' => self::NOTAS_LISTA,
             ][$clave] ?? [];
             if (!isset($validos[$valor])) {
                 return false;
             }
         }
-        // $clave sale de una lista fija (color, disposicion, nota_lista o volumen), nunca del usuario
+        // $clave sale de una lista fija (color, disposicion, nota_lista, nota_hoy o volumen), nunca del usuario
         $this->db->prepare("UPDATE usuario SET {$clave} = :valor WHERE id = :id")
             ->execute(['valor' => $valor, 'id' => $id]);
         return true;
