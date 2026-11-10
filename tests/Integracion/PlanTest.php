@@ -179,4 +179,66 @@ final class PlanTest extends TestCase
         $this->assertSame(5, $datos['porciones']);
         $this->assertSame('Anotado para el almuerzo de hoy.', $datos['mensaje']);
     }
+
+    public function testArmarLaSemanaCompletaTodoSinRepetirNiUsarLoQueNoCome(): void
+    {
+        $db = Db::conexion();
+        $db->prepare('INSERT INTO restriccion_usuario (usuario_id, ingrediente_id) VALUES (?, 15)')   // huevo
+            ->execute([$this->usuario]);
+        $receta = $this->receta();
+        $this->web->get('app/plan.php');
+        $this->web->post('app/plan.php', [
+            'accion' => 'guardar', 'fecha' => date('Y-m-d'), 'momento' => 'cena', 'receta' => 'r:' . $receta['id'],
+            'porciones' => '3',
+        ]);
+        $this->web->get('app/plan.php');
+        $this->web->post('app/plan.php', ['accion' => 'armar']);
+
+        $plan = $this->plan();
+        $this->assertCount(14, $plan, 'Se completan los 14 lugares');
+        $this->assertSame(3, (int) $plan[date('Y-m-d') . '|cena']['porciones'], 'Lo que ya estaba no se toca');
+        $recetas = array_map('intval', array_column($plan, 'receta_id'));
+        $this->assertSame($recetas, array_values(array_unique($recetas)), 'No se repiten recetas');
+        $conHuevo = $db->prepare(
+            'SELECT COUNT(*) FROM plan_comida p JOIN receta_ingrediente ri ON ri.receta_id = p.receta_id
+             WHERE p.usuario_id = ? AND ri.ingrediente_id = 15 AND ri.es_opcional = 0 AND p.receta_id <> ?'
+        );
+        $conHuevo->execute([$this->usuario, $receta['id']]);
+        $this->assertSame(0, (int) $conHuevo->fetchColumn(), 'Armar no elige recetas con algo que no come');
+
+        [, , $destino] = $this->web->post('app/plan.php', ['accion' => 'armar']);
+        $this->assertStringEndsWith('app/plan.php', $destino);
+        [, $html] = $this->web->get('app/plan.php');
+        $this->assertStringContainsString('Ya tenés toda la semana planeada.', $html);
+    }
+
+    public function testLoQueFaltaParaLaSemanaVaALaListaUnaSolaVez(): void
+    {
+        $receta = $this->receta();
+        $hoy = date('Y-m-d');
+        $this->web->get('app/plan.php');
+        $this->web->post('app/plan.php', [
+            'accion' => 'guardar', 'fecha' => $hoy, 'momento' => 'almuerzo', 'receta' => 'r:' . $receta['id'],
+        ]);
+        [, $html] = $this->web->get('app/plan.php');
+        $this->assertStringContainsString('Falta:', $html, 'La despensa está vacía: falta todo lo que no es básico');
+        $this->assertStringContainsString('Agregar lo que falta para la semana a la lista', $html);
+
+        $this->web->post('app/plan.php', ['accion' => 'faltantes']);
+        $cuantos = Db::conexion()->prepare(
+            'SELECT COUNT(*) FROM lista_compra_item WHERE usuario_id = ? AND receta_id = ? AND comprado_en IS NULL'
+        );
+        $cuantos->execute([$this->usuario, $receta['id']]);
+        $agregados = (int) $cuantos->fetchColumn();
+        $this->assertGreaterThan(0, $agregados);
+
+        // Otra vez (toda la semana o solo esa comida): no se duplica, y la comida dice que ya está en la lista
+        $this->web->get('app/plan.php');
+        $this->web->post('app/plan.php', ['accion' => 'faltantes', 'fecha' => $hoy, 'momento' => 'almuerzo']);
+        $cuantos->execute([$this->usuario, $receta['id']]);
+        $this->assertSame($agregados, (int) $cuantos->fetchColumn());
+        [, $html] = $this->web->get('app/plan.php');
+        $this->assertStringContainsString('Ya está en tu lista', $html);
+        $this->assertStringNotContainsString('Agregar lo que falta para la semana a la lista', $html);
+    }
 }
