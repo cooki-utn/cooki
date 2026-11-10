@@ -268,4 +268,49 @@ final class PlanTest extends TestCase
         $this->assertStringContainsString('Ya está en tu lista', $html);
         $this->assertStringNotContainsString('Agregar lo que falta para la semana a la lista', $html);
     }
+
+    public function testElPlanPorLaApi(): void
+    {
+        $receta = $this->receta();
+        $hoy = date('Y-m-d');
+        $api = new ClienteApi();
+        ClienteApi::iniciar();
+        $this->assertSame(401, $api->pedir('GET', '/plan')[0]);
+        $this->assertSame(401, $api->pedir('PUT', "/plan/{$hoy}/cena", ['receta_id' => $receta['id']])[0]);
+        $api->pedir('POST', '/sesion', ['email' => $this->email, 'contrasena' => 'Usuario1234']);
+
+        // Poner y cambiar: sin porciones, las de la receta
+        [$estado, $datos] = $api->pedir('PUT', "/plan/{$hoy}/cena", ['receta_id' => $receta['id']]);
+        $this->assertSame(200, $estado);
+        $this->assertSame($receta['titulo'], $datos['titulo']);
+        $this->assertSame($receta['porciones_base'], $datos['porciones']);
+        [$estado, $datos] = $api->pedir('PUT', "/plan/{$hoy}/cena", ['receta_id' => $receta['id'], 'porciones' => 3]);
+        $this->assertSame(3, $datos['porciones']);
+        $this->assertCount(1, $this->plan());
+
+        // Lo que no se acepta
+        $ayer = date('Y-m-d', strtotime('-1 day'));
+        $this->assertSame(422, $api->pedir('PUT', "/plan/{$ayer}/cena", ['receta_id' => $receta['id']])[0]);
+        $this->assertSame(422, $api->pedir('PUT', "/plan/{$hoy}/merienda", ['receta_id' => $receta['id']])[0]);
+        $this->assertSame(400, $api->pedir('PUT', "/plan/{$hoy}/almuerzo", [])[0]);
+        $this->assertSame(400, $api->pedir('PUT', "/plan/{$hoy}/almuerzo", ['receta_id' => 1, 'receta_ia_id' => 1])[0]);
+        $this->assertSame(400, $api->pedir('PUT', "/plan/{$hoy}/almuerzo", ['receta_id' => 1, 'porciones' => 50])[0]);
+        $this->assertSame(404, $api->pedir('PUT', "/plan/{$hoy}/almuerzo", ['receta_id' => 99999999])[0]);
+        $this->assertSame(404, $api->pedir('PUT', "/plan/{$hoy}/almuerzo", ['receta_ia_id' => 99999999])[0]);
+
+        // La semana: 7 días, con lo que falta (la despensa está vacía)
+        [$estado, $datos] = $api->pedir('GET', '/plan');
+        $this->assertSame(200, $estado);
+        $this->assertCount(7, $datos['dias']);
+        $this->assertSame($hoy, $datos['dias'][0]['fecha']);
+        $this->assertSame('Hoy', $datos['dias'][0]['dia']);
+        $this->assertNull($datos['dias'][0]['almuerzo']);
+        $this->assertSame($receta['titulo'], $datos['dias'][0]['cena']['titulo']);
+        $this->assertFalse($datos['dias'][0]['cena']['tiene_todo']);
+        $this->assertNotEmpty($datos['dias'][0]['cena']['faltantes']);
+
+        $this->assertSame(200, $api->pedir('DELETE', "/plan/{$hoy}/cena")[0]);
+        $this->assertSame(404, $api->pedir('DELETE', "/plan/{$hoy}/cena")[0]);
+        $this->assertSame([], $this->plan());
+    }
 }

@@ -23,6 +23,11 @@ final class Router
         $this->rutas[] = ['POST', $ruta, $accion];
     }
 
+    public function put(string $ruta, callable $accion): void
+    {
+        $this->rutas[] = ['PUT', $ruta, $accion];
+    }
+
     public function patch(string $ruta, callable $accion): void
     {
         $this->rutas[] = ['PATCH', $ruta, $accion];
