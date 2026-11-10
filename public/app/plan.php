@@ -374,4 +374,5 @@ require parcial('encabezado');
     <?php endforeach; ?>
   </div>
 </div>
+<script src="<?= e(recurso('js/plan.js')) ?>" defer></script>
 <?php require parcial('pie'); ?>

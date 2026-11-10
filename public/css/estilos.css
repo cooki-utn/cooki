@@ -1869,6 +1869,8 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
 .plan-acciones__ia { display: inline-flex; align-items: center; gap: 6px; color: var(--color-sobre-puerta); font-weight: 600; }
 .plan-acciones__todo { margin: 6px 0 0; }
 .plan-acciones .boton[disabled] { opacity: .5; cursor: not-allowed; }
+.plan[aria-busy="true"] { cursor: progress; }
+.plan-aviso .aviso { margin-bottom: 22px; }
 /* En cada comida: los dibujos (lo que falta, tachado), "Tenés todo" o lo que falta y por qué */
 .plan .plan-comida__ingredientes { height: auto; margin: 2px 0 4px; gap: 0 4px; }
 .plan .plan-comida__ingredientes li { flex: 0 1 36px; min-width: 24px; height: 44px; }
