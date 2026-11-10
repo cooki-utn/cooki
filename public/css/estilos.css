@@ -1806,3 +1806,51 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
   .tabla-total td { border-top: none; }
   .tabla-ia .tabla-total { border-top: 2px solid var(--color-borde); }
 }
+
+/* ══════════ Plan semanal (app/plan.php · HU-35 a HU-37) ══════════ */
+.plan-encabezado { align-items: center; }
+.plan-encabezado__dibujo { width: 72px; height: 72px; transform: rotate(-6deg); }
+.plan-ayuda { color: var(--color-sobre-puerta); margin: -6px 0 26px; }
+/* Cada día es una nota de color con chinche; el almuerzo y la cena van separados por una línea punteada */
+.plan { display: grid; gap: 34px 26px; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); align-items: start; margin-bottom: 40px; }
+.plan .plan-dia { max-width: none; margin: 0; padding: 24px 18px 16px; }
+.plan-dia--0 { --giro: -1deg; }
+.plan-dia--1 { background: #F7C9D4; --giro: .9deg; }
+.plan-dia--2 { background: #CFE0F2; --giro: -.6deg; }
+.plan-dia--3 { background: #D7F2DD; --giro: 1.2deg; }
+.plan-dia--1 .postit__chinche, .plan-dia--2 .postit__chinche, .plan-dia--3 .postit__chinche { background: radial-gradient(circle at 35% 30%, #9FD3FF, var(--color-azul) 70%); }
+.plan-dia h2 { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.plan-dia h2 small { font: 700 1rem var(--fuente-rotulo); color: var(--color-suave); }
+.plan-comida { padding: 10px 0 8px; border-top: 2px dashed rgb(0 0 0 / 22%); }
+.plan-comida__momento { margin: 0 0 6px; font: 700 .85rem var(--fuente-rotulo); text-transform: uppercase; letter-spacing: .06em; }
+.plan-comida__receta { margin: 0 0 6px; }
+.plan-comida__receta a { font-weight: 700; }
+.plan-comida__receta small { display: block; color: var(--color-suave); }
+.plan-comida__form { display: grid; gap: 8px; margin: 0; }
+.plan-comida__form select { width: 100%; min-width: 0; }
+.plan-comida__fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.plan-comida__fila input { width: 9.5em; }
+.plan-comida__cambiar { display: inline-block; margin-right: 8px; vertical-align: top; }
+.plan-comida__cambiar[open] { display: block; margin: 0 0 8px; }
+.plan-comida__cambiar summary { cursor: pointer; font-weight: 700; color: var(--color-enlace); padding: 4px 0; }
+.plan-comida__cambiar[open] summary { margin-bottom: 6px; }
+.plan-comida__quitar { display: inline-block; margin: 0; }
+
+/* Mi cocina: la nota "Hoy" del plan, chica y naranja, al lado de "Usalo pronto" */
+.nota-hoy { background: #FFD9A8; --giro: 1deg; }
+/* "Hoy" y la lista van una arriba de la otra, al lado de "Usalo pronto" */
+.cocina__columna { flex: 0 1 360px; display: grid; gap: 4px; }
+.cocina__columna > .postit { margin-top: 10px; }
+.cocina__columna > .nota-hoy { margin-bottom: 26px; }
+@media (min-width: 1100px) {
+  [data-disposicion="panoramica"] .cocina__columna { flex-basis: 100%; }
+}
+.nota-hoy h2 { padding-right: 60px; }
+.nota-hoy__dibujo { position: absolute; top: 10px; right: 14px; width: 52px; height: 52px; transform: rotate(7deg); }
+.nota-hoy p { margin: 0 0 6px; }
+.nota-hoy__comidas { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 8px; }
+.nota-hoy__comidas li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.nota-hoy__momento { font: 700 .85rem var(--fuente-rotulo); text-transform: uppercase; letter-spacing: .05em; }
+.nota-hoy__cocinar { margin: 0; }
+.nota-hoy__ver { font-size: .95rem; }
+.cocina__columna > .nota-lista:has(.nota-lista__abierta[hidden]) { justify-self: start; }

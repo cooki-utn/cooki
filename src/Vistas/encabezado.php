@@ -27,7 +27,7 @@ $marcar = function (string $ruta) use ($actual, $carpeta): string {
 if ($usuario !== null) {
     $menu = [
         ['app/index.php', 'Mi cocina'], ['app/despensa.php', 'Mi despensa'], ['app/recetas.php', 'Recetas'],
-        ['app/lista.php', 'Lista'],
+        ['app/plan.php', 'Plan'], ['app/lista.php', 'Lista'],
     ];
     if ($usuario['rol'] === Sesion::ROL_ADMIN) {
         $menu[] = ['admin/index.php', 'Administración'];
