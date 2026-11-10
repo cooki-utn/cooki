@@ -66,6 +66,7 @@ $imanesColor = function (): void {
   <script src="<?= e(recurso('js/manija.js')) ?>" defer></script>
 </head>
 <body>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
 <header class="barra">
   <div class="barra__interior">
     <?php /* El dibujo de los fideos es el de la aplicación: va al lado del nombre y en la pestaña */ ?>

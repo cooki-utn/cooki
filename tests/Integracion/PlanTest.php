@@ -73,6 +73,8 @@ final class PlanTest extends TestCase
         $this->assertStringContainsString('id="dia-' . date('Y-m-d') . '"', $html);
         $this->assertStringContainsString('<optgroup label="Te faltan 3 o más">', $html);
         $this->assertStringContainsString('aria-current="page"', $html);
+        $this->assertStringContainsString('<a class="saltar" href="#contenido">Saltar al contenido</a>', $html);
+        $this->assertStringContainsString('<main class="contenido" id="contenido">', $html);
     }
 
     public function testGuardarCambiarYQuitarUnaComida(): void

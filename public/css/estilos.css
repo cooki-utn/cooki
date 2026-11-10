@@ -281,6 +281,7 @@ img { max-width: 100%; }
 /* Las hojas de papel (tarjetas, post-its, tablas, la nota del editor) vuelven el texto a tinta */
 /* Lo que va sobre papel lleva tinta oscura aunque la heladera sea noche (la hoja de la lista también) */
 .tarjeta, .postit, .aviso, .tabla-contenedor, .nota-despegada, .lista-compras {
+  --color-foco: var(--color-azul);
   --color-sobre-puerta: var(--color-texto);
   --color-sobre-puerta-suave: var(--color-suave);
   --color-enlace: var(--color-azul);
@@ -400,9 +401,18 @@ input[type="number"], input[type="date"], select, textarea {
   background: #fff; border: 2px solid var(--color-texto); border-radius: 10px;
 }
 textarea { min-height: 120px; resize: vertical; }
-input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
-  outline: 3px solid var(--color-azul); outline-offset: 2px;
+/* El contorno del foco: azul sobre el papel y la heladera clara; celeste sobre la heladera noche */
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible,
+summary:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid var(--color-foco, var(--color-azul)); outline-offset: 2px;
 }
+/* "Saltar al contenido": el primer Tab de cada página; aparece como una etiqueta pegada arriba a la izquierda */
+.saltar {
+  position: absolute; left: 12px; top: -80px; z-index: 100; padding: 10px 16px; border: 2px solid var(--color-texto);
+  border-radius: 8px; background: #FFF6A8; color: var(--color-texto); font-weight: 700; box-shadow: var(--sombra);
+  --color-foco: var(--color-azul);
+}
+.saltar:focus { top: 12px; }
 fieldset { border: 2px dashed var(--color-borde); border-radius: 10px; padding: 12px 16px; margin: 0; }
 .casillas { display: flex; flex-wrap: wrap; gap: 8px 20px; }
 .casillas label { font-weight: 600; display: inline-flex; gap: 6px; align-items: center; }
@@ -471,6 +481,7 @@ tr:last-child td { border-bottom: none; }
   --color-sobre-puerta: #EEF3F0;
   --color-sobre-puerta-suave: #B5C7BF;
   --color-enlace: #A9D4FF;
+  --color-foco: #A9D4FF;
 }
 :root[data-color="noche"] body {
   background-image:
@@ -479,7 +490,8 @@ tr:last-child td { border-bottom: none; }
 }
 /* En la heladera oscura, los botones negros que van directo sobre la puerta pasan a ser claros */
 :root[data-color="noche"] .portada .boton:not(.boton--secundario, .boton--agregar),
-:root[data-color="noche"] .encabezado-pagina > .boton:not(.boton--secundario, .boton--agregar) {
+:root[data-color="noche"] .encabezado-pagina > .boton:not(.boton--secundario, .boton--agregar),
+:root[data-color="noche"] .plan-acciones .boton:not(.boton--secundario, .boton--agregar, [disabled]) {
   background: #F2F2EE; border-color: #F2F2EE; color: var(--color-texto);
 }
 :root[data-color="noche"] .manija { background: linear-gradient(90deg, #3E474C, #9AA6AE 42%, #6B777D 62%, #353D41); }
@@ -1372,7 +1384,7 @@ td > .acciones { flex-wrap: nowrap; }
 .boton--cocinar {
   min-height: 52px; padding: 0 26px; font-size: 1.05rem; background: var(--color-marca); border-color: var(--color-marca);
 }
-.boton--cocinar small { font-weight: 600; opacity: .85; }
+.boton--cocinar small { font-weight: 600; }
 .boton--cocinar:hover { background: var(--color-marca-oscuro); border-color: var(--color-marca-oscuro); }
 /* Mi cocina: aviso de la receta que está cocinando */
 .cocinando a { white-space: nowrap; }
@@ -1868,7 +1880,11 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
 .plan-acciones__nota { flex-basis: 100%; color: var(--color-sobre-puerta-suave); }
 .plan-acciones__ia { display: inline-flex; align-items: center; gap: 6px; color: var(--color-sobre-puerta); font-weight: 600; }
 .plan-acciones__todo { margin: 6px 0 0; }
-.plan-acciones .boton[disabled] { opacity: .5; cursor: not-allowed; }
+/* Deshabilitado: punteado y sin relleno, con texto que se lee en todas las heladeras (también la noche) */
+.plan-acciones .boton[disabled] {
+  opacity: 1; background: transparent; border: 2px dashed var(--color-sobre-puerta-suave);
+  color: var(--color-sobre-puerta-suave); box-shadow: none; cursor: not-allowed;
+}
 .plan[aria-busy="true"] { cursor: progress; }
 .plan-aviso .aviso { margin-bottom: 22px; }
 /* En cada comida: los dibujos (lo que falta, tachado), "Tenés todo" o lo que falta y por qué */
@@ -1878,7 +1894,7 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
 .plan .plan-comida__ingredientes li.mini-ingredientes__mas { font-size: 1.25rem; }
 .plan-comida__estado { margin: 0 0 8px; font-size: .95rem; line-height: 1.45; }
 .plan-comida__estado .etiqueta { margin: 0; }
-.plan-comida__estado--falta strong { color: var(--color-marca); }
+.plan-comida__estado--falta strong { color: var(--color-marca-oscuro); }
 .plan-comida__falta:not(:last-child)::after { content: " · "; color: var(--color-suave); }
 .plan-comida__falta small { color: var(--color-suave); }
 .plan-comida__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
