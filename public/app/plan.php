@@ -365,7 +365,7 @@ require parcial('encabezado');
   <div class="plan-relleno" aria-hidden="true">
     <?php
     // [izquierda %, arriba %, tamaño px, giro]
-    $lugaresRelleno = [[4, 6, 112, -9], [40, 0, 84, 7], [70, 12, 120, -4], [20, 40, 92, 11], [56, 46, 104, -7], [2, 72, 80, 5], [78, 66, 90, 13]];
+    $lugaresRelleno = [[4, 6, 112, -9], [40, 0, 84, 7], [70, 12, 120, -4], [20, 40, 92, 11], [56, 46, 104, -7], [2, 72, 80, 5], [78, 66, 90, 13], [33, 78, 88, 8]];
     ?>
     <?php foreach (array_slice($decoracion, PlanSemanal::DIAS, count($lugaresRelleno)) as $n => $dibujo) : ?>
       <?php [$x, $y, $tamano, $giro] = $lugaresRelleno[$n]; ?>
