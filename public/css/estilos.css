@@ -279,7 +279,8 @@ img { max-width: 100%; }
 .pie p { margin: 2px 0; }
 
 /* Las hojas de papel (tarjetas, post-its, tablas, la nota del editor) vuelven el texto a tinta */
-.tarjeta, .postit, .aviso, .tabla-contenedor, .nota-despegada {
+/* Lo que va sobre papel lleva tinta oscura aunque la heladera sea noche (la hoja de la lista también) */
+.tarjeta, .postit, .aviso, .tabla-contenedor, .nota-despegada, .lista-compras {
   --color-sobre-puerta: var(--color-texto);
   --color-sobre-puerta-suave: var(--color-suave);
   --color-enlace: var(--color-azul);
