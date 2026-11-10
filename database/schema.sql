@@ -2,13 +2,15 @@
 --  Cooki · Esquema de base de datos (MariaDB 10.6+ / MySQL 8.0+)
 --  Incremento 1 (2.º parcial de Programación): usuarios con rol, tabla de contacto y autor de cada receta.
 --  Incremento 2: modo cocina, preferencias, recuperación de contraseña e intentos de ingreso.
+--  Incremento 3: lista de compras, plan semanal e IA en las recetas.
 --  Ejecutar sobre una base vacía:  mysql -u root -p cooki < database/schema.sql
 -- =====================================================================
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE IF EXISTS intento_ingreso, recuperacion, contacto, paso_completado, sesion_cocina, favorito, receta_etiqueta, etiqueta,
+DROP TABLE IF EXISTS lista_compra_item, plan_comida, sugerencia_reemplazo, uso_ia, respuesta_ia, receta_ia,
+    intento_ingreso, recuperacion, contacto, paso_completado, sesion_cocina, favorito, receta_etiqueta, etiqueta,
     paso, receta_ingrediente, receta, despensa_item, restriccion_usuario, usuario_basico,
     sustitucion, sinonimo, ingrediente, categoria, usuario;
 
@@ -24,6 +26,7 @@ CREATE TABLE usuario (
     color            VARCHAR(10)  NOT NULL DEFAULT 'verde',  -- color de la heladera elegido (UsuarioRepositorio::COLORES)
     disposicion      VARCHAR(12)  NOT NULL DEFAULT 'normal', -- 'normal' o 'panoramica' (UsuarioRepositorio::DISPOSICIONES)
     volumen          TINYINT UNSIGNED NOT NULL DEFAULT 50,   -- volumen de los sonidos, de 0 a 100
+    nota_lista       VARCHAR(10)  NOT NULL DEFAULT 'abierta', -- nota de la lista de compras: abierta, cerrada o nunca
     creado_en        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Cuentas de usuario. La identidad la maneja la propia app (sesiones PHP).';
@@ -248,4 +251,101 @@ CREATE TABLE intento_ingreso (
     ip         VARCHAR(45)  NOT NULL,
     creado_en  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     KEY idx_intento_email (email, creado_en)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ─────────────────── Incremento 3: IA, lista de compras y plan semanal ───────────────────
+-- Los datos con estructura van en TEXT con JSON adentro, y las reglas entre columnas se validan en PHP:
+-- así el esquema anda igual en MariaDB y en el MySQL del hosting (DEC-018).
+
+-- Recetas que propuso la IA. guardada = FALSE: se generó pero la persona no la guardó (se limpia a los 7 días).
+CREATE TABLE receta_ia (
+    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    usuario_id   INT UNSIGNED NOT NULL,
+    tipo         ENUM('nueva','adaptada') NOT NULL,
+    receta_base  INT UNSIGNED NULL,                  -- la original, si es adaptada
+    titulo       VARCHAR(120) NOT NULL,
+    contenido    TEXT         NOT NULL,              -- JSON: la receta ya validada y cruzada con el catálogo
+    guardada     BOOLEAN      NOT NULL DEFAULT FALSE,
+    pasada_a     INT UNSIGNED NULL,                  -- receta.id si la administración la pasó al recetario
+    creado_en    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_receta_ia_usuario (usuario_id, guardada),
+    CONSTRAINT fk_receta_ia_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE,
+    CONSTRAINT fk_receta_ia_base FOREIGN KEY (receta_base) REFERENCES receta(id) ON DELETE SET NULL,
+    CONSTRAINT fk_receta_ia_pasada FOREIGN KEY (pasada_a) REFERENCES receta(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Lista de compras. Cada ítem tiene ingrediente_id (del catálogo) o texto (texto libre): lo valida ListaRepositorio.
+CREATE TABLE lista_compra_item (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    usuario_id      INT UNSIGNED NOT NULL,
+    ingrediente_id  INT UNSIGNED NULL,              -- NULL = texto libre
+    texto           VARCHAR(80)  NULL,              -- solo si no está en el catálogo
+    cantidad        DECIMAL(9,2) NULL,              -- NULL = sin cantidad ("a gusto")
+    unidad          VARCHAR(10)  NULL,
+    receta_id       INT UNSIGNED NULL,              -- de qué receta salió (para mostrar "para: …")
+    receta_ia_id    INT UNSIGNED NULL,
+    comprado_en     DATETIME     NULL,              -- NULL = pendiente
+    deshacer        TEXT         NULL,              -- JSON: cómo estaba la despensa antes de comprarlo
+    creado_en       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_lista_usuario (usuario_id, comprado_en),
+    CONSTRAINT fk_lista_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE,
+    CONSTRAINT fk_lista_ingrediente FOREIGN KEY (ingrediente_id) REFERENCES ingrediente(id) ON DELETE CASCADE,
+    CONSTRAINT fk_lista_receta FOREIGN KEY (receta_id) REFERENCES receta(id) ON DELETE SET NULL,
+    CONSTRAINT fk_lista_receta_ia FOREIGN KEY (receta_ia_id) REFERENCES receta_ia(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Plan semanal: una receta (del recetario o de la IA) por día y comida.
+CREATE TABLE plan_comida (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    usuario_id    INT UNSIGNED NOT NULL,
+    fecha         DATE         NOT NULL,
+    momento       ENUM('almuerzo','cena') NOT NULL,
+    receta_id     INT UNSIGNED NULL,
+    receta_ia_id  INT UNSIGNED NULL,
+    porciones     TINYINT      NOT NULL DEFAULT 2,
+    UNIQUE KEY uq_plan (usuario_id, fecha, momento),
+    CONSTRAINT fk_plan_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE,
+    CONSTRAINT fk_plan_receta FOREIGN KEY (receta_id) REFERENCES receta(id) ON DELETE CASCADE,
+    CONSTRAINT fk_plan_receta_ia FOREIGN KEY (receta_ia_id) REFERENCES receta_ia(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Caché de la IA: la misma consulta no se paga dos veces (vale 7 días).
+CREATE TABLE respuesta_ia (
+    clave       CHAR(64)     PRIMARY KEY,            -- sha256 del tipo + datos normalizados
+    tipo        VARCHAR(20)  NOT NULL,               -- receta | adaptar | reemplazo
+    respuesta   TEXT         NOT NULL,               -- JSON
+    creado_en   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_respuesta_creado (creado_en)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Cada pedido a la IA, para los límites por día y el panel de administración.
+CREATE TABLE uso_ia (
+    id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    usuario_id       INT UNSIGNED NULL,
+    tipo             VARCHAR(20)  NOT NULL,
+    desde_cache      BOOLEAN      NOT NULL DEFAULT FALSE,
+    ok               BOOLEAN      NOT NULL,
+    error            VARCHAR(200) NULL,
+    tokens_entrada   INT UNSIGNED NULL,
+    tokens_salida    INT UNSIGNED NULL,
+    milisegundos     INT UNSIGNED NULL,
+    creado_en        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_uso_dia (creado_en),
+    KEY idx_uso_usuario (usuario_id, creado_en),
+    CONSTRAINT fk_uso_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Reemplazos que sugirió la IA, para que la administración los pase a `sustitucion`.
+CREATE TABLE sugerencia_reemplazo (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    ingrediente_id  INT UNSIGNED NOT NULL,
+    reemplazo_id    INT UNSIGNED NULL,               -- NULL si el reemplazo no está en el catálogo
+    reemplazo_texto VARCHAR(80)  NOT NULL,
+    ratio           DECIMAL(5,2) NULL,
+    nota            VARCHAR(200) NULL,
+    veces           INT UNSIGNED NOT NULL DEFAULT 1,
+    pasada          BOOLEAN      NOT NULL DEFAULT FALSE,
+    UNIQUE KEY uq_sugerencia (ingrediente_id, reemplazo_texto),
+    CONSTRAINT fk_sugerencia_ingrediente FOREIGN KEY (ingrediente_id) REFERENCES ingrediente(id) ON DELETE CASCADE,
+    CONSTRAINT fk_sugerencia_reemplazo FOREIGN KEY (reemplazo_id) REFERENCES ingrediente(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

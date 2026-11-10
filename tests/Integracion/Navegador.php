@@ -22,6 +22,11 @@ final class Navegador
     /** Página de la que "viene" el próximo pedido (el encabezado Referer, como al tocar un enlace). */
     private string $referer = '';
 
+    /** @param string $base otro servidor (ClienteApi::servidorCon); vacío = el de siempre */
+    public function __construct(private string $base = '')
+    {
+    }
+
     public function agregarCookie(string $nombre, string $valor): void
     {
         $this->otrasCookies .= '; ' . $nombre . '=' . rawurlencode($valor);
@@ -107,7 +112,8 @@ final class Navegador
             'ignore_errors' => true,
             'follow_location' => 0,
         ]]);
-        $html = (string) file_get_contents(ClienteApi::base() . '/' . ltrim($ruta, '/'), false, $contexto);
+        $base = $this->base !== '' ? $this->base : ClienteApi::base();
+        $html = (string) file_get_contents($base . '/' . ltrim($ruta, '/'), false, $contexto);
         $lineas = $http_response_header ?? [];
         preg_match('#HTTP/\S+ (\d{3})#', $lineas[0] ?? '', $codigo);
         $destino = '';

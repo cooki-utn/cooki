@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 require dirname(__DIR__, 2) . '/src/bootstrap.php';
 
+use Cooki\Config;
 use Cooki\Db;
 use Cooki\Repositorios\ResumenRepositorio;
 use Cooki\Sesion;
@@ -25,6 +26,8 @@ $secciones = [
         'Mensajes que llegaron desde el formulario de contacto.', 'yerba', 'celeste'],
     ['usuarios.php', 'Usuarios', $totales['usuarios'] . ' generales · ' . $totales['administradores'] . ' administradores',
         'Cuentas, roles y contraseñas.', 'manzana', 'verde'],
+    ['correo.php', 'Correo', Config::get('MAIL_HOST') !== '' ? Config::get('MAIL_HOST') : 'sin servidor configurado',
+        'Ver la configuración y mandar un correo de prueba.', 'limon', 'amarillo'],
 ];
 
 $titulo = 'Administración';

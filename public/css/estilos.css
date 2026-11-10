@@ -958,6 +958,15 @@ td small { display: block; }
 }
 .nota-panel:hover .nota-panel__dibujo { transform: rotate(-6deg) scale(1.12); }
 
+/* Administración → Correo: la configuración como pares "dato: valor" */
+.datos-correo { display: grid; grid-template-columns: max-content 1fr; gap: 0 16px; margin: 0 0 var(--renglon); line-height: var(--renglon); }
+.datos-correo dt { font-weight: 700; }
+.datos-correo dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+  .datos-correo { grid-template-columns: 1fr; }
+  .datos-correo dd { margin-bottom: 6px; }
+}
+
 /* ══════════ Administración: dibujos en listas y formularios ══════════ */
 /* Las hojas con tablas se despegan un poco al pasar el mouse (sin girar: se está leyendo) */
 .tabla-contenedor:not(:has(#tabla-despensa)) { transition: transform .35s cubic-bezier(.3, 1.5, .5, 1), box-shadow .35s; }
@@ -1312,16 +1321,19 @@ td > .acciones { flex-wrap: nowrap; }
 .iman-enlace--correo { --claro: #FF9C8F; --base: var(--color-marca); }
 .iman-enlace:hover, .iman-enlace:focus-visible { transform: translateY(-3px) rotate(-6deg); box-shadow: var(--sombra-iman-alto); }
 /* Los dos ingredientes a los costados de la última hoja (solo en la computadora) */
+/* La nota de contacto, con el mate y el café a los costados (en pantallas angostas solo la nota) */
+.nosotros__fila-contacto { display: grid; grid-template-columns: minmax(0, 640px); justify-content: center; align-items: center; gap: 0 32px; margin: 44px 0 30px; }
 .nosotros__adorno { display: none; }
 @media (min-width: 900px) {
+  .nosotros__fila-contacto { grid-template-columns: 150px minmax(0, 640px) 150px; }
   .nosotros__adorno {
-    display: block; align-self: center; justify-self: center; width: min(150px, 80%); height: auto;
+    display: block; align-self: center; justify-self: center; width: 150px; height: auto;
     filter: drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 8px 8px rgb(30 50 40 / 30%));
     --d: 0s; animation: mecer 3.6s ease-in-out var(--d) infinite alternate;
   }
   .nosotros__adorno--derecha { --d: -1.8s; }
 }
-.nosotros__contacto { max-width: 640px; margin: 44px auto 30px; text-align: center; background: #CFE0F2; --giro: .8deg; }
+.nosotros__contacto { max-width: 640px; margin: 0; text-align: center; background: #CFE0F2; --giro: .8deg; }
 .nosotros__contacto .postit__chinche { background: radial-gradient(circle at 35% 30%, #9FD3FF, var(--color-azul) 70%); }
 .nosotros__pregunta { margin: 0 0 14px; font: 700 1.8rem/1.1 var(--fuente-mano); }
 .nosotros__contacto .acciones { justify-content: center; }
@@ -1524,3 +1536,160 @@ a.paginacion__numero:hover, .paginacion__flecha:hover { transform: translateY(-2
   margin-right: 10px; min-height: 36px; padding: 0 14px; border-radius: 99px; border: 2px solid var(--color-texto);
   background: var(--color-superficie); color: var(--color-texto); font: 800 .85rem var(--fuente); cursor: pointer;
 }
+
+/* ══════════ Incremento 3 · Lista de compras (P2) ══════════ */
+/* Sexto imán del menú (con Administración, la barra tiene seis) */
+.menu li:nth-child(6) a::before { --claro: #FFC48A; --base: #D9731A; }
+/* "+ lista" en la receta y en Mi despensa: un papelito chico con borde de birome */
+.mas-lista { display: inline; margin: 0; }
+.mas-lista__boton {
+  min-height: 32px; padding: 0 10px; border: 2px dashed var(--color-azul); border-radius: 8px;
+  background: var(--color-superficie); color: var(--color-azul); font: 700 1.1rem/1 var(--fuente-mano);
+  cursor: pointer; transform: rotate(-2deg); transition: transform .2s cubic-bezier(.3, 1.6, .5, 1);
+}
+.mas-lista__boton:hover { transform: rotate(1deg) scale(1.05); background: #EAF2FB; }
+.mas-lista__boton:disabled { opacity: .5; cursor: wait; }
+.mas-lista--todo { display: block; margin: 8px 0 4px; }
+.etiqueta--lista { background: #DCEBFA; color: var(--color-azul); text-decoration: none; }
+a.etiqueta--lista:hover { text-decoration: underline; }
+/* En Mi despensa, "+ lista" va al lado de la cantidad (así se ve de qué ingrediente es) */
+.cantidad-y-lista { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+
+/* La lista: una hoja de cuaderno con un renglón por cosa, agrupada por góndola */
+.lista-agregar .nuevo-ingrediente__nota { margin-top: 4px; }
+.lista-compras {
+  position: relative; background-color: var(--color-superficie); box-shadow: var(--sombra);
+  background-image: repeating-linear-gradient(180deg, transparent 0 47px, var(--color-renglon) 47px 48px);
+  padding: 20px 20px 24px 46px; margin-bottom: 28px;
+}
+.lista-compras::before { content: ""; position: absolute; top: 0; bottom: 0; left: 30px; width: 2px; background: var(--color-margen); }
+.lista-compras__compartir { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.lista-compras__copiado { font: 700 1.2rem var(--fuente-mano); color: var(--color-exito); }
+.lista-compras__grupo h2, .lista-compras__comprado h2 {
+  margin: 14px 0 4px; font: 700 1.6rem/1.2 var(--fuente-mano); color: var(--color-marca);
+}
+.lista-compras__items { list-style: none; margin: 0; padding: 0; }
+.renglon { display: flex; align-items: center; gap: 10px; min-height: 48px; }
+.renglon__tilde { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; cursor: pointer; }
+.renglon__tilde input { width: 24px; height: 24px; flex: none; }
+.renglon__dibujo { width: 44px; height: 44px; flex: none; filter: drop-shadow(0 1px 2px rgb(0 0 0 / 18%)); }
+.renglon__texto { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-width: 0; }
+.renglon__cantidad { font: 700 1.25rem/1 var(--fuente-mano); color: var(--color-azul); }
+.renglon__receta { color: var(--color-suave); }
+.renglon__quitar {
+  flex: none; width: 36px; height: 36px; border: none; border-radius: 50%; background: transparent;
+  color: var(--color-suave); font-size: 1.1rem; cursor: pointer;
+}
+.renglon__quitar:hover { background: var(--color-error-fondo); color: var(--color-error); }
+.renglon--comprado .renglon__dibujo { filter: grayscale(1) opacity(.5); }
+.renglon--comprado strong, .renglon--comprado s { text-decoration: line-through 2px var(--color-marca); color: var(--color-suave); }
+.renglon--comprado .renglon__cantidad { color: var(--color-suave); }
+.lista-compras__comprado { margin-top: 18px; padding-top: 6px; border-top: 2px dashed var(--color-borde); }
+.lista-compras__comprado .renglon__texto { flex: 1; }
+.lista-compras__pasar { margin-top: 14px; }
+@media (max-width: 520px) {
+  .lista-compras { padding: 16px 10px 20px 38px; }
+  .lista-compras::before { left: 24px; }
+  .renglon__dibujo { width: 36px; height: 36px; }
+}
+
+/* Imprimir la lista: solo los renglones, sin menú, botones ni decoración */
+@media print {
+  body { background: #fff; padding: 0; }
+  .barra, .manija, .pie, .encabezado-pagina .boton, .lista-agregar, .lista-compras__compartir,
+  .renglon__quitar, .renglon__deshacer, .lista-compras__pasar, .lista-compras__comprado, .aviso { display: none !important; }
+  .contenido { border: none; margin: 0; padding: 0; width: auto; }
+  .lista-compras { box-shadow: none; background: none; padding: 0; }
+  .lista-compras::before { display: none; }
+  .lista-compras__grupo { break-inside: avoid; }
+  .renglon { min-height: 32px; }
+  .renglon__dibujo { width: 24px; height: 24px; filter: none; }
+}
+
+/* La nota de la lista de compras (Mi cocina y Mi despensa): un post-it celeste que se cierra y queda asomando */
+.nota-lista .postit { background: #CFE0F2; --giro: 1deg; max-width: none; }
+.nota-lista .postit__chinche { background: radial-gradient(circle at 35% 30%, #9FD3FF, var(--color-azul) 70%); }
+.nota-lista__form { margin: 0; }
+.postit__titulo .nota-lista__form { margin-left: auto; }
+.nota-lista__cerrar {
+  width: 36px; height: 36px; border: none; border-radius: 50%; background: rgb(255 255 255 / 45%);
+  color: var(--color-texto); font-size: 1.1rem; cursor: pointer;
+}
+.nota-lista__cerrar:hover { background: #fff; }
+.nota-lista__items { list-style: none; margin: 0; padding: 0; }
+.nota-lista__items li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 4px 0; border-bottom: 1px dashed rgb(30 43 38 / 22%); }
+.nota-lista__items li:last-child { border-bottom: none; }
+.nota-lista__items strong { font: 700 1.4rem/1 var(--fuente-mano); }
+.nota-lista__items span { color: var(--color-azul); font-weight: 700; }
+.nota-lista { position: relative; z-index: 5; }   /* así el desplegable queda por encima de lo que hay abajo */
+.nota-lista__pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; margin-top: 8px; }
+.nota-lista__ir { font-weight: 700; }
+/* "Ver N más": el resto cuelga debajo del post-it, por encima de la página (no la empuja hacia abajo) */
+.nota-lista__mas summary {
+  cursor: pointer; list-style: none; font: 700 1.2rem/1 var(--fuente-mano); color: var(--color-azul);
+  text-decoration: underline dashed; text-underline-offset: 4px; padding: 4px 0;
+}
+.nota-lista__mas summary::-webkit-details-marker { display: none; }
+.nota-lista__mas[open] summary span { display: inline-block; transform: rotate(180deg); }
+.nota-lista__desplegable {
+  position: absolute; left: 0; right: 0; top: calc(100% - 4px); max-height: 320px; overflow-y: auto;
+  padding: 6px 22px 14px; background: #CFE0F2; box-shadow: 0 14px 22px rgb(0 0 0 / 22%);
+  border-top: 2px dashed rgb(30 43 38 / 25%);
+}
+.nota-lista__cerrada { margin: 10px 0 24px; }
+.nota-lista__asomada {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 16px 6px 14px;
+  border: none; background: #CFE0F2; color: var(--color-texto); font: 700 1.45rem/1 var(--fuente-mano);
+  box-shadow: 0 6px 12px rgb(0 0 0 / 16%); transform: rotate(-2deg); cursor: pointer;
+  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+}
+.nota-lista__asomada b {
+  display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding: 0 6px; border-radius: 99px;
+  background: var(--color-azul); color: #fff; font: 800 .9rem var(--fuente);
+}
+.nota-lista__asomada:hover, .nota-lista__asomada:focus-visible { transform: rotate(1deg) translateY(-2px); }
+/* Mi cocina: "Usalo pronto" y la nota, lado a lado (se apilan si no entran) */
+.cocina__notas { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 28px; }
+.cocina__notas > .postit { flex: 1 1 420px; }
+.cocina__notas > .nota-lista { flex: 0 1 360px; }
+.cocina__notas > .nota-lista:has(.nota-lista__abierta[hidden]) { flex-basis: auto; }
+@media (min-width: 1100px) {
+  [data-disposicion="panoramica"] .cocina__notas > .postit, [data-disposicion="panoramica"] .cocina__notas > .nota-lista { flex-basis: 100%; }
+}
+/* Mi despensa, arriba: título y filtros a la izquierda, la nota en el medio y "+ Agregar producto" a la derecha.
+   En el celular: título y botón arriba, los filtros y la nota abajo */
+.despensa-arriba {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 0 20px; margin-bottom: 8px;
+  grid-template-areas: "titulo boton" "filtros filtros" "nota nota";
+}
+.despensa-arriba__titulo { grid-area: titulo; margin: 0 0 14px; }
+.despensa-arriba__boton { grid-area: boton; }
+.despensa-arriba__filtros { grid-area: filtros; min-width: 0; }
+.despensa-arriba > .nota-lista { grid-area: nota; }
+@media (min-width: 900px) {
+  .despensa-arriba {
+    grid-template-columns: fit-content(540px) minmax(280px, 1fr) auto; gap: 0 28px;
+    grid-template-areas: "titulo nota boton" "filtros nota boton";
+  }
+  .despensa-arriba > .nota-lista { justify-self: center; width: min(400px, 100%); }
+  .despensa-arriba .nota-lista .postit, .despensa-arriba .nota-lista__cerrada { margin-top: 0; margin-bottom: 18px; }
+  .despensa-arriba .nota-lista__cerrada { text-align: center; }
+}
+.preferencia__casilla { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 700; }
+.preferencia__casilla input { width: 22px; height: 22px; flex: none; accent-color: var(--color-marca); }
+/* Lista: "Otra cantidad" (abre un campito debajo del renglón) y "Marcar todo como comprado" */
+.renglon { flex-wrap: wrap; }
+.renglon__otra { flex: none; }
+.renglon__otra summary {
+  cursor: pointer; list-style: none; font: 700 1.1rem/1 var(--fuente-mano); color: var(--color-azul);
+  text-decoration: underline dashed; text-underline-offset: 4px; padding: 6px 4px;
+}
+.renglon__otra summary::-webkit-details-marker { display: none; }
+.renglon__otra[open] { flex-basis: 100%; order: 3; padding: 0 0 8px 34px; }
+.renglon__otra-campos { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; }
+.renglon__otra-campos input { width: 110px; }
+.renglon__otra-campos select { width: auto; }
+.lista-compras__todo { margin-top: 14px; }
+@media print { .renglon__otra, .lista-compras__todo { display: none !important; } }
+.nota-lista .postit__titulo { flex-wrap: nowrap; }
+.nota-lista .postit__titulo h2 { font-size: 1.9rem; }

@@ -43,6 +43,34 @@ final class ClienteApi
         return new self();
     }
 
+    /**
+     * Levanta otro servidor de prueba con variables de entorno propias (tienen prioridad sobre el .env), para probar
+     * una configuración distinta, como la del hosting. Devuelve su dirección base; se apaga al terminar las pruebas.
+     * @param array<string, string> $variables
+     */
+    public static function servidorCon(array $variables): string
+    {
+        $socket = stream_socket_server('tcp://127.0.0.1:0');
+        $puerto = (int) explode(':', (string) stream_socket_get_name($socket, false))[1];
+        fclose($socket);
+        $raiz = dirname(__DIR__, 2);
+        $comando = sprintf(
+            '%s -S 127.0.0.1:%d -t %s %s',
+            escapeshellarg(PHP_BINARY),
+            $puerto,
+            escapeshellarg($raiz . '/public'),
+            escapeshellarg($raiz . '/public/router.php')
+        );
+        $nulo = PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null';
+        $salidas = [1 => ['file', $nulo, 'w'], 2 => ['file', $nulo, 'w']];
+        $proceso = proc_open($comando, $salidas, $tuberias, null, $variables + getenv());
+        register_shutdown_function(fn () => proc_terminate($proceso));
+        for ($i = 0; $i < 50 && @fsockopen('127.0.0.1', $puerto) === false; $i++) {
+            usleep(100_000);
+        }
+        return 'http://127.0.0.1:' . $puerto;
+    }
+
     /** Dirección base del servidor de prueba, por ejemplo http://127.0.0.1:54321 */
     public static function base(): string
     {

@@ -143,6 +143,24 @@ $bloque = function (string $lista, string $id, string $tituloBloque, string $exp
   ?>
 </div>
 
+<?php /* La nota de la lista de compras: la casilla se guarda en app/preferencias.php (el campo oculto "nunca"
+         va primero: si la casilla está tildada, PHP se queda con su valor) */ ?>
+<section class="tarjeta preferencia" id="nota-lista">
+  <h2>Lista de compras</h2>
+  <form class="preferencia__nota-lista" method="post" action="<?= e(url('app/preferencias.php')) ?>">
+    <?= Sesion::campoCsrf() ?>
+    <input type="hidden" name="volver" value="<?= e(url('app/mis-preferencias.php#nota-lista')) ?>">
+    <input type="hidden" name="avisar" value="1">
+    <input type="hidden" name="nota_lista" value="nunca">
+    <label class="preferencia__casilla">
+      <input type="checkbox" name="nota_lista" value="abierta"<?= Sesion::notaLista() !== 'nunca' ? ' checked' : '' ?>>
+      Mostrar mi lista de compras en Mi cocina y Mi despensa
+    </label>
+    <p class="texto-suave">Si la apagás, no aparece ni siquiera cerrada. La lista sigue en el imán <a href="<?= e(url('app/lista.php')) ?>">Lista</a>.</p>
+    <button class="boton boton--chico" type="submit">Guardar</button>
+  </form>
+</section>
+
 <section id="favoritas" aria-labelledby="titulo-favoritas">
   <h2 id="titulo-favoritas" class="titulo-mano">Mis favoritas ♥</h2>
   <?php if ($favoritas === []) : ?>

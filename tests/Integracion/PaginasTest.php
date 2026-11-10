@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cooki\Tests\Integracion;
 
+use Cooki\Config;
 use Cooki\Db;
 use PDOException;
 use PHPUnit\Framework\TestCase;
@@ -50,7 +51,7 @@ final class PaginasTest extends TestCase
         $this->assertSame(200, $estado);
         $this->assertStringContainsString('Quiénes somos', $html);
         $equipo = require dirname(__DIR__, 2) . '/src/equipo.php';
-        $this->assertCount(5, $equipo);
+        $this->assertCount(4, $equipo);
         foreach ($equipo as $persona) {
             $this->assertStringContainsString($persona['area'], $html);
             $this->assertStringContainsString('img/equipo/' . $persona['imagen'] . '.svg', $html);
@@ -62,8 +63,10 @@ final class PaginasTest extends TestCase
             }
         }
         $this->assertStringContainsString('contacto.php', $html);
-        $this->assertStringContainsString('ingredientes/yerba.svg', $html, 'El mate a un costado');
-        $this->assertStringContainsString('ingredientes/cafe.svg', $html, 'El café al otro');
+        // El mate y el café, a los costados de la nota de contacto
+        $contacto = '#<img class="nosotros__adorno"[^>]*yerba\.svg.*nosotros__contacto'
+            . '.*<img class="nosotros__adorno[^"]*"[^>]*cafe\.svg#s';
+        $this->assertMatchesRegularExpression($contacto, $html);
 
         [, $inicio] = $web->get('index.php');
         $this->assertStringContainsString('nosotros.php', $inicio, 'El inicio tiene el enlace');
@@ -88,12 +91,66 @@ final class PaginasTest extends TestCase
         $web = new Navegador();
         $this->assertStringEndsWith('admin/index.php', $web->ingresar('admin@cooki.test', 'Admin1234'));
         $paginas = ['admin/index.php', 'admin/recetas.php', 'admin/receta-editar.php', 'admin/ingredientes.php',
-            'admin/ingredientes.php?nuevo', 'admin/usuarios.php', 'admin/usuarios.php?nuevo', 'admin/consultas.php'];
+            'admin/ingredientes.php?nuevo', 'admin/usuarios.php', 'admin/usuarios.php?nuevo', 'admin/consultas.php',
+            'admin/correo.php'];
         foreach ($paginas as $pagina) {
             $this->assertSame(200, $web->get($pagina)[0], "{$pagina} tiene que responder 200 (sin composer install)");
         }
         [, $html] = $web->get('admin/consultas.php');
         $this->assertStringContainsString('css/estilos.css', $html, 'Consultas usa el encabezado común');
+    }
+
+    public function testProbarElCorreoMuestraLaConfiguracionSinLaContrasenaYAvisaElResultado(): void
+    {
+        $web = new Navegador();
+        $web->ingresar('admin@cooki.test', 'Admin1234');
+        [, $html] = $web->get('admin/index.php');
+        $this->assertStringContainsString('admin/correo.php', $html, 'El panel tiene la nota del correo');
+        [$estado, $html] = $web->get('admin/correo.php');
+        $this->assertSame(200, $estado);
+        $this->assertStringContainsString('Configuración actual', $html);
+        $this->assertStringContainsString('admin@cooki.test', $html, 'La prueba va a la cuenta de quien la pide');
+        $contrasena = Config::get('MAIL_CONTRASENA');
+        if ($contrasena !== '') {
+            $this->assertStringNotContainsString($contrasena, $html, 'La contraseña del correo nunca se muestra');
+        }
+        [$estado, , $destino] = $web->post('admin/correo.php', []);
+        $this->assertSame(302, $estado);
+        $this->assertStringEndsWith('admin/correo.php', $destino);
+        [, $html] = $web->get('admin/correo.php');
+        $resultado = '/se mandó el correo de prueba|No se pudo mandar/';
+        $this->assertMatchesRegularExpression($resultado, $html);
+    }
+
+    public function testProbarElCorreoConLaConfiguracionDeGmailDelHosting(): void
+    {
+        // Como en el hosting: con MAIL_USUARIO cargado (el encabezado común usa $usuario y lo pisaba)
+        $web = new Navegador(ClienteApi::servidorCon([
+            'APP_ENV' => 'produccion',
+            'MAIL_HOST' => 'smtp.gmail.com',
+            'MAIL_PORT' => '587',
+            'MAIL_SEGURIDAD' => 'tls',
+            'MAIL_USUARIO' => 'cuenta.del.proyecto@gmail.com',
+            'MAIL_CONTRASENA' => 'clavedeaplicacion',
+            'MAIL_REMITENTE' => 'otra@cooki.test',
+        ]));
+        $web->ingresar('admin@cooki.test', 'Admin1234');
+        [$estado, $html] = $web->get('admin/correo.php');
+        $this->assertSame(200, $estado);
+        $this->assertStringNotContainsString('error inesperado', $html);
+        $this->assertStringContainsString('<dd>cuenta.del.proyecto@gmail.com</dd>', $html);
+        $this->assertStringContainsString('cargada (no se muestra)', $html);
+        $this->assertStringNotContainsString('clavedeaplicacion', $html, 'La contraseña nunca se muestra');
+        $this->assertStringContainsString('Poné esa misma dirección en MAIL_REMITENTE', $html);
+        $this->assertStringContainsString('Mandarme un correo de prueba', $html, 'La página llega hasta el final');
+    }
+
+    public function testUsuarioGeneralNoPuedeProbarElCorreo(): void
+    {
+        $web = new Navegador();
+        $web->ingresar('maria@cooki.test', 'Usuario1234');
+        [, , $destino] = $web->get('admin/correo.php');
+        $this->assertStringEndsWith('error.php?motivo=sin-permiso', $destino);
     }
 
     public function testPaginaPrivadaSinSesionRedirigeAlError(): void
@@ -281,7 +338,8 @@ final class PaginasTest extends TestCase
         $web = new Navegador();
         $web->ingresar('admin@cooki.test', 'Admin1234');
         [, $html] = $web->get('admin/index.php');
-        $this->assertSame(4, substr_count($html, 'class="postit postit--'));
+        $notas = substr_count($html, 'class="postit postit--');
+        $this->assertSame(5, $notas, 'Recetas, ingredientes, consultas, usuarios y correo');
         [, $html] = $web->get('admin/ingredientes.php?q=manzana');
         $this->assertStringContainsString('img/ingredientes/manzana.svg', $html);
         [, $html] = $web->get('admin/ingredientes.php?editar=1');

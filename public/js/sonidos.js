@@ -215,7 +215,7 @@
   const REGLAS = [
     ['.iman-sonido, .volumen, .portada__dibujo, .manija', null],
     ['form[data-sonido] button, form[data-sonido] [type=submit]', null],
-    ['#abrir-editor, [data-editar], .nota-despegada, .selector__sticker, .paso, #reiniciar-pasos', null],
+    ['#abrir-editor, [data-editar], .nota-despegada, .selector__sticker, .paso, #reiniciar-pasos, .nota-lista button', null],
     ['.menu ul a', 'iman'],
     ['.tarjeta-receta, a[href*="receta.php?id="]', 'hoja'],
     ['.colores__iman, .disposicion__boton, .cuenta__resumen', 'iman-grave'],

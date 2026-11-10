@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 use Cooki\Config;
 use Cooki\Controladores\IngredientesControlador;
+use Cooki\Controladores\ListaControlador;
 use Cooki\Controladores\RecetasControlador;
 use Cooki\Controladores\SaludControlador;
 use Cooki\Controladores\SesionControlador;
@@ -33,6 +34,12 @@ $router->get('/recomendaciones', fn () => RecetasControlador::recomendaciones())
 $router->get('/despensa', fn () => RecetasControlador::despensa());
 $router->post('/favoritos/{id}', fn (array $p) => RecetasControlador::marcarFavorita($p));
 $router->delete('/favoritos/{id}', fn (array $p) => RecetasControlador::desmarcarFavorita($p));
+// Incremento 3: lista de compras
+$router->get('/lista', fn () => ListaControlador::ver());
+$router->post('/lista', fn () => ListaControlador::agregar());
+$router->post('/lista/{id}/comprado', fn (array $p) => ListaControlador::comprar($p));
+$router->delete('/lista/{id}/comprado', fn (array $p) => ListaControlador::deshacer($p));
+$router->delete('/lista/{id}', fn (array $p) => ListaControlador::quitar($p));
 
 $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 

@@ -46,7 +46,7 @@ $imanEnlace = function (string $tipo, string $href, string $texto) use ($iconos)
         . ' fill="currentColor">' . $iconos[$tipo] . '</svg><span class="solo-lectores">' . e($texto) . '</span></a>';
 };
 
-// A los costados de la última hoja: el mate y el café, grandes y meciéndose
+// A los costados de la nota de contacto: el mate y el café, grandes y meciéndose (solo en pantallas anchas)
 $adornos = ['yerba', 'cafe'];
 
 $titulo = 'Quiénes somos';
@@ -66,11 +66,7 @@ require parcial('encabezado');
     $correo = $enlaceCorreo($persona['correo'] ?? '');
     $quien = trim((string) ($persona['nombre'] ?? ''));
     $imagen = preg_replace('/[^a-z0-9-]/', '', (string) ($persona['imagen'] ?? ''));
-    $ultima = $i === count($equipo) - 1 && count($equipo) % 2 === 1;
     ?>
-    <?php if ($ultima) : ?>
-      <img class="nosotros__adorno" src="<?= e(url('img/ingredientes/' . $adornos[0] . '.svg')) ?>" alt="" width="150" height="150">
-    <?php endif; ?>
     <article class="tarjeta nosotros__persona" style="--giro: <?= [-.6, .5, -.3, .7, -.5][$i % 5] ?>deg">
       <div class="nosotros__foto" aria-hidden="true">
         <?php if ($imagen !== '' && is_file(__DIR__ . '/img/equipo/' . $imagen . '.svg')) : ?>
@@ -92,12 +88,11 @@ require parcial('encabezado');
         <?php endif; ?>
       </div>
     </article>
-    <?php if ($ultima) : ?>
-      <img class="nosotros__adorno nosotros__adorno--derecha" src="<?= e(url('img/ingredientes/' . $adornos[1] . '.svg')) ?>" alt="" width="150" height="150">
-    <?php endif; ?>
   <?php endforeach; ?>
 </div>
 
+<div class="nosotros__fila-contacto">
+<img class="nosotros__adorno" src="<?= e(url('img/ingredientes/' . $adornos[0] . '.svg')) ?>" alt="" width="150" height="150">
 <aside class="postit nosotros__contacto" aria-label="Contactar al equipo">
   <span class="postit__chinche" aria-hidden="true"></span>
   <p class="nosotros__pregunta">¿Querés contactarte con el equipo o proponer ideas?</p>
@@ -106,5 +101,7 @@ require parcial('encabezado');
     <a class="boton boton--secundario" href="mailto:<?= e($correoEquipo) ?>">Enviar un correo</a>
   </p>
 </aside>
+<img class="nosotros__adorno nosotros__adorno--derecha" src="<?= e(url('img/ingredientes/' . $adornos[1] . '.svg')) ?>" alt="" width="150" height="150">
+</div>
 <?= enlaceVolver('index.php', 'Volver al inicio') ?>
 <?php require parcial('pie'); ?>

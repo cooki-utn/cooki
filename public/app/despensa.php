@@ -11,6 +11,7 @@
  *   POST accion=guardar|borrar
  * El ingrediente se elige con un buscador de stickers (despensa.js); si no está en la lista,
  * se agrega como ingrediente propio (nombre_nuevo, categoria_nueva, unidad_nueva) con el dibujo del frasco.
+ * Lo agotado o con poco tiene "+ lista" para anotarlo en la lista de compras (app/lista.php).
  */
 
 declare(strict_types=1);
@@ -20,6 +21,7 @@ require dirname(__DIR__, 2) . '/src/bootstrap.php';
 use Cooki\Db;
 use Cooki\Repositorios\DespensaRepositorio;
 use Cooki\Repositorios\IngredienteRepositorio;
+use Cooki\Repositorios\ListaRepositorio;
 use Cooki\Sesion;
 
 Sesion::requiereLogin();
@@ -149,15 +151,52 @@ if ($estado !== '') {
     $items = array_values(array_filter($items, fn ($fila) => DespensaRepositorio::estado($fila) === $estado));
 }
 /** Dirección de la despensa con los filtros (ubicación y estado) que se pasen; los vacíos no van. */
+$listaCompras = new ListaRepositorio($db);
+$enLista = $listaCompras->ingredientesPendientes($usuarioId);
+$notaLista = $listaCompras->faltaComprar($usuarioId);   // la nota de la lista de compras, a la derecha de los filtros
 $filtro = fn (string $ubic, string $est) => url('app/despensa.php' . (($q = http_build_query(array_filter(['ubicacion' => $ubic, 'estado' => $est]))) !== '' ? '?' . $q : ''));
 $error = fn (string $campo) => isset($errores[$campo]) ? '<p class="error-campo">' . e($errores[$campo]) . '</p>' : '';
 
 $titulo = 'Mi despensa';
 require parcial('encabezado');
 ?>
-<div class="encabezado-pagina">
-  <h1>Mi despensa</h1>
-  <a class="boton boton--agregar" href="#formulario" id="abrir-editor">+ Agregar producto</a>
+<?php /* Arriba, en una grilla: título, contador, pestañas y buscador a la izquierda; la nota de la lista de compras
+         en el medio y "+ Agregar producto" a la derecha. En el celular: título y botón, filtros y la nota abajo */ ?>
+<div class="despensa-arriba">
+<h1 class="despensa-arriba__titulo">Mi despensa</h1>
+<a class="boton boton--agregar despensa-arriba__boton" href="#formulario" id="abrir-editor">+ Agregar producto</a>
+<div class="despensa-arriba__filtros">
+<?php if (array_sum($resumen) > 0) : ?>
+  <?php /* Cada número es un filtro: tocarlo muestra solo esos; tocarlo de nuevo, todos */ ?>
+  <nav class="contador" aria-label="Filtrar por estado">
+    <?php foreach (DespensaRepositorio::ESTADOS as $clave => $texto) : ?>
+      <?php if ($clave === 'agotados' && $resumen['agotados'] === 0) {
+          continue;
+      } ?>
+      <?php $activo = $estado === $clave; ?>
+      <a class="contador__item contador__item--<?= e(str_replace('_', '-', $clave)) ?>"
+         href="<?= e($filtro($ubicacion, $activo ? '' : $clave)) ?>"<?= $activo ? ' aria-current="true"' : '' ?>
+         title="<?= $activo ? 'Ver todos' : 'Ver solo los que están ' . e($texto) ?>">
+        <strong><?= $resumen[$clave] ?></strong> <?= e($resumen[$clave] === 1 ? rtrim($texto, 's') : $texto) ?>
+      </a>
+    <?php endforeach; ?>
+  </nav>
+<?php endif; ?>
+
+<nav class="pestanas" aria-label="Filtrar por ubicación">
+  <a href="<?= e($filtro('', $estado)) ?>"<?= $ubicacion === '' ? ' aria-current="page"' : '' ?>>Todo</a>
+  <?php foreach (DespensaRepositorio::UBICACIONES as $valor => $texto) : ?>
+    <a href="<?= e($filtro($valor, $estado)) ?>"<?= $ubicacion === $valor ? ' aria-current="page"' : '' ?>><?= e($texto) ?></a>
+  <?php endforeach; ?>
+</nav>
+<?php if ($items !== []) : ?>
+  <div class="campo filtro-rapido">
+    <label for="filtro">Buscar en mi despensa</label>
+    <input id="filtro" type="search" placeholder="Escribí para filtrar la lista" autocomplete="off">
+  </div>
+<?php endif; ?>
+</div>
+<?php require parcial('nota-lista'); ?>
 </div>
 
 <?php /* data-abrir: despensa.js abre la nota sola si se está editando o si hay errores */ ?>
@@ -260,30 +299,6 @@ require parcial('encabezado');
   </form>
 </section>
 
-<?php if (array_sum($resumen) > 0) : ?>
-  <?php /* Cada número es un filtro: tocarlo muestra solo esos; tocarlo de nuevo, todos */ ?>
-  <nav class="contador" aria-label="Filtrar por estado">
-    <?php foreach (DespensaRepositorio::ESTADOS as $clave => $texto) : ?>
-      <?php if ($clave === 'agotados' && $resumen['agotados'] === 0) {
-          continue;
-      } ?>
-      <?php $activo = $estado === $clave; ?>
-      <a class="contador__item contador__item--<?= e(str_replace('_', '-', $clave)) ?>"
-         href="<?= e($filtro($ubicacion, $activo ? '' : $clave)) ?>"<?= $activo ? ' aria-current="true"' : '' ?>
-         title="<?= $activo ? 'Ver todos' : 'Ver solo los que están ' . e($texto) ?>">
-        <strong><?= $resumen[$clave] ?></strong> <?= e($resumen[$clave] === 1 ? rtrim($texto, 's') : $texto) ?>
-      </a>
-    <?php endforeach; ?>
-  </nav>
-<?php endif; ?>
-
-<nav class="pestanas" aria-label="Filtrar por ubicación">
-  <a href="<?= e($filtro('', $estado)) ?>"<?= $ubicacion === '' ? ' aria-current="page"' : '' ?>>Todo</a>
-  <?php foreach (DespensaRepositorio::UBICACIONES as $valor => $texto) : ?>
-    <a href="<?= e($filtro($valor, $estado)) ?>"<?= $ubicacion === $valor ? ' aria-current="page"' : '' ?>><?= e($texto) ?></a>
-  <?php endforeach; ?>
-</nav>
-
 <?php if ($items === []) : ?>
   <p class="vacio">
     <?php if ($estado !== '') : ?>
@@ -294,10 +309,6 @@ require parcial('encabezado');
     <?php endif; ?>
   </p>
 <?php else : ?>
-  <div class="campo filtro-rapido">
-    <label for="filtro">Buscar en mi despensa</label>
-    <input id="filtro" type="search" placeholder="Escribí para filtrar la lista" autocomplete="off">
-  </div>
   <div class="tabla-contenedor">
     <table id="tabla-despensa" class="tabla-tarjetas">
       <thead><tr><th>Ingrediente</th><th>Cantidad</th><th>Vencimiento</th><th>Ubicación</th><th><span class="solo-lectores">Acciones</span></th></tr></thead>
@@ -323,7 +334,26 @@ require parcial('encabezado');
             <strong><?= e($fila['nombre']) ?></strong>
             <small class="texto-suave"><?= e($fila['categoria']) ?></small>
           </td>
-          <td><span class="nivel nivel--<?= (int) $fila['nivel'] ?>"><?= e($textoCantidad !== '' ? $textoCantidad : DespensaRepositorio::NIVELES[(int) $fila['nivel']]) ?></span></td>
+          <td>
+            <?php /* Agotado o con poco: "+ lista" va al lado de la cantidad, así se ve de qué ingrediente es */ ?>
+            <div class="cantidad-y-lista">
+              <span class="nivel nivel--<?= (int) $fila['nivel'] ?>"><?= e($textoCantidad !== '' ? $textoCantidad : DespensaRepositorio::NIVELES[(int) $fila['nivel']]) ?></span>
+              <?php if ((int) $fila['nivel'] <= 1 && in_array((int) $fila['ingrediente_id'], $enLista, true)) : ?>
+                <a class="etiqueta etiqueta--lista" href="<?= e(url('app/lista.php')) ?>">En tu lista</a>
+              <?php elseif ((int) $fila['nivel'] <= 1) : ?>
+                <?php /* Agotado o poco: "+ lista" (sin JavaScript recarga; con JavaScript, lista.js lo agrega sin recargar) */ ?>
+                <form class="mas-lista" method="post" action="<?= e(url('app/lista.php')) ?>">
+                  <?= Sesion::campoCsrf() ?>
+                  <input type="hidden" name="accion" value="agregar">
+                  <input type="hidden" name="ingrediente_id" value="<?= e($fila['ingrediente_id']) ?>">
+                  <input type="hidden" name="volver" value="<?= e((string) ($_SERVER['REQUEST_URI'] ?? '')) ?>">
+                  <button class="mas-lista__boton" type="submit" title="Agregar a la lista de compras">
+                    + lista<span class="solo-lectores">: agregar <?= e($fila['nombre']) ?> a la lista de compras</span>
+                  </button>
+                </form>
+              <?php endif; ?>
+            </div>
+          </td>
           <td>
             <span class="etiqueta<?= $estilo ? ' etiqueta--' . $estilo : '' ?>"><?= e($textoVence) ?></span>
             <?php if ($fila['fecha_vencimiento']) : ?><small class="texto-suave"><?= e(date('d/m', strtotime($fila['fecha_vencimiento']))) ?></small><?php endif; ?>
@@ -348,5 +378,7 @@ require parcial('encabezado');
   </div>
   <p class="vacio" id="sin-resultados" hidden>Nada coincide con lo que escribiste.</p>
 <?php endif; ?>
+<script src="<?= e(recurso('js/elegir.js')) ?>" defer></script>
 <script src="<?= e(recurso('js/despensa.js')) ?>" defer></script>
+<script src="<?= e(recurso('js/lista.js')) ?>" defer></script>
 <?php require parcial('pie'); ?>

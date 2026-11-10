@@ -63,8 +63,7 @@ APP_ENV=produccion          # no muestra errores en pantalla (quedan en el log d
 APP_URL=https://tu-dominio  # para los enlaces de los correos ("Olvidé mi contraseña")
 FORZAR_HTTPS=1              # solo si el sitio ya abre con https
 
-MAIL_CONTACTO=correo-del-equipo@ejemplo.com
-MAIL_REMITENTE=no-responder@tu-dominio
+# El correo (MAIL_...) se configura en el paso 6
 ```
 
 El `.env` tiene contraseñas: **nunca va al repositorio** (ya está en `.gitignore`). Con la forma B del paso 3, el `.htaccess` impide abrirlo desde el navegador.
@@ -76,15 +75,49 @@ Cooki manda correos para:
 - responder las consultas;
 - avisar de una consulta nueva.
 
-Tiene su propio cliente SMTP (`src/Smtp.php`). Hay tres opciones:
+Tiene su propio cliente SMTP (`src/Smtp.php`). En InfinityFree `mail()` está bloqueado, pero las conexiones a Gmail
+salen bien por el 587 y por el 465 (probado el 08/11/2026). Por eso se usa **una cuenta de Gmail del proyecto**.
 
-| Opción | Qué poner en `.env` | Cuándo |
-|---|---|---|
-| **Servidor de correo del hosting** | `MAIL_HOST`, `MAIL_PORT=587`, `MAIL_SEGURIDAD=tls`, `MAIL_USUARIO` y `MAIL_CONTRASENA` con los datos del panel | Si el hosting da casillas de correo |
-| **Servicio de envío de correos** (muchos tienen un plan gratuito) | Los datos SMTP que da el servicio (normalmente puerto 587 con `tls`) | Si el hosting no tiene correo |
-| **`mail()` del hosting** | `MAIL_HOST=` vacío | Si el hosting bloquea las conexiones SMTP salientes, algo frecuente en los planes gratuitos |
+### 6.1. Sacar la contraseña de aplicación de Gmail
 
-Si ninguna funciona en el hosting gratuito, todo lo demás sigue andando y las consultas quedan guardadas. La recuperación de la contraseña se puede mostrar en la demo con Docker y Mailpit.
+Gmail no deja entrar desde otro programa con la contraseña de la cuenta: hace falta una **contraseña de aplicación**.
+
+1. Entrá a la cuenta de Gmail del proyecto y abrí <https://myaccount.google.com/security>.
+2. Activá la **verificación en dos pasos**, si no está activa. Sin eso, Google no ofrece contraseñas de aplicación.
+3. Abrí <https://myaccount.google.com/apppasswords>, escribí un nombre (por ejemplo, `Cooki hosting`) y tocá **Crear**.
+4. Copiá las 16 letras que muestra. Se ven una sola vez. Si la perdés, borrala y creá otra.
+
+### 6.2. Completar el `.env` del hosting
+
+```ini
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_SEGURIDAD=tls
+MAIL_USUARIO=cuenta-del-proyecto@gmail.com
+MAIL_CONTRASENA=xxxxxxxxxxxxxxxx         # las 16 letras, sin espacios
+MAIL_REMITENTE=cuenta-del-proyecto@gmail.com
+MAIL_CONTACTO=cuenta-del-proyecto@gmail.com   # o el correo donde quieran recibir las consultas
+```
+
+- `MAIL_REMITENTE` tiene que ser **la misma cuenta**: si ponés otra dirección, Gmail la cambia por la cuenta igual.
+- Si el 587 falla, probá con `MAIL_PORT=465` y `MAIL_SEGURIDAD=ssl`. Los dos anduvieron en la prueba.
+- Gmail deja mandar unos 500 correos por día desde una cuenta gratuita: sobra para el sitio.
+
+### 6.3. Probarlo
+
+Entrá como administración → **Correo** → **Mandarme un correo de prueba**. La página muestra la configuración (sin la
+contraseña) y, si el correo no sale, la respuesta de Gmail:
+
+| Lo que dice | Qué hacer |
+|---|---|
+| `535 ... Username and Password not accepted` | La contraseña de aplicación está mal copiada o es la contraseña común. Creá otra |
+| `No se pudo conectar a ...` | Revisá `MAIL_HOST` y `MAIL_PORT`, o probá con el otro puerto |
+| `sin respuesta (tiempo agotado)` | Gmail no contestó a tiempo. Probá de nuevo o con el otro puerto |
+
+Después probá también "¿Olvidaste tu contraseña?" con una cuenta real.
+
+Con Docker los correos van a Mailpit (<http://localhost:8025>) y no hace falta configurar nada. Si el correo no
+funciona, todo lo demás sigue andando y las consultas quedan guardadas.
 
 ## 7. Comprobar que quedó bien
 
@@ -93,7 +126,7 @@ Si ninguna funciona en el hosting gratuito, todo lo demás sigue andando y las c
 - [ ] Se puede crear una cuenta, cargar algo en la despensa y ver recetas recomendadas.
 - [ ] El modo cocina guarda los pasos aunque se recargue la página, y al terminar descuenta de la despensa.
 - [ ] Como administración: editar una receta y subirle una foto.
-- [ ] "¿Olvidaste tu contraseña?" manda el correo, si se configuró el paso 6.
+- [ ] Administración → Correo manda el correo de prueba, y "¿Olvidaste tu contraseña?" manda el suyo (paso 6).
 - [ ] `https://tu-dominio/src/Db.php` y `https://tu-dominio/.env` **no** abren (403 o 404).
 - [ ] Una página con error muestra "Algo salió mal", y no el detalle técnico.
 - [ ] Cambiaste las contraseñas de los usuarios de prueba (paso 4).

@@ -31,10 +31,10 @@ public/                 ← lo único que ve el navegador (raíz web)
   olvide.php · restablecer.php   recuperar la contraseña con un enlace por correo
   nosotros.php          Quiénes somos (imán "Nosotros" sin cuenta; los datos están en src/equipo.php)
   app/                  páginas del usuario logueado: Mi cocina, Mi despensa, Recetas, modo cocina (cocinar.php),
-                        Mis preferencias, Mi cuenta
+                        Lista de compras (lista.php), Mis preferencias, Mi cuenta
   admin/                páginas solo para administradores: panel y ABM
   css/ · js/ · img/      (img/equipo: los dibujos de cada integrante para Quiénes somos)
-  api/index.php         API JSON: sesión, recetas, recomendaciones, despensa y favoritas (docs/api.md)
+  api/index.php         API JSON: sesión, recetas, recomendaciones, despensa, favoritas y lista (docs/api.md)
 src/                    código PHP que no se ve desde el navegador
   bootstrap.php         arranque: cada página empieza con require de este archivo
   ayudas.php            e() para escapar HTML, url(), redirigir(), parcial()...
@@ -92,13 +92,12 @@ docker compose exec web composer install
 
 ## Equipo
 
-|     | Módulo                                         | Nombre | GitHub                 |
-| --- | ---------------------------------------------- | ------ | ---------------------- |
-| P1  | Cuentas + Infraestructura                      | Daiana | Daiana1411             |
-| P2  | Despensa + Diseño                              | Julian | julianmartinez093-tech |
-| P3  | Recetas + Base de datos (coordinación)         | Pablo  | pablito2032            |
-| P4  | Contacto + Calidad                             | Ariana | arianapajon            |
-| P5  | Administración: ABM de usuarios e ingredientes | Susana | Susana2030             |
+|     | Módulo                                      | Nombre          | GitHub                 |
+| --- | ------------------------------------------- | --------------- | ---------------------- |
+| P1  | Cuentas + Infraestructura + Administración  | Daiana Martin   | Daiana1411             |
+| P2  | Despensa + Diseño                           | Julian Martinez | julianmartinez093-tech |
+| P3  | Recetas + Base de datos                     | Pablo Faraone   | pablito2032            |
+| P4  | Contacto + Calidad                          | Ariana Pajon    | arianapajon            |
 
 División de tareas: [docs/tareas-incremento-1.md](docs/tareas-incremento-1.md) · Cómo trabajamos: [CONTRIBUTING.md](CONTRIBUTING.md) · Decisiones: [docs/decisiones.md](docs/decisiones.md) · Modelo de datos: [docs/modelo-datos.md](docs/modelo-datos.md)
 
