@@ -169,6 +169,35 @@ final class PlanSemanalTest extends TestCase
         $this->assertArrayNotHasKey('2026-11-11|almuerzo', $elegidas, 'No hay más recetas: no se repite ninguna');
     }
 
+    public function testElDesplegableDiceCuantoFaltaEnCadaLugarContandoLoDeAntes(): void
+    {
+        $huevo = self::ing(15, 'Huevo', 2, 'u');
+        $despensa = [15 => [['nivel' => 2, 'cantidad' => 2.0, 'unidad' => 'u', 'vence' => null]]];
+        $receta = fn (string $id, string $titulo, array $ings): array => ['id' => $id, 'titulo' => $titulo,
+            'porciones_base' => 2, 'ingredientes' => $ings];
+        $candidatas = [
+            $receta('r:3', 'Tortilla', [$huevo, self::ing(9, 'Papa', 3, 'u'), self::ing(2, 'Cebolla', 1, 'u'),
+                self::ing(4, 'Aceite', 2, 'cda')]),
+            $receta('r:1', 'Huevo duro', [$huevo]),
+            $receta('r:2', 'Arroz con huevo', [$huevo, self::ing(20, 'Arroz', 200, 'g')]),
+        ];
+        $lugares = [
+            ['clave' => 'a', 'fecha' => '2026-11-09', 'comida' => self::comida('2026-11-09|a', 'Huevo duro', [$huevo])],
+            ['clave' => 'b', 'fecha' => '2026-11-09', 'comida' => null],
+        ];
+        $opciones = PlanSemanal::opciones($lugares, $candidatas, $despensa);
+
+        // En el primer lugar (aunque ya tenga receta) se mira la despensa entera: el huevo está
+        $this->assertSame(['r:1', 'r:2', 'r:3'], array_column($opciones['a'], 'id'), 'De la que menos le falta');
+        $this->assertSame([0, 1, 3], array_column($opciones['a'], 'faltan'));
+        $this->assertSame(['Arroz'], $opciones['a'][1]['faltantes']);
+        // En el segundo, el almuerzo ya usó los 2 huevos
+        $this->assertSame([1, 2, 4], array_column($opciones['b'], 'faltan'));
+        $this->assertSame(['Huevo', 'Arroz'], $opciones['b'][1]['faltantes']);
+        $this->assertSame(3, PlanSemanal::grupoFaltan(4));
+        $this->assertSame(0, PlanSemanal::grupoFaltan(0));
+    }
+
     public function testArmarRespetaLoQueYaEstabaYNoLoRepite(): void
     {
         $huevo = self::ing(15, 'Huevo', 2, 'u');

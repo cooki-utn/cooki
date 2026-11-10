@@ -21,10 +21,8 @@ require dirname(__DIR__, 2) . '/src/bootstrap.php';
 use Cooki\Db;
 use Cooki\Dominio\PlanSemanal;
 use Cooki\Dominio\Porciones;
-use Cooki\Repositorios\IaRepositorio;
 use Cooki\Repositorios\ListaRepositorio;
 use Cooki\Repositorios\PlanRepositorio;
-use Cooki\Repositorios\RecetaRepositorio;
 use Cooki\Sesion;
 
 Sesion::requiereLogin();
@@ -35,6 +33,22 @@ $usuarioId = Sesion::idUsuario();
 $hoy = new DateTimeImmutable('today');
 $dias = PlanSemanal::dias($hoy);
 $ultimoDia = $dias[PlanSemanal::DIAS - 1];
+/**
+ * Los 14 lugares de la semana en orden, cada uno con la comida que ya tiene (o null), como los quieren
+ * PlanSemanal::armar() y ::opciones().
+ * @param list<array<string, mixed>> $comidas lo que devolvió PlanRepositorio::comidas()
+ * @return list<array{clave: string, fecha: string, comida: ?array<string, mixed>}>
+ */
+$lugaresDe = function (array $comidas) use ($dias): array {
+    $porClave = array_column($comidas, null, 'clave');
+    $lugares = [];
+    foreach ($dias as $dia) {
+        foreach (array_keys(PlanSemanal::MOMENTOS) as $cual) {
+            $lugares[] = ['clave' => $dia . '|' . $cual, 'fecha' => $dia, 'comida' => $porClave[$dia . '|' . $cual] ?? null];
+        }
+    }
+    return $lugares;
+};
 
 if (esPost()) {
     Sesion::verificarCsrf();
@@ -79,16 +93,7 @@ if (esPost()) {
     }
     if ($accion === 'armar') {
         $repo->limpiar($usuarioId, $hoy->format('Y-m-d'));
-        $porClave = [];
-        foreach ($repo->comidas($usuarioId, $repo->semana($usuarioId, $dias[0], $ultimoDia)) as $comida) {
-            $porClave[$comida['clave']] = $comida;
-        }
-        $lugares = [];
-        foreach ($dias as $dia) {
-            foreach (array_keys(PlanSemanal::MOMENTOS) as $cual) {
-                $lugares[] = ['clave' => $dia . '|' . $cual, 'fecha' => $dia, 'comida' => $porClave[$dia . '|' . $cual] ?? null];
-            }
-        }
+        $lugares = $lugaresDe($repo->comidas($usuarioId, $repo->semana($usuarioId, $dias[0], $ultimoDia)));
         $candidatas = $repo->candidatas($usuarioId, ($_POST['con_ia'] ?? '') === '1');
         $porId = array_column($candidatas, null, 'id');
         $elegidas = PlanSemanal::armar($lugares, $candidatas, $repo->despensa($usuarioId));
@@ -141,8 +146,10 @@ if (esPost()) {
 }
 
 $plan = $repo->semana($usuarioId, $dias[0], $ultimoDia);
+$comidas = $repo->comidas($usuarioId, $plan);
+$despensa = $repo->despensa($usuarioId);
 // Qué tiene y qué le falta a cada comida, gastando la despensa en orden (de hoy en adelante)
-$simulacion = PlanSemanal::simular($repo->comidas($usuarioId, $plan), $repo->despensa($usuarioId));
+$simulacion = PlanSemanal::simular($comidas, $despensa);
 $enLista = array_flip((new ListaRepositorio($db))->ingredientesPendientes($usuarioId));
 /** Lo que falta para una comida y todavía no está en la lista de compras. */
 $sinAnotar = fn (array $estado): int => count(array_filter(
@@ -151,11 +158,11 @@ $sinAnotar = fn (array $estado): int => count(array_filter(
 ));
 $faltanSemana = array_sum(array_map($sinAnotar, $simulacion));
 $vacios = PlanSemanal::DIAS * count(PlanSemanal::MOMENTOS) - count($plan);
-// Opciones del desplegable: las recomendadas, las favoritas, las de IA guardadas y todo el recetario
-$todas = $repo->recetasParaElegir($usuarioId);
-$recomendadas = array_slice((new RecetaRepositorio($db))->recomendadas($usuarioId), 0, 8);
-$favoritas = array_values(array_filter($todas, fn (array $r) => $r['favorita'] && !$r['restringida']));
-$deIa = (new IaRepositorio($db))->guardadas($usuarioId);
+// El desplegable de cada lugar: todas las recetas (y las de IA guardadas), agrupadas por cuánto les faltaría ahí
+$candidatas = $repo->candidatas($usuarioId, true);
+$recetasPorId = array_column($candidatas, null, 'id');
+$hayIa = array_filter($candidatas, fn (array $c) => $c['ia']) !== [];
+$opciones = PlanSemanal::opciones($lugaresDe($comidas), $candidatas, $despensa);
 // Dibujos de ingredientes para decorar: uno chico en cada nota y los grandes en el lugar que queda después del domingo
 $decoracion = array_values(array_filter(
     array_map(fn (string $archivo) => basename($archivo, '.svg'), glob(dirname(__DIR__) . '/img/ingredientes/*.svg') ?: []),
@@ -163,37 +170,40 @@ $decoracion = array_values(array_filter(
 ));
 shuffle($decoracion);
 
-/** El desplegable de recetas de un lugar. La elegida se marca en "Todo el recetario" o en "Mis recetas de IA". */
-$desplegable = function (string $id, string $elegida) use ($recomendadas, $favoritas, $deIa, $todas): void {
+/**
+ * El desplegable de recetas de un lugar, agrupado en "Tenés todo", "Te falta 1 cosa", "Te faltan 2 cosas" y
+ * "Te faltan 3 o más" (contando lo que usan las comidas de antes). Las favoritas llevan ♥ y las de IA, "(IA)";
+ * a las que les faltan 1 o 2 cosas se les dice cuáles.
+ */
+$desplegable = function (string $id, string $elegida, array $deEsteLugar) use ($recetasPorId): void {
+    $grupos = [];
+    foreach ($deEsteLugar as $opcion) {
+        $grupos[PlanSemanal::grupoFaltan($opcion['faltan'])][] = $opcion;
+    }
     ?>
     <select id="<?= e($id) ?>" name="receta" required>
       <option value="">Elegí una receta…</option>
-      <?php if ($recomendadas !== []) : ?>
-        <optgroup label="Recomendadas para vos">
-          <?php foreach ($recomendadas as $r) : ?>
-            <option value="r:<?= e($r['id']) ?>"><?= e($r['titulo']) ?></option>
+      <?php foreach (PlanSemanal::GRUPOS_FALTAN as $grupo => $nombreGrupo) : ?>
+        <?php if (!isset($grupos[$grupo])) {
+            continue;
+        } ?>
+        <optgroup label="<?= e($nombreGrupo) ?>">
+          <?php foreach ($grupos[$grupo] as $opcion) : ?>
+            <?php
+            $receta = $recetasPorId[$opcion['id']];
+            $texto = ($receta['favorita'] ? '♥ ' : '') . $receta['titulo'] . ($receta['ia'] ? ' (IA)' : '');
+            if ($opcion['faltan'] > 0 && $opcion['faltan'] <= 2) {
+                $texto .= ' — falta' . ($opcion['faltan'] === 2 ? 'n' : '') . ': '
+                    . mb_strtolower(implode(' y ', $opcion['faltantes']));
+            } elseif ($opcion['faltan'] > 2) {
+                $texto .= ' — faltan ' . $opcion['faltan'];
+            }
+            $texto .= $receta['restringida'] ? ' (tiene algo que no comés)' : '';
+            ?>
+            <option value="<?= e($opcion['id']) ?>"<?= $opcion['id'] === $elegida ? ' selected' : '' ?>><?= e($texto) ?></option>
           <?php endforeach; ?>
         </optgroup>
-      <?php endif; ?>
-      <?php if ($favoritas !== []) : ?>
-        <optgroup label="Tus favoritas">
-          <?php foreach ($favoritas as $r) : ?>
-            <option value="r:<?= e($r['id']) ?>"><?= e($r['titulo']) ?></option>
-          <?php endforeach; ?>
-        </optgroup>
-      <?php endif; ?>
-      <?php if ($deIa !== []) : ?>
-        <optgroup label="Mis recetas de IA">
-          <?php foreach ($deIa as $r) : ?>
-            <option value="ia:<?= e($r['id']) ?>"<?= 'ia:' . $r['id'] === $elegida ? ' selected' : '' ?>><?= e($r['titulo']) ?></option>
-          <?php endforeach; ?>
-        </optgroup>
-      <?php endif; ?>
-      <optgroup label="Todo el recetario">
-        <?php foreach ($todas as $r) : ?>
-          <option value="r:<?= e($r['id']) ?>"<?= 'r:' . $r['id'] === $elegida ? ' selected' : '' ?>><?= e($r['titulo']) ?><?= $r['restringida'] ? ' (tiene algo que no comés)' : '' ?></option>
-        <?php endforeach; ?>
-      </optgroup>
+      <?php endforeach; ?>
     </select>
     <?php
 };
@@ -226,7 +236,7 @@ require parcial('encabezado');
     <?= Sesion::campoCsrf() ?>
     <input type="hidden" name="accion" value="armar">
     <button class="boton" type="submit"<?= $vacios === 0 ? ' disabled' : '' ?>>Armá mi semana</button>
-    <?php if ($deIa !== []) : ?>
+    <?php if ($hayIa) : ?>
       <label class="plan-acciones__ia"><input type="checkbox" name="con_ia" value="1"> Incluir mis recetas de IA</label>
     <?php endif; ?>
     <small class="plan-acciones__nota"><?= $vacios === 0
@@ -328,7 +338,7 @@ require parcial('encabezado');
               <input type="hidden" name="fecha" value="<?= e($fecha) ?>">
               <input type="hidden" name="momento" value="<?= e($momento) ?>">
               <label class="solo-lectores" for="receta-<?= e($idLugar) ?>">Receta para <?= e($deQuien) ?></label>
-              <?php $desplegable('receta-' . $idLugar, $comida === null ? '' : PlanSemanal::valorOpcion($comida['receta_id'], $comida['receta_ia_id'])); ?>
+              <?php $desplegable('receta-' . $idLugar, $comida === null ? '' : PlanSemanal::valorOpcion($comida['receta_id'], $comida['receta_ia_id']), $opciones[$clave] ?? []); ?>
               <div class="plan-comida__fila">
                 <label for="porciones-<?= e($idLugar) ?>">Porciones</label>
                 <input id="porciones-<?= e($idLugar) ?>" name="porciones" type="number" min="<?= Porciones::MINIMO ?>" max="<?= Porciones::MAXIMO ?>"
@@ -350,11 +360,17 @@ require parcial('encabezado');
       <?php endforeach; ?>
     </section>
   <?php endforeach; ?>
-  <?php /* El lugar que queda vacío después del domingo: stickers grandes (decorativos) */ ?>
+  <?php /* El lugar que queda vacío después del último día: stickers grandes desparramados, cada uno a otra altura,
+           tamaño y giro, como los dibujos sueltos de las otras páginas (decorativos) */ ?>
   <div class="plan-relleno" aria-hidden="true">
-    <?php foreach (array_slice($decoracion, PlanSemanal::DIAS, 5) as $n => $dibujo) : ?>
-      <img class="plan-relleno__dibujo" src="<?= e(url('img/ingredientes/' . $dibujo . '.svg')) ?>" alt="" width="110" height="110"
-           loading="lazy" style="--r: <?= [-8, 6, -3, 9, -6][$n] ?>deg; --d: <?= $n * 0.4 ?>s">
+    <?php
+    // [izquierda %, arriba %, tamaño px, giro]
+    $lugaresRelleno = [[4, 6, 112, -9], [40, 0, 84, 7], [70, 12, 120, -4], [20, 40, 92, 11], [56, 46, 104, -7], [2, 72, 80, 5], [78, 66, 90, 13]];
+    ?>
+    <?php foreach (array_slice($decoracion, PlanSemanal::DIAS, count($lugaresRelleno)) as $n => $dibujo) : ?>
+      <?php [$x, $y, $tamano, $giro] = $lugaresRelleno[$n]; ?>
+      <img class="plan-relleno__dibujo" src="<?= e(url('img/ingredientes/' . $dibujo . '.svg')) ?>" alt="" width="<?= $tamano ?>" height="<?= $tamano ?>"
+           loading="lazy" style="--x: <?= $x ?>%; --y: <?= $y ?>%; --t: <?= $tamano ?>px; --r: <?= $giro ?>deg; --d: <?= ($n % 5) * 0.35 ?>s">
     <?php endforeach; ?>
   </div>
 </div>

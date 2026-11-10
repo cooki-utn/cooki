@@ -170,10 +170,12 @@ final class PlanRepositorio
     }
 
     /**
-     * Recetas para "Armá mi semana": las del recetario que no tienen nada que la persona no come y, si quiere,
-     * sus recetas de IA guardadas. Cada una con sus ingredientes y si la cocinó en los últimos 7 días.
+     * Recetas para "Armá mi semana" y para el desplegable de cada comida: todo el recetario y, si se pide, las recetas
+     * de IA guardadas. Cada una con sus ingredientes, si la cocinó en los últimos 7 días, si es favorita y si tiene
+     * algo que la persona no come (armar() no usa esas).
      * @return list<array{id: string, titulo: string, minutos: int, dificultad: int, porciones_base: int,
-     *                    reciente: bool, ingredientes: list<array<string, mixed>>}>
+     *                    reciente: bool, favorita: bool, restringida: bool, ia: bool,
+     *                    ingredientes: list<array<string, mixed>>}>
      */
     public function candidatas(int $usuarioId, bool $conIa): array
     {
@@ -181,13 +183,16 @@ final class PlanRepositorio
             "SELECT r.id, r.titulo, r.minutos_prep + r.minutos_coccion AS minutos, r.dificultad, r.porciones_base,
                     EXISTS (SELECT 1 FROM sesion_cocina s
                              WHERE s.usuario_id = :usuario AND s.receta_id = r.id AND s.estado = 'completada'
-                               AND s.finalizada_en >= NOW() - INTERVAL 7 DAY) AS reciente
+                               AND s.finalizada_en >= NOW() - INTERVAL 7 DAY) AS reciente,
+                    EXISTS (SELECT 1 FROM favorito f WHERE f.usuario_id = :usuario3 AND f.receta_id = r.id) AS favorita,
+                    EXISTS (SELECT 1 FROM receta_ingrediente ri
+                              JOIN restriccion_usuario ru ON ru.ingrediente_id = ri.ingrediente_id
+                             WHERE ri.receta_id = r.id AND ri.es_opcional = 0
+                               AND ru.usuario_id = :usuario2) AS restringida
              FROM receta r
-             WHERE NOT EXISTS (SELECT 1 FROM receta_ingrediente ri
-                                 JOIN restriccion_usuario ru ON ru.ingrediente_id = ri.ingrediente_id
-                                WHERE ri.receta_id = r.id AND ri.es_opcional = 0 AND ru.usuario_id = :usuario2)"
+             ORDER BY r.titulo"
         );
-        $consulta->execute(['usuario' => $usuarioId, 'usuario2' => $usuarioId]);
+        $consulta->execute(['usuario' => $usuarioId, 'usuario2' => $usuarioId, 'usuario3' => $usuarioId]);
         $ingredientes = $this->ingredientes($usuarioId);
         $candidatas = [];
         foreach ($consulta->fetchAll() as $fila) {
@@ -198,6 +203,9 @@ final class PlanRepositorio
                 'dificultad' => (int) $fila['dificultad'],
                 'porciones_base' => (int) $fila['porciones_base'],
                 'reciente' => (bool) $fila['reciente'],
+                'favorita' => (bool) $fila['favorita'],
+                'restringida' => (bool) $fila['restringida'],
+                'ia' => false,
                 'ingredientes' => $ingredientes[(int) $fila['id']] ?? [],
             ];
         }
@@ -205,8 +213,8 @@ final class PlanRepositorio
             foreach ($this->recetasIa($usuarioId) as $id => $ia) {
                 $candidatas[] = [
                     'id' => 'ia:' . $id, 'titulo' => $ia['titulo'], 'minutos' => $ia['minutos'], 'dificultad' => 2,
-                    'porciones_base' => $ia['porciones_base'], 'reciente' => false,
-                    'ingredientes' => $ia['ingredientes'],
+                    'porciones_base' => $ia['porciones_base'], 'reciente' => false, 'favorita' => false,
+                    'restringida' => false, 'ia' => true, 'ingredientes' => $ia['ingredientes'],
                 ];
             }
         }
@@ -338,33 +346,5 @@ final class PlanRepositorio
             ];
         }
         return $datos;
-    }
-
-    /**
-     * Todas las recetas del recetario para el desplegable, por título, con si es favorita y si usa algo que la
-     * persona no come.
-     * @return list<array{id: int, titulo: string, porciones_base: int, favorita: bool, restringida: bool}>
-     */
-    public function recetasParaElegir(int $usuarioId): array
-    {
-        $consulta = $this->db->prepare(
-            'SELECT r.id, r.titulo, r.porciones_base,
-                    EXISTS (SELECT 1 FROM favorito f
-                             WHERE f.usuario_id = :usuario AND f.receta_id = r.id) AS favorita,
-                    EXISTS (SELECT 1 FROM receta_ingrediente ri
-                              JOIN restriccion_usuario ru ON ru.ingrediente_id = ri.ingrediente_id
-                             WHERE ri.receta_id = r.id AND ri.es_opcional = 0
-                               AND ru.usuario_id = :usuario2) AS restringida
-             FROM receta r
-             ORDER BY r.titulo'
-        );
-        $consulta->execute(['usuario' => $usuarioId, 'usuario2' => $usuarioId]);
-        return array_map(fn (array $fila): array => [
-            'id' => (int) $fila['id'],
-            'titulo' => (string) $fila['titulo'],
-            'porciones_base' => (int) $fila['porciones_base'],
-            'favorita' => (bool) $fila['favorita'],
-            'restringida' => (bool) $fila['restringida'],
-        ], $consulta->fetchAll());
     }
 }

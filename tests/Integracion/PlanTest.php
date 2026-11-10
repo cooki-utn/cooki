@@ -71,7 +71,7 @@ final class PlanTest extends TestCase
         $this->assertSame(7, substr_count($html, 'class="postit plan-dia'));
         $this->assertSame(14, substr_count($html, 'name="receta"'));
         $this->assertStringContainsString('id="dia-' . date('Y-m-d') . '"', $html);
-        $this->assertStringContainsString('Todo el recetario', $html);
+        $this->assertStringContainsString('<optgroup label="Te faltan 3 o más">', $html);
         $this->assertStringContainsString('aria-current="page"', $html);
     }
 

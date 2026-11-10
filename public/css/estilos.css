@@ -1893,23 +1893,24 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
 }
 .plan-dia__sticker--derecha { right: 18px; transform: rotate(12deg); }
 .plan-dia__sticker--izquierda { left: 22px; transform: rotate(-10deg); animation-delay: 1.2s; }
-/* …y los grandes en el lugar que queda vacío después del domingo (2 lugares con 3 columnas, 1 con 2 columnas) */
-.plan-relleno {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-evenly; gap: 10px 18px;
-  align-self: stretch; min-height: 120px; padding: 10px 0;
-}
+/* …y los grandes desparramados en el lugar que queda vacío después del último día (2 lugares con 3 columnas,
+   1 con 2 columnas), cada uno a otra altura, tamaño y giro, como los dibujos sueltos de las otras páginas */
+.plan-relleno { position: relative; align-self: stretch; min-height: 340px; }
 .plan-relleno__dibujo {
-  width: clamp(64px, 8vw, 118px); height: auto; transform: rotate(var(--r));
+  position: absolute; left: var(--x); top: var(--y); width: var(--t); height: auto; transform: rotate(var(--r));
   filter: drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 7px 8px rgb(30 50 40 / 30%));
   animation: mecer 4s ease-in-out var(--d) infinite alternate;
   transition: scale .3s cubic-bezier(.3, 1.6, .5, 1);
 }
 .plan-relleno__dibujo:hover { scale: 1.2; animation: menear .5s ease-in-out infinite alternate; }
 @media (min-width: 1000px) { .plan-relleno { grid-column: span 2; } }
+/* Con 2 columnas el lugar es angosto: más chicos */
+@media (min-width: 640px) and (max-width: 999px) { .plan-relleno__dibujo { width: calc(var(--t) * .75); } }
+/* En el celular no hay lugar vacío: una franja baja con 5, más chicos */
 @media (max-width: 639px) {
-  .plan-relleno { min-height: 0; }
-  .plan-relleno__dibujo { width: 58px; }
-  .plan-relleno__dibujo:nth-child(n+5) { display: none; }
+  .plan-relleno { min-height: 170px; }
+  .plan-relleno__dibujo { width: calc(var(--t) * .58); top: calc(var(--y) * .9); }
+  .plan-relleno__dibujo:nth-child(n+6) { display: none; }
 }
 .plan-acciones__todo a { margin-left: 10px; color: var(--color-enlace); }
 .plan-comida__en-lista { margin: 0; }

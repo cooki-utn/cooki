@@ -137,7 +137,8 @@ final class PlanSemanal
      * (Puntaje: lo que tenés ese día, lo que vence en 3 días o menos, si la cocinaste hace poco) mirando la despensa
      * que dejaron las comidas anteriores, y la "gasta" antes de pasar al siguiente. Primero las que entran en un
      * grupo de Mi cocina (ahora, falta 1, casi); si no alcanzan, la de más puntaje aunque falten cosas. No repite
-     * recetas en la semana (tampoco las que ya estaban). Si no quedan recetas, el lugar queda vacío.
+     * recetas en la semana (tampoco las que ya estaban) ni usa las que tienen algo que la persona no come
+     * (restringida). Si no quedan recetas, el lugar queda vacío.
      *
      * @param list<array{clave: string, fecha: string, comida: ?array<string, mixed>}> $lugares los 14, en orden;
      *        comida = la que ya está (como en simular(), con "id") o null si está vacío
@@ -161,7 +162,7 @@ final class PlanSemanal
             if ($comida === null) {
                 $mejor = null;
                 foreach ($candidatas as $candidata) {
-                    if (isset($usadas[$candidata['id']])) {
+                    if (isset($usadas[$candidata['id']]) || !empty($candidata['restringida'])) {
                         continue;
                     }
                     $calculo = Puntaje::calcular(
@@ -191,6 +192,59 @@ final class PlanSemanal
             self::gastar($estado, ['clave' => $lugar['clave'], 'fecha' => $lugar['fecha']] + $comida);
         }
         return $elegidas;
+    }
+
+    /** Los grupos del desplegable de cada comida, según cuántas cosas faltan. */
+    public const GRUPOS_FALTAN = [
+        0 => 'Tenés todo', 1 => 'Te falta 1 cosa', 2 => 'Te faltan 2 cosas', 3 => 'Te faltan 3 o más',
+    ];
+
+    /** El grupo del desplegable para una receta a la que le faltan $faltan cosas (0, 1, 2 o 3 = "3 o más"). */
+    public static function grupoFaltan(int $faltan): int
+    {
+        return max(0, min(3, $faltan));
+    }
+
+    /**
+     * Para el desplegable de cada lugar: cuánto le faltaría a cada receta si se pusiera ahí, mirando la despensa que
+     * dejaron las comidas anteriores (la que ya está en ese lugar no cuenta, así "Cambiar" muestra lo mismo que se
+     * va a ver después de guardar). Ordenadas de la que menos le falta a la que más, y por título.
+     *
+     * @param list<array{clave: string, fecha: string, comida: ?array<string, mixed>}> $lugares en orden (como armar())
+     * @param list<array{id: string, titulo: string, porciones_base: int, ingredientes: list<array<string, mixed>>}>
+     *        $candidatas
+     * @param array<int, list<array{nivel: int, cantidad: ?float, unidad: ?string, vence: ?string}>> $despensa
+     * @return array<string, list<array{id: string, faltan: int, faltantes: list<string>}>> por clave del lugar
+     */
+    public static function opciones(array $lugares, array $candidatas, array $despensa): array
+    {
+        $estado = ['items' => $despensa, 'quien' => []];
+        $opciones = [];
+        foreach ($lugares as $lugar) {
+            $deEste = [];
+            foreach ($candidatas as $n => $candidata) {
+                $prueba = $estado;   // una copia: probar no gasta nada
+                $resultado = self::gastar($prueba, [
+                    'clave' => $lugar['clave'], 'fecha' => $lugar['fecha'], 'titulo' => $candidata['titulo'],
+                    'porciones' => $candidata['porciones_base'], 'porciones_base' => $candidata['porciones_base'],
+                    'ingredientes' => $candidata['ingredientes'],
+                ]);
+                $deEste[] = [
+                    'id' => $candidata['id'],
+                    'faltan' => count($resultado['faltantes']),
+                    'faltantes' => array_column($resultado['faltantes'], 'nombre'),
+                    'orden' => [count($resultado['faltantes']), mb_strtolower($candidata['titulo']), $n],
+                ];
+            }
+            usort($deEste, fn (array $a, array $b) => $a['orden'] <=> $b['orden']);
+            $opciones[$lugar['clave']] = array_map(fn (array $o) => [
+                'id' => $o['id'], 'faltan' => $o['faltan'], 'faltantes' => $o['faltantes'],
+            ], $deEste);
+            if ($lugar['comida'] !== null) {
+                self::gastar($estado, ['clave' => $lugar['clave'], 'fecha' => $lugar['fecha']] + $lugar['comida']);
+            }
+        }
+        return $opciones;
     }
 
     /**
