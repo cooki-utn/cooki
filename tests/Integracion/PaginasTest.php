@@ -489,8 +489,15 @@ final class PaginasTest extends TestCase
         [, $html] = (new Navegador())->get('index.php');
         $inicio = (int) strpos($html, '<ul>');
         $menu = substr($html, $inicio, (int) strpos($html, '</ul>') - $inicio);
-        $this->assertStringContainsString('login.php">Ingresar</a></li>', $menu, 'Ingresar es un imán más del menú');
-        $this->assertStringContainsString('registro.php">Crear cuenta</a></li>', $menu);
+        $this->assertMatchesRegularExpression(
+            '#login\.php"><img class="menu__dibujo" src="[^"]*menu/ingresar\.svg" alt=""[^>]*>'
+            . '<span class="menu__texto">Ingresar</span></a></li>#',
+            $menu,
+            'Ingresar es un sticker más del menú'
+        );
+        $this->assertStringContainsString('<span class="menu__texto">Crear cuenta</span>', $menu);
+        $this->assertSame(5, substr_count($menu, 'class="menu__dibujo"'), 'Cada enlace lleva su dibujo');
+        $this->assertStringContainsString('img/menu/ajustes.svg', $html);
         $this->assertStringContainsString('cuenta--ajustes', $html);
         $this->assertStringContainsString('class="marca__letra"', $html, 'Letras separadas para la ola');
         $this->assertMatchesRegularExpression('#js/sitio\.js\?v=\d+#', $html, 'El JS lleva versión');

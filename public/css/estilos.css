@@ -124,8 +124,8 @@ img { max-width: 100%; }
   max-width: var(--ancho); margin: 0 auto; padding: 22px 16px 8px;
   display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px;
 }
-/* Alineación: todo lo de la barra se alinea con el centro de los imanes del menú (no con su texto).
-   El imán mide 34 px y arranca 4 px abajo → su centro queda a 21 px; logo, nombre y botones (44 px) también. */
+/* Alineación: todo lo de la barra se alinea con el centro de los stickers del menú (no con su texto):
+   el sticker mide 44 px, igual que el logo, el nombre y los botones. */
 .barra__interior > .marca, .menu__cuenta, .menu ul { margin-top: 0; }
 .barra__interior > .marca { min-height: 44px; }
 /* Logo: el sticker de los fideos (el dibujo de la aplicación) pegado al rótulo negro */
@@ -163,54 +163,44 @@ img { max-width: 100%; }
   100% { opacity: 0; transform: translateY(-14px) rotate(14deg) scaleY(1.2); }
 }
 .barra__boton { display: none; }
-.menu { display: flex; align-items: flex-start; gap: 20px; }
-.menu ul { list-style: none; display: flex; gap: 10px; margin: 0; padding: 0; }
+/* El menú arranca a poca distancia del logo y ocupa el resto de la barra: los stickers quedan repartidos con el mismo
+   espacio entre uno y otro (los nombres largos usan más lugar) */
+.menu { flex: 1; display: flex; align-items: flex-start; gap: 10px clamp(12px, 2vw, 28px); margin-left: clamp(8px, 3vw, 44px); }
+.menu ul { flex: 1; list-style: none; display: flex; justify-content: space-between; gap: 8px; margin: 0; padding: 0; }
 .menu ul a {
   display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 4px 8px; color: var(--color-sobre-puerta); text-decoration: none;
-  font: 700 1.35rem/1.1 var(--fuente-mano);
-  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+  padding: 0 4px 2px; color: var(--color-sobre-puerta); text-decoration: none;
+  font: 700 1.35rem/1.1 var(--fuente-mano); white-space: nowrap;
 }
-/* Cada link tiene su imán de color */
-.menu ul a::before {
-  content: ""; width: 34px; height: 34px; border-radius: 50%;
-  --claro: #FFE08A; --base: #F2B705;
-  background: radial-gradient(circle at 35% 30%, var(--claro), var(--base) 70%);
-  box-shadow: var(--sombra-iman);
-  transition: box-shadow .25s;
+/* Cada enlace es un sticker con el dibujo de su sección, troquelado con borde blanco y un poco torcido.
+   Con el mouse encima se endereza, sube y se agranda; la página actual lleva el nombre resaltado con fibra */
+.menu__dibujo {
+  width: 44px; height: 44px; flex: none; transform: rotate(var(--giro-sticker, -5deg));
+  filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 4px 4px rgb(30 50 40 / 30%));
+  transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), filter .3s;
 }
-.menu li:nth-child(2) a::before { --claro: #FF9C8F; --base: var(--color-marca); }
-.menu li:nth-child(3) a::before { --claro: #9FD3FF; --base: var(--color-azul); }
-.menu li:nth-child(4) a::before { --claro: #A8E6B8; --base: var(--color-exito); }
-.menu li:nth-child(5) a::before { --claro: #E4C6F5; --base: #7B4FA0; }
-.menu ul a[href$="registro.php"]::before { --claro: #A8E6B8; --base: var(--color-exito); }
-.menu ul a:hover { transform: translateY(-3px) rotate(-4deg); }
-.menu ul a:hover::before { box-shadow: var(--sombra-iman-alto); }
-.menu ul a[aria-current="page"]::before { outline: 3px dashed var(--color-sobre-puerta); outline-offset: 3px; }
+.menu li:nth-child(even) .menu__dibujo { --giro-sticker: 6deg; }
+.menu ul a:hover .menu__dibujo, .menu ul a:focus-visible .menu__dibujo,
+.cuenta__resumen:hover .menu__dibujo, .cuenta[open] .cuenta__resumen .menu__dibujo {
+  transform: translateY(-3px) rotate(0deg) scale(1.15);
+  filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 10px 8px rgb(30 50 40 / 30%));
+}
+.menu ul a[aria-current="page"] .menu__texto, .cuenta[open] .cuenta__nombre {
+  background-image: linear-gradient(transparent 58%, rgb(255 242 122 / 85%) 58%);
+}
+:root[data-color="noche"] .menu ul a[aria-current="page"] .menu__texto,
+:root[data-color="noche"] .cuenta[open] .cuenta__nombre { background-image: linear-gradient(transparent 58%, rgb(255 156 143 / 40%) 58%); }
 .menu__cuenta { position: relative; display: flex; align-items: center; gap: 10px; }
 
 /* Menú de la cuenta (y "Ajustes" sin cuenta): un imán más de la barra, con el nombre y una flechita abajo.
    Despliega una nota con colores, disposición, sonido y Salir */
 .cuenta { position: relative; }
 .cuenta__resumen {
-  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 8px; cursor: pointer;
-  list-style: none; color: var(--color-sobre-puerta); font: 700 1.35rem/1.1 var(--fuente-mano);
-  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0 4px 2px; cursor: pointer;
+  list-style: none; color: var(--color-sobre-puerta); font: 700 1.35rem/1.1 var(--fuente-mano); white-space: nowrap;
 }
+.cuenta__resumen .menu__dibujo { --giro-sticker: 5deg; }
 .cuenta__resumen::-webkit-details-marker { display: none; }
-.cuenta__resumen::before {   /* imán de la cuenta */
-  content: ""; width: 34px; height: 34px; border-radius: 50%; box-shadow: var(--sombra-iman); transition: box-shadow .25s;
-  background: radial-gradient(circle at 35% 30%, #9FE6DE, #1F8A80 70%);
-}
-/* Sin cuenta, el imán de "Ajustes" tiene los colores de la heladera */
-.cuenta__resumen--ajustes::before {
-  background:
-    radial-gradient(circle at 35% 30%, rgb(255 255 255 / 55%), transparent 55%),
-    conic-gradient(#CFE6DC 0 20%, #F2E6D0 0 40%, #D9E4F2 0 60%, #F4D8DE 0 80%, #2A3136 0);
-}
-.cuenta__resumen:hover { transform: translateY(-3px) rotate(-4deg); }
-.cuenta__resumen:hover::before, .cuenta[open] .cuenta__resumen::before { box-shadow: var(--sombra-iman-alto); }
-.cuenta[open] .cuenta__resumen::before { outline: 3px dashed var(--color-sobre-puerta); outline-offset: 3px; }
 .cuenta__nombre { display: inline-flex; align-items: center; gap: 6px; }
 .cuenta__flecha { width: 8px; height: 8px; border-right: 2.5px solid currentColor; border-bottom: 2.5px solid currentColor; transform: translateY(-3px) rotate(45deg); transition: transform .2s; }
 .cuenta[open] .cuenta__flecha { transform: translateY(2px) rotate(-135deg); }
@@ -255,13 +245,13 @@ img { max-width: 100%; }
     background: var(--color-superficie); padding: 12px; box-shadow: var(--sombra);
     --color-sobre-puerta: var(--color-texto); --color-sobre-puerta-suave: var(--color-suave); color: var(--color-texto); }
   .menu.abierto { display: flex; }
+  .menu { margin-left: 0; }
   .menu ul { flex-direction: column; gap: 4px; }
-  .menu ul a { flex-direction: row; gap: 12px; }
-  .menu ul a::before { width: 26px; height: 26px; }
+  .menu ul a { flex-direction: row; gap: 12px; padding: 4px 8px; }
+  .menu__dibujo { width: 32px; height: 32px; }
   .menu__cuenta { flex-wrap: wrap; justify-content: flex-start; }
   .cuenta { width: 100%; }
   .cuenta__resumen { flex-direction: row; gap: 12px; padding: 4px 8px; color: var(--color-texto); }
-  .cuenta__resumen::before { width: 26px; height: 26px; }
   .cuenta__panel { position: static; width: auto; transform: none; margin-top: 12px; padding: 18px 0 4px; background: transparent; box-shadow: none; border-top: 2px dashed var(--color-borde); }
   .cuenta__panel::before { display: none; }
   .marca__rotulo { font-size: 1.25rem; letter-spacing: 6px; }
@@ -1373,10 +1363,6 @@ td > .acciones { flex-wrap: nowrap; }
 }
 /* Inicio: el enlace a "Quiénes somos" dentro de "¿Por qué Cooki?" */
 .portada__equipo { font-weight: 800; }
-/* Menú sin cuenta: Inicio, Nosotros (imán naranja, el único de ese color), Contacto, Ingresar y Crear cuenta */
-.menu__invitado li:nth-child(2) a::before { --claro: #FFC48A; --base: #E8731C; }
-.menu__invitado li:nth-child(3) a::before { --claro: #FF9C8F; --base: var(--color-marca); }
-.menu__invitado li:nth-child(4) a::before { --claro: #9FD3FF; --base: var(--color-azul); }
 
 /* ══════════ Incremento 2 · Modo cocina (P4) ══════════ */
 /* Detalle de receta: el botón grande para empezar a cocinar */
@@ -1567,8 +1553,6 @@ a.paginacion__numero:hover, .paginacion__flecha:hover { transform: translateY(-2
 }
 
 /* ══════════ Incremento 3 · Lista de compras (P2) ══════════ */
-/* Sexto imán del menú (con Administración, la barra tiene seis) */
-.menu li:nth-child(6) a::before { --claro: #FFC48A; --base: #D9731A; }
 /* "+ lista" en la receta y en Mi despensa: un papelito chico con borde de birome */
 .mas-lista { display: inline; margin: 0; }
 .mas-lista__boton {

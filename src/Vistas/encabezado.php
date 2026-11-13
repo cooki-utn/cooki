@@ -23,21 +23,24 @@ $marcar = function (string $ruta) use ($actual, $carpeta): string {
     return $mismaCarpeta && $archivo === $actual ? ' aria-current="page"' : '';
 };
 
-// Todos los enlaces de la barra son imanes (sin cuenta también Ingresar y Crear cuenta)
+// Todos los enlaces de la barra son stickers con un dibujo (sin cuenta también Ingresar y Crear cuenta):
+// [ruta, texto, dibujo en img/]
 if ($usuario !== null) {
     $menu = [
-        ['app/index.php', 'Mi cocina'], ['app/despensa.php', 'Mi despensa'], ['app/recetas.php', 'Recetas'],
-        ['app/plan.php', 'Plan'], ['app/lista.php', 'Lista'],
+        ['app/index.php', 'Mi cocina', 'menu/horno.svg'], ['app/despensa.php', 'Mi despensa', 'menu/heladera.svg'],
+        ['app/recetas.php', 'Recetas', 'menu/recetas.svg'], ['app/plan.php', 'Plan', 'plan.svg'],
+        ['app/lista.php', 'Lista', 'menu/lista.svg'],
     ];
     if ($usuario['rol'] === Sesion::ROL_ADMIN) {
-        $menu[] = ['admin/index.php', 'Administración'];
+        $menu[] = ['admin/index.php', 'Administración', 'menu/administracion.svg'];
     }
-    $menu[] = ['contacto.php', 'Contacto'];
+    $menu[] = ['contacto.php', 'Contacto', 'menu/contacto.svg'];
 } else {
     // "Nosotros" (Quiénes somos) va solo en el menú sin cuenta
     $menu = [
-        ['index.php', 'Inicio'], ['nosotros.php', 'Nosotros'], ['contacto.php', 'Contacto'],
-        ['login.php', 'Ingresar'], ['registro.php', 'Crear cuenta'],
+        ['index.php', 'Inicio', 'menu/inicio.svg'], ['nosotros.php', 'Nosotros', 'menu/nosotros.svg'],
+        ['contacto.php', 'Contacto', 'menu/contacto.svg'], ['login.php', 'Ingresar', 'menu/ingresar.svg'],
+        ['registro.php', 'Crear cuenta', 'menu/crear-cuenta.svg'],
     ];
 }
 
@@ -82,8 +85,8 @@ $imanesColor = function (): void {
     <button class="barra__boton" type="button" aria-expanded="false" aria-controls="menu-principal">Menú</button>
     <nav id="menu-principal" class="menu" aria-label="Principal">
       <ul<?= $usuario === null ? ' class="menu__invitado"' : '' ?>>
-        <?php foreach ($menu as [$ruta, $texto]) : ?>
-          <li><a href="<?= e(url($ruta)) ?>"<?= $marcar($ruta) ?>><?= e($texto) ?></a></li>
+        <?php foreach ($menu as [$ruta, $texto, $dibujo]) : ?>
+          <li><a href="<?= e(url($ruta)) ?>"<?= $marcar($ruta) ?>><img class="menu__dibujo" src="<?= e(url('img/' . $dibujo)) ?>" alt="" width="44" height="44"><span class="menu__texto"><?= e($texto) ?></span></a></li>
         <?php endforeach; ?>
       </ul>
       <div class="menu__cuenta">
@@ -91,6 +94,7 @@ $imanesColor = function (): void {
           <?php /* Menú de la cuenta: un <details> funciona sin JavaScript; sitio.js lo cierra al tocar afuera */ ?>
           <details class="cuenta">
             <summary class="cuenta__resumen">
+              <img class="menu__dibujo" src="<?= e(url('img/menu/cuenta.svg')) ?>" alt="" width="44" height="44">
               <span class="cuenta__nombre"><?= e(explode(' ', $usuario['nombre'])[0]) ?><span class="cuenta__flecha" aria-hidden="true"></span></span>
             </summary>
             <div class="cuenta__panel">
@@ -144,6 +148,7 @@ $imanesColor = function (): void {
           <?php /* Sin cuenta: "Ajustes" despliega una hoja con el color de la heladera (cookie), el sonido y el volumen */ ?>
           <details class="cuenta cuenta--ajustes">
             <summary class="cuenta__resumen cuenta__resumen--ajustes">
+              <img class="menu__dibujo" src="<?= e(url('img/menu/ajustes.svg')) ?>" alt="" width="44" height="44">
               <span class="cuenta__nombre">Ajustes<span class="cuenta__flecha" aria-hidden="true"></span></span>
             </summary>
             <div class="cuenta__panel">
