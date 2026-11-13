@@ -348,13 +348,15 @@ img { max-width: 100%; }
   75% { transform: translateY(-4px) rotate(calc(var(--giro) - .6deg)); }
   100% { transform: translateY(-4px) rotate(calc(var(--giro) + 1.2deg)); }
 }
-/* Las notas que tienen algo para tocar (un enlace, un botón, un campo) no se hamacan mientras el mouse está encima:
-   se levantan y se quedan quietas en esa inclinación, así es fácil darle al enlace. Al soltarlas (cuando el mouse
-   sale), sitio.js les pone .nota--soltada y recién ahí se hamacan hasta volver a su lugar. */
-:is(.aviso, .postit):has(a, button, input, select, textarea, summary):hover { animation: none; }
+/* Las notas que tienen algo para tocar (un enlace, un botón, un campo) están un poco inclinadas (--giro) y, con el
+   mouse encima, se levantan y se ponen derechas (sin hamacarse), así el texto se lee derecho y es fácil darle al
+   enlace. Al soltarlas (cuando el mouse sale), sitio.js les pone .nota--soltada y se hamacan hasta volver a su giro. */
+:is(.aviso, .postit):has(a, button, input, select, textarea, summary):hover {
+  animation: none; transform: translateY(-4px) rotate(0deg);
+}
 .nota--soltada { animation: hamacar-soltar 1.4s ease-out; }
 @keyframes hamacar-soltar {
-  0% { transform: translateY(-4px) rotate(calc(var(--giro) + 1.2deg)); }
+  0% { transform: translateY(-4px) rotate(0deg); }
   20% { transform: translateY(-2px) rotate(calc(var(--giro) - 3deg)); }
   40% { transform: rotate(calc(var(--giro) + 2.2deg)); }
   60% { transform: rotate(calc(var(--giro) - 1.2deg)); }

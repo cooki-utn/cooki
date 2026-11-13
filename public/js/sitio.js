@@ -211,8 +211,8 @@ if (masLista) {
   });
 }
 
-// 8. Las notas con algo para tocar (enlace, botón, campo) quedan quietas mientras el mouse está encima (estilos.css)
-//    y se hamacan recién cuando el mouse sale. Sin JavaScript o con "reducir movimiento", solo vuelven a su lugar.
+// 8. Las notas con algo para tocar (enlace, botón, campo) se ponen derechas mientras el mouse está encima (estilos.css)
+//    y se hamacan recién cuando el mouse sale. Sin JavaScript o con "reducir movimiento", solo vuelven a su giro.
 const NOTA_CON_ENLACE = ':is(.aviso, .postit):has(a, button, input, select, textarea, summary)';
 if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   document.addEventListener('mouseout', (evento) => {
