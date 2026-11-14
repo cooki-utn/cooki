@@ -279,6 +279,18 @@ img { max-width: 100%; }
 }
 .pie { color: var(--color-sobre-puerta-suave); text-align: center; padding: 18px 16px; font: 700 1.2rem var(--fuente-mano); }
 .pie p { margin: 2px 0; }
+/* Pie: Contacto y Quiénes somos como stickers chicos (igual que los del menú), arriba del texto */
+.pie__enlaces { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 30px; margin: 0 0 10px; }
+.pie__enlace { display: inline-flex; align-items: center; gap: 8px; padding: 2px 4px; color: var(--color-sobre-puerta); text-decoration: none; }
+.pie__dibujo {
+  width: 34px; height: 34px; flex: none; transform: rotate(-6deg);
+  filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 3px 3px rgb(30 50 40 / 30%));
+  transition: transform .3s cubic-bezier(.3, 1.6, .5, 1);
+}
+.pie__enlace:nth-child(even) .pie__dibujo { transform: rotate(6deg); }
+.pie__enlace:hover .pie__dibujo, .pie__enlace:focus-visible .pie__dibujo { transform: translateY(-2px) rotate(0deg) scale(1.15); }
+.pie__enlace[aria-current="page"] span { background-image: linear-gradient(transparent 58%, rgb(255 242 122 / 85%) 58%); }
+:root[data-color="noche"] .pie__enlace[aria-current="page"] span { background-image: linear-gradient(transparent 58%, rgb(255 156 143 / 40%) 58%); }
 
 /* Las hojas de papel (tarjetas, post-its, tablas, la nota del editor) vuelven el texto a tinta */
 /* Lo que va sobre papel lleva tinta oscura aunque la heladera sea noche (la hoja de la lista también) */

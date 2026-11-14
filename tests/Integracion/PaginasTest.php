@@ -44,7 +44,7 @@ final class PaginasTest extends TestCase
         }
     }
 
-    public function testQuienesSomosMuestraAlEquipoYSoloEstaEnElMenuSinCuenta(): void
+    public function testQuienesSomosMuestraAlEquipoYConCuentaEstaEnElPie(): void
     {
         $web = new Navegador();
         [$estado, $html] = $web->get('nosotros.php');
@@ -76,7 +76,20 @@ final class PaginasTest extends TestCase
         $this->assertMatchesRegularExpression($imanNosotros, $inicio, 'Sin cuenta, el menú tiene el imán Nosotros');
         $web->ingresar('maria@cooki.test', 'Usuario1234');
         [, $cocina] = $web->get('app/index.php');
-        $this->assertStringNotContainsString('nosotros.php', $cocina, 'Con cuenta no está en el menú');
+        $inicioMenu = (int) strpos($cocina, 'id="menu-principal"');
+        $menu = substr($cocina, $inicioMenu, (int) strpos($cocina, '</nav>', $inicioMenu) - $inicioMenu);
+        $this->assertStringNotContainsString('nosotros.php', $menu, 'Con cuenta no está en el menú');
+        $this->assertStringNotContainsString('contacto.php', $menu, 'Con cuenta, Contacto tampoco');
+        $pie = substr($cocina, (int) strpos($cocina, '<footer'));
+        $this->assertMatchesRegularExpression(
+            '#class="pie__enlace" href="[^"]*contacto\.php".*menu/contacto\.svg#s',
+            $pie
+        );
+        $this->assertMatchesRegularExpression(
+            '#class="pie__enlace" href="[^"]*nosotros\.php".*menu/nosotros\.svg#s',
+            $pie
+        );
+        $this->assertStringContainsString('Cooki · ' . date('Y') . ' · Proyecto integrador', $pie);
     }
 
     public function testLasTipografiasNoDependenDeGoogle(): void

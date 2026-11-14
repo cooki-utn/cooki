@@ -34,7 +34,7 @@ if ($usuario !== null) {
     if ($usuario['rol'] === Sesion::ROL_ADMIN) {
         $menu[] = ['admin/index.php', 'Administración', 'menu/administracion.svg'];
     }
-    $menu[] = ['contacto.php', 'Contacto', 'menu/contacto.svg'];
+    // Contacto y Quiénes somos, con cuenta, están en el pie de página (src/Vistas/pie.php)
 } else {
     // "Nosotros" (Quiénes somos) va solo en el menú sin cuenta
     $menu = [
