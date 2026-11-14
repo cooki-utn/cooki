@@ -145,11 +145,11 @@ $imanesColor = function (): void {
             </div>
           </details>
         <?php else : ?>
-          <?php /* Sin cuenta: "Ajustes" despliega una hoja con el color de la heladera (cookie), el sonido y el volumen */ ?>
+          <?php /* Sin cuenta: "Preferencias" despliega una hoja con el color de la heladera (cookie), el sonido y el volumen */ ?>
           <details class="cuenta cuenta--ajustes">
             <summary class="cuenta__resumen cuenta__resumen--ajustes">
               <img class="menu__dibujo" src="<?= e(url('img/menu/ajustes.svg')) ?>" alt="" width="44" height="44">
-              <span class="cuenta__nombre">Ajustes<span class="cuenta__flecha" aria-hidden="true"></span></span>
+              <span class="cuenta__nombre">Preferencias<span class="cuenta__flecha" aria-hidden="true"></span></span>
             </summary>
             <div class="cuenta__panel">
               <form class="preferencias" method="post" action="<?= e(url('app/preferencias.php')) ?>">

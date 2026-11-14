@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Guarda las preferencias de pantalla (menú de la cuenta, o "Ajustes" sin cuenta):
+ * Guarda las preferencias de pantalla (menú de la cuenta, o "Preferencias" sin cuenta):
  *   POST color=verde|crema|celeste|rosa|noche        → color de la heladera
  *   POST disposicion=normal|panoramica               → disposición en la computadora
  *   POST volumen=0..100                              → volumen de los sonidos

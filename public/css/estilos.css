@@ -166,9 +166,9 @@ img { max-width: 100%; }
 /* Los stickers van a la derecha, con el mismo espacio entre uno y otro (también antes de la cuenta), y dejan un
    lugar libre después del logo. Cada uno ocupa lo que mide su nombre */
 .menu {
-  --espacio-menu: clamp(10px, 1.6vw, 22px);
+  --espacio-menu: clamp(14px, 2vw, 28px);
   flex: 1; display: flex; justify-content: flex-end; align-items: flex-start; gap: 10px var(--espacio-menu);
-  margin-left: clamp(24px, 6vw, 90px);
+  margin-left: 32px;   /* lo mínimo libre después del logo; con lugar, queda más (los stickers van a la derecha) */
 }
 .menu ul { list-style: none; display: flex; gap: var(--espacio-menu); margin: 0; padding: 0; }
 .menu ul a {
@@ -196,7 +196,7 @@ img { max-width: 100%; }
 :root[data-color="noche"] .cuenta[open] .cuenta__nombre { background-image: linear-gradient(transparent 58%, rgb(255 156 143 / 40%) 58%); }
 .menu__cuenta { position: relative; display: flex; align-items: center; gap: 10px; }
 
-/* Menú de la cuenta (y "Ajustes" sin cuenta): un imán más de la barra, con el nombre y una flechita abajo.
+/* Menú de la cuenta (y "Preferencias" sin cuenta): un imán más de la barra, con el nombre y una flechita abajo.
    Despliega una nota con colores, disposición, sonido y Salir */
 .cuenta { position: relative; }
 .cuenta__resumen {

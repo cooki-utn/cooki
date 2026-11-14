@@ -104,7 +104,7 @@ final class Sesion
     }
 
     /**
-     * Color de la heladera: el de la cuenta; sin cuenta, el de la cookie (lo elige en "Ajustes").
+     * Color de la heladera: el de la cuenta; sin cuenta, el de la cookie (lo elige en "Preferencias").
      * 'verde' si no eligió ninguno.
      */
     public static function color(): string

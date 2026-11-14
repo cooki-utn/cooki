@@ -484,7 +484,7 @@ final class PaginasTest extends TestCase
     }
 
     /** El HTML del resultado del selector (sin el resto de la página, que también tiene recetas). */
-    public function testLaBarraSinCuentaEsTodaDeImanesConAjustes(): void
+    public function testLaBarraSinCuentaEsTodaDeStickersConPreferencias(): void
     {
         [, $html] = (new Navegador())->get('index.php');
         $inicio = (int) strpos($html, '<ul>');
@@ -499,6 +499,7 @@ final class PaginasTest extends TestCase
         $this->assertSame(5, substr_count($menu, 'class="menu__dibujo"'), 'Cada enlace lleva su dibujo');
         $this->assertStringContainsString('img/menu/ajustes.svg', $html);
         $this->assertStringContainsString('cuenta--ajustes', $html);
+        $this->assertStringContainsString('<span class="cuenta__nombre">Preferencias<span', $html);
         $this->assertStringContainsString('class="marca__letra"', $html, 'Letras separadas para la ola');
         $this->assertMatchesRegularExpression('#js/sitio\.js\?v=\d+#', $html, 'El JS lleva versión');
         [, $login] = (new Navegador())->get('login.php');
