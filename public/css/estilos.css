@@ -15,6 +15,13 @@
 @font-face { font-family: "Figtree"; font-weight: 700; font-display: swap; src: url("../fonts/figtree-latin-700-normal.woff2") format("woff2"); }
 @font-face { font-family: "Figtree"; font-weight: 800; font-display: swap; src: url("../fonts/figtree-latin-800-normal.woff2") format("woff2"); }
 @font-face { font-family: "Space Mono"; font-weight: 700; font-display: swap; src: url("../fonts/space-mono-latin-700-normal.woff2") format("woff2"); }
+/* Letras de reemplazo mientras cargan las de arriba: las que trae la computadora, achicadas o agrandadas (size-adjust)
+   para que ocupen el mismo ancho. Así la página no se agranda y se achica al cambiar de página. Medido en Edge:
+   Caveat ocupa el 68,5 % de Segoe Print y el 70,2 % de Comic Sans; Space Mono, el 111,3 % de Consolas y el 102 % de Courier */
+@font-face { font-family: "Caveat respaldo"; font-weight: 700; src: local("Segoe Print Bold"), local("SegoePrint-Bold"), local("Segoe Print"); size-adjust: 68.5%; }
+@font-face { font-family: "Caveat respaldo 2"; font-weight: 700; src: local("Comic Sans MS Bold"), local("ComicSansMS-Bold"), local("Comic Sans MS"); size-adjust: 70.2%; }
+@font-face { font-family: "Space Mono respaldo"; font-weight: 700; src: local("Consolas Bold"), local("Consolas-Bold"), local("Consolas"); size-adjust: 111.3%; }
+@font-face { font-family: "Space Mono respaldo 2"; font-weight: 700; src: local("Courier New Bold"), local("CourierNewPS-BoldMT"), local("Courier New"); size-adjust: 102%; }
 
 :root {
   /* Puerta, tinta y papel */
@@ -60,8 +67,8 @@
   --color-sobre-puerta-suave: var(--color-suave);
   --color-enlace: var(--color-azul);
   --fuente: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --fuente-mano: "Caveat", "Segoe Print", cursive;
-  --fuente-rotulo: "Space Mono", ui-monospace, monospace;
+  --fuente-mano: "Caveat", "Caveat respaldo", "Caveat respaldo 2", cursive;
+  --fuente-rotulo: "Space Mono", "Space Mono respaldo", "Space Mono respaldo 2", ui-monospace, monospace;
   --ancho: 1180px;
 }
 

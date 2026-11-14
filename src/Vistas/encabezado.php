@@ -63,6 +63,10 @@ $imanesColor = function (): void {
   <meta name="description" content="Cooki: tu despensa y qué cocinar con lo que tenés">
   <?php /* recurso(): agrega ?v=fecha del archivo, así el navegador baja el CSS y el JS nuevos cada vez que cambian */ ?>
   <link rel="icon" type="image/svg+xml" href="<?= e(url('img/ingredientes/fideos.svg')) ?>">
+  <?php /* Las letras principales se piden enseguida, sin esperar a leer el CSS (así no se ve el cambio de letra) */ ?>
+  <?php foreach (['caveat-latin-700-normal', 'figtree-latin-600-normal', 'space-mono-latin-700-normal'] as $fuente) : ?>
+    <link rel="preload" href="<?= e(url('fonts/' . $fuente . '.woff2')) ?>" as="font" type="font/woff2" crossorigin>
+  <?php endforeach; ?>
   <link rel="stylesheet" href="<?= e(recurso('css/estilos.css')) ?>">
   <script src="<?= e(recurso('js/sitio.js')) ?>" defer></script>
   <script src="<?= e(recurso('js/sonidos.js')) ?>" defer></script>
