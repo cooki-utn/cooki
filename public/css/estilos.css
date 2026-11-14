@@ -127,7 +127,7 @@ img { max-width: 100%; }
 /* Alineación: todo lo de la barra se alinea con el centro de los stickers del menú (no con su texto):
    el sticker mide 44 px, igual que el logo, el nombre y los botones. */
 .barra__interior > .marca, .menu__cuenta, .menu ul { margin-top: 0; }
-.barra__interior > .marca { min-height: 44px; }
+.barra__interior > .marca { min-height: 44px; margin-top: 14px; }   /* a la altura de los stickers */
 /* Logo: el sticker de los fideos (el dibujo de la aplicación) pegado al rótulo negro */
 .marca { position: relative; display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
 .marca__dibujo {
@@ -163,10 +163,14 @@ img { max-width: 100%; }
   100% { opacity: 0; transform: translateY(-14px) rotate(14deg) scaleY(1.2); }
 }
 .barra__boton { display: none; }
-/* El menú arranca a poca distancia del logo y ocupa el resto de la barra: los stickers quedan repartidos con el mismo
-   espacio entre uno y otro (los nombres largos usan más lugar) */
-.menu { flex: 1; display: flex; align-items: flex-start; gap: 10px clamp(12px, 2vw, 28px); margin-left: clamp(8px, 3vw, 44px); }
-.menu ul { flex: 1; list-style: none; display: flex; justify-content: space-between; gap: 8px; margin: 0; padding: 0; }
+/* Los stickers van a la derecha, con el mismo espacio entre uno y otro (también antes de la cuenta), y dejan un
+   lugar libre después del logo. Cada uno ocupa lo que mide su nombre */
+.menu {
+  --espacio-menu: clamp(10px, 1.6vw, 22px);
+  flex: 1; display: flex; justify-content: flex-end; align-items: flex-start; gap: 10px var(--espacio-menu);
+  margin-left: clamp(24px, 6vw, 90px);
+}
+.menu ul { list-style: none; display: flex; gap: var(--espacio-menu); margin: 0; padding: 0; }
 .menu ul a {
   display: flex; flex-direction: column; align-items: center; gap: 2px;
   padding: 0 4px 2px; color: var(--color-sobre-puerta); text-decoration: none;
@@ -246,6 +250,7 @@ img { max-width: 100%; }
     --color-sobre-puerta: var(--color-texto); --color-sobre-puerta-suave: var(--color-suave); color: var(--color-texto); }
   .menu.abierto { display: flex; }
   .menu { margin-left: 0; }
+  .barra__interior > .marca { margin-top: 0; }   /* en el celular, a la altura del botón Menú */
   .menu ul { flex-direction: column; gap: 4px; }
   .menu ul a { flex-direction: row; gap: 12px; padding: 4px 8px; }
   .menu__dibujo { width: 32px; height: 32px; }
