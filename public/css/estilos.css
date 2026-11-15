@@ -1988,7 +1988,7 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
 .paso--rosa { background: #FFD3DD; }
 .paso--celeste { background: #D3ECFF; }
 .paso--verde { background: #DDF5C8; }
-.pasos--js .paso:not(.paso--actual) { display: none; }
+.js .pasos .paso:not(.paso--actual) { display: none; }
 .paso h2:focus { outline: none; }
 .paso h2:focus-visible { outline: 3px solid var(--color-foco); outline-offset: 4px; }
 .paso__botones { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
@@ -2054,3 +2054,38 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
 .perfil-resumen dd { margin: 0; }
 .perfil-resumen small { color: var(--color-suave); }
 @media (max-width: 480px) { .perfil-resumen { grid-template-columns: 1fr; } .perfil-resumen dd { margin-bottom: 6px; } }
+
+/* Recetas: lista desplegable de "Tipo" con los stickers (elegir-tipo.js). Se ve como los otros campos. */
+.campo__rotulo { font-weight: 800; }
+/* En la hoja de cuaderno, como los otros campos: rótulo de 1 renglón y caja de 44 px + 20 px */
+.tarjeta .campo > .campo__rotulo { line-height: var(--renglon); }
+.tarjeta .campo > .elegir-tipo { margin-bottom: 20px; }
+.elegir-tipo__resumen { box-sizing: border-box; height: 44px; }
+.elegir-tipo { position: relative; }
+.elegir-tipo__resumen {
+  display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 34px 4px 8px; list-style: none; cursor: pointer;
+  font: 600 1rem/1.5 var(--fuente); color: var(--color-texto); background: #fff; border: 2px solid var(--color-texto); border-radius: 10px;
+}
+.elegir-tipo__resumen::-webkit-details-marker { display: none; }
+.elegir-tipo__resumen::after {
+  content: ""; position: absolute; right: 14px; top: 50%; width: 8px; height: 8px; margin-top: -6px;
+  border: solid var(--color-texto); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform .2s;
+}
+.elegir-tipo[open] .elegir-tipo__resumen::after { transform: rotate(-135deg); margin-top: -2px; }
+.elegir-tipo__resumen span, .elegir-tipo__opcion span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.elegir-tipo__resumen img, .elegir-tipo__opcion img { flex: none; width: 30px; height: 30px; }
+.elegir-tipo__panel {
+  position: absolute; z-index: 30; left: 0; top: calc(100% + 4px); display: grid; gap: 2px; min-width: 100%; width: max-content;
+  max-width: min(320px, 90vw); max-height: min(450px, 70vh); overflow-y: auto; padding: 6px; background: #fff; color: var(--color-texto);
+  border: 2px solid var(--color-texto); border-radius: 10px; box-shadow: 0 12px 22px rgb(0 0 0 / 22%);
+}
+.elegir-tipo__opcion { display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 6px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.elegir-tipo__opcion input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.elegir-tipo__opcion:hover { background: #EEF5F1; }
+.elegir-tipo__opcion:has(input:checked) { background: var(--color-cinta); font-weight: 800; }
+.elegir-tipo__opcion:has(input:focus-visible) { outline: 3px solid var(--color-foco, var(--color-azul)); outline-offset: -3px; }
+@media (prefers-reduced-motion: reduce) { .elegir-tipo__resumen::after { transition: none; } }
+
+/* Bienvenida: con JavaScript (clase "js" puesta en el <head>, antes de dibujar) se ve una nota por vez desde el
+   primer momento; sin JavaScript se ven las 4 juntas y no aparecen los botones de paso ni los puntitos */
+html:not(.js) .pasos__puntos, html:not(.js) .pasos [data-paso] { display: none; }

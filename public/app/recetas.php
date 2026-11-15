@@ -81,14 +81,39 @@ require parcial('encabezado');
       <?php endforeach; ?>
     </select>
   </div>
+  <?php /* Tipo: una lista desplegable con los stickers de cada tipo (un <select> no puede mostrar dibujos).
+           Sin JavaScript se abre, se elige y se toca Buscar; con JavaScript (elegir-tipo.js) se cierra sola
+           y muestra arriba lo elegido. */ ?>
+  <?php
+  $tipoElegido = null;
+  foreach ($etiquetas as $etiqueta) {
+      if ($filtros['etiqueta'] === (int) $etiqueta['id']) {
+          $tipoElegido = $etiqueta['nombre'];
+      }
+  }
+  $textoTipo = fn (string $clave): string => Tipos::nombre($clave) . ($clave === 'sin_tacc' ? ' (apta celíacos)' : '');
+  ?>
   <div class="campo">
-    <label for="etiqueta">Tipo</label>
-    <select id="etiqueta" name="etiqueta">
-      <option value="0">Todas</option>
-      <?php foreach ($etiquetas as $etiqueta) : ?>
-        <option value="<?= e($etiqueta['id']) ?>"<?= $filtros['etiqueta'] === (int) $etiqueta['id'] ? ' selected' : '' ?>><?= e(Tipos::nombre($etiqueta['nombre']) . ($etiqueta['nombre'] === 'sin_tacc' ? ' (apta celíacos)' : '')) ?></option>
-      <?php endforeach; ?>
-    </select>
+    <span class="campo__rotulo" id="rotulo-tipo">Tipo</span>
+    <details class="elegir-tipo" data-elegir-tipo>
+      <summary class="elegir-tipo__resumen" aria-describedby="rotulo-tipo">
+        <img src="<?= e(url($tipoElegido !== null ? (string) Tipos::dibujo($tipoElegido) : 'img/tipos/todo.svg')) ?>" alt="" width="30" height="30">
+        <span><?= e($tipoElegido !== null ? $textoTipo($tipoElegido) : 'Todos') ?></span>
+      </summary>
+      <fieldset class="elegir-tipo__panel">
+        <legend class="solo-lectores">Tipo de receta</legend>
+        <label class="elegir-tipo__opcion">
+          <input type="radio" name="etiqueta" value="0"<?= $tipoElegido === null ? ' checked' : '' ?>>
+          <img src="<?= e(url('img/tipos/todo.svg')) ?>" alt="" width="30" height="30"><span>Todos</span>
+        </label>
+        <?php foreach ($etiquetas as $etiqueta) : ?>
+          <label class="elegir-tipo__opcion" title="<?= e(Tipos::explicacion($etiqueta['nombre'])) ?>">
+            <input type="radio" name="etiqueta" value="<?= e($etiqueta['id']) ?>"<?= $tipoElegido === $etiqueta['nombre'] ? ' checked' : '' ?>>
+            <img src="<?= e(url((string) (Tipos::dibujo($etiqueta['nombre']) ?? 'img/tipos/todo.svg'))) ?>" alt="" width="30" height="30"><span><?= e($textoTipo($etiqueta['nombre'])) ?></span>
+          </label>
+        <?php endforeach; ?>
+      </fieldset>
+    </details>
   </div>
   <div class="campo">
     <label for="orden">Ordenar</label>
@@ -133,4 +158,5 @@ require parcial('encabezado');
 <?php endif; ?>
 </div>
 </div>
+<script src="<?= e(recurso('js/elegir-tipo.js')) ?>" defer></script>
 <?php require parcial('pie'); ?>

@@ -125,7 +125,7 @@ require parcial('encabezado');
     quieras en <a href="<?= e(url('app/mis-preferencias.php')) ?>">Mis preferencias</a>.</p>
 </div>
 
-<ol class="pasos__puntos" aria-label="Pasos" hidden>
+<ol class="pasos__puntos" aria-label="Pasos">
   <li aria-current="step"><span>1</span> Cómo comés</li>
   <li><span>2</span> Lo que no</li>
   <li><span>3</span> Tus gustos</li>
@@ -151,7 +151,7 @@ require parcial('encabezado');
     </fieldset>
     <div class="paso__botones">
       <a href="<?= e(url('app/index.php')) ?>">Lo hago después</a>
-      <button class="boton" type="button" data-paso="1" hidden>Siguiente</button>
+      <button class="boton" type="button" data-paso="1">Siguiente</button>
     </div>
   </section>
 
@@ -177,8 +177,8 @@ require parcial('encabezado');
     </fieldset>
     <?php $buscador('nocomo', 'Ej.: berenjena, palta, maní…'); ?>
     <div class="paso__botones">
-      <button class="boton boton--secundario" type="button" data-paso="-1" hidden>Atrás</button>
-      <button class="boton" type="button" data-paso="1" hidden>Siguiente</button>
+      <button class="boton boton--secundario" type="button" data-paso="-1">Atrás</button>
+      <button class="boton" type="button" data-paso="1">Siguiente</button>
     </div>
   </section>
 
@@ -213,8 +213,8 @@ require parcial('encabezado');
       </ul>
     </fieldset>
     <div class="paso__botones">
-      <button class="boton boton--secundario" type="button" data-paso="-1" hidden>Atrás</button>
-      <button class="boton" type="button" data-paso="1" hidden>Siguiente</button>
+      <button class="boton boton--secundario" type="button" data-paso="-1">Atrás</button>
+      <button class="boton" type="button" data-paso="1">Siguiente</button>
     </div>
   </section>
 
@@ -239,7 +239,7 @@ require parcial('encabezado');
     </fieldset>
     <?php $buscador('basicos', 'Ej.: polenta, lentejas, café…'); ?>
     <div class="paso__botones">
-      <button class="boton boton--secundario" type="button" data-paso="-1" hidden>Atrás</button>
+      <button class="boton boton--secundario" type="button" data-paso="-1">Atrás</button>
       <button class="boton" type="submit">Listo, ir a mi cocina</button>
     </div>
   </section>

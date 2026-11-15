@@ -17,12 +17,7 @@
   const puntos = document.querySelector('.pasos__puntos');
   const itemsPuntos = puntos ? Array.from(puntos.children) : [];
   let actual = 0;
-  form.classList.add('pasos--js');
-  if (puntos) {
-    puntos.hidden = false;
-  }
   form.querySelectorAll('[data-paso]').forEach((boton) => {
-    boton.hidden = false;
     boton.addEventListener('click', () => mostrar(actual + Number(boton.dataset.paso)));
   });
   function mostrar(cual, enfocar = true) {

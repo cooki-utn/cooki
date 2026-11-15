@@ -68,6 +68,9 @@ $imanesColor = function (): void {
     <link rel="preload" href="<?= e(url('fonts/' . $fuente . '.woff2')) ?>" as="font" type="font/woff2" crossorigin>
   <?php endforeach; ?>
   <link rel="stylesheet" href="<?= e(recurso('css/estilos.css')) ?>">
+  <?php /* Marca que hay JavaScript antes de dibujar la página: así lo que se arma con JavaScript (por ejemplo, la
+           bienvenida de a una nota) se ve bien desde el primer momento, sin mostrar todo y después acomodarse */ ?>
+  <script>document.documentElement.classList.add('js');</script>
   <script src="<?= e(recurso('js/sitio.js')) ?>" defer></script>
   <script src="<?= e(recurso('js/sonidos.js')) ?>" defer></script>
   <script src="<?= e(recurso('js/manija.js')) ?>" defer></script>
