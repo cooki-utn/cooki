@@ -161,9 +161,23 @@ final class UsuarioRepositorio
         return is_string($hash) && password_verify($contrasena, $hash);
     }
 
+    /**
+     * Borra la cuenta y todo lo suyo. Primero las listas y la despensa: si alguna usa un ingrediente propio,
+     * la base no deja borrar el ingrediente (y por lo tanto la cuenta) mientras esa fila exista.
+     */
     public function borrar(int $id): void
     {
-        $this->db->prepare('DELETE FROM usuario WHERE id = :id')->execute(['id' => $id]);
+        $this->db->beginTransaction();
+        try {
+            foreach (['restriccion_usuario', 'usuario_basico', 'despensa_item', 'lista_compra_item'] as $tabla) {
+                $this->db->prepare("DELETE FROM {$tabla} WHERE usuario_id = :id")->execute(['id' => $id]);
+            }
+            $this->db->prepare('DELETE FROM usuario WHERE id = :id')->execute(['id' => $id]);
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
     }
 
     public function contarAdministradores(): int

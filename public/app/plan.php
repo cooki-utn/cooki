@@ -6,7 +6,8 @@
  *                                                    ingredientes y qué falta, gastando la despensa en orden
  *                                                    (PlanSemanal::simular: lo que usa el almuerzo ya no está en la cena)
  *   POST accion=guardar fecha= momento= receta=r:12|ia:5 porciones=  → pone (o cambia) la receta de ese lugar.
- *                                                    Sin porciones, van las de la receta
+ *                                                    Sin porciones, van las de la persona (bienvenida)
+ *                                                    o, si no las contó, las de la receta
  *   POST accion=quitar fecha= momento=             → deja el lugar vacío
  *   POST accion=armar [con_ia=1]                   → "Armá mi semana": completa los lugares vacíos (PlanSemanal::armar)
  *   POST accion=faltantes [fecha= momento=]        → lo que falta de toda la semana (o de esa comida), a la lista
@@ -19,10 +20,12 @@ declare(strict_types=1);
 require dirname(__DIR__, 2) . '/src/bootstrap.php';
 
 use Cooki\Db;
+use Cooki\Dominio\Perfil;
 use Cooki\Dominio\PlanSemanal;
 use Cooki\Dominio\Porciones;
 use Cooki\Repositorios\ListaRepositorio;
 use Cooki\Repositorios\PlanRepositorio;
+use Cooki\Repositorios\PreferenciasRepositorio;
 use Cooki\Sesion;
 
 Sesion::requiereLogin();
@@ -33,6 +36,8 @@ $usuarioId = Sesion::idUsuario();
 $hoy = new DateTimeImmutable('today');
 $dias = PlanSemanal::dias($hoy);
 $ultimoDia = $dias[PlanSemanal::DIAS - 1];
+// Para cuántos cocina (bienvenida): las porciones con que se anota cada comida si no se escriben otras
+$comensales = (new PreferenciasRepositorio($db))->perfil($usuarioId)['comensales'];
 /**
  * Los 14 lugares de la semana en orden, cada uno con la comida que ya tiene (o null), como los quieren
  * PlanSemanal::armar() y ::opciones().
@@ -86,7 +91,7 @@ if (esPost()) {
         if ($elegida === null || $base === null) {
             $responder(false, 'Elegí una receta de la lista.');
         }
-        $porciones = PlanSemanal::porciones(campo('porciones'), $base);
+        $porciones = PlanSemanal::porciones(campo('porciones'), Perfil::porcionesDelPlan($comensales, $base));
         $repo->limpiar($usuarioId, $hoy->format('Y-m-d'));
         $repo->guardar($usuarioId, $fecha, $momento, $elegida['receta_id'], $elegida['receta_ia_id'], $porciones);
         $responder(true, 'Anotado para ' . $lugar . '.', ['porciones' => $porciones]);
@@ -100,7 +105,7 @@ if (esPost()) {
         foreach ($elegidas as $clave => $id) {
             [$dia, $cual] = explode('|', $clave);
             $opcion = PlanSemanal::opcion($id);
-            $repo->guardar($usuarioId, $dia, $cual, $opcion['receta_id'], $opcion['receta_ia_id'], $porId[$id]['porciones_base']);
+            $repo->guardar($usuarioId, $dia, $cual, $opcion['receta_id'], $opcion['receta_ia_id'], Perfil::porcionesDelPlan($comensales, $porId[$id]['porciones_base']));
         }
         $vacios = count(array_filter($lugares, fn (array $l) => $l['comida'] === null));
         $responder(true, match (true) {
@@ -199,6 +204,7 @@ $desplegable = function (string $id, string $elegida, array $deEsteLugar) use ($
                 $texto .= ' — faltan ' . $opcion['faltan'];
             }
             $texto .= $receta['restringida'] ? ' (tiene algo que no comés)' : '';
+            $texto .= $receta['fuera_de_dieta'] ? ' (no va con tu dieta)' : '';
             ?>
             <option value="<?= e($opcion['id']) ?>"<?= $opcion['id'] === $elegida ? ' selected' : '' ?>><?= e($texto) ?></option>
           <?php endforeach; ?>
@@ -342,7 +348,7 @@ require parcial('encabezado');
               <div class="plan-comida__fila">
                 <label for="porciones-<?= e($idLugar) ?>">Porciones</label>
                 <input id="porciones-<?= e($idLugar) ?>" name="porciones" type="number" min="<?= Porciones::MINIMO ?>" max="<?= Porciones::MAXIMO ?>"
-                       inputmode="numeric" value="<?= $comida !== null ? e($comida['porciones']) : '' ?>" placeholder="las de la receta">
+                       inputmode="numeric" value="<?= $comida !== null ? e($comida['porciones']) : '' ?>" placeholder="<?= $comensales !== null ? e($comensales) : 'las de la receta' ?>">
                 <button class="boton boton--chico" type="submit">Guardar<span class="solo-lectores"> <?= e($deQuien) ?></span></button>
               </div>
             </form>

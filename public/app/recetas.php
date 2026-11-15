@@ -13,18 +13,25 @@ require dirname(__DIR__, 2) . '/src/bootstrap.php';
 
 use Cooki\Db;
 use Cooki\Dominio\Paginacion;
+use Cooki\Dominio\Tipos;
+use Cooki\Repositorios\PreferenciasRepositorio;
 use Cooki\Repositorios\RecetaRepositorio;
 use Cooki\Sesion;
 
 Sesion::requiereLogin();
 
-$repo = new RecetaRepositorio(Db::conexion());
+$db = Db::conexion();
+$repo = new RecetaRepositorio($db);
+// La dieta de la bienvenida: el filtro viene puesto y se puede sacar. "dieta_enviada" dice que el formulario
+// ya se mandó (si no, cualquier enlace con ?orden=… la apagaría sin querer).
+$misDietas = (new PreferenciasRepositorio($db))->perfil(Sesion::idUsuario())['dietas'];
 $filtros = [
     'q' => trim((string) ($_GET['q'] ?? '')),
     'dificultad' => (int) ($_GET['dificultad'] ?? 0),
     'etiqueta' => (int) ($_GET['etiqueta'] ?? 0),
     'puedo' => isset($_GET['puedo']),
     'favoritas' => isset($_GET['favoritas']),
+    'dieta' => $misDietas !== [] && (isset($_GET['dieta']) || !isset($_GET['dieta_enviada'])),
 ];
 $recetas = $repo->buscar($filtros, Sesion::idUsuario());
 $ordenes = ['az' => 'A a la Z', 'recomendadas' => 'Recomendadas para mí', 'rapidas' => 'Más rápidas primero'];
@@ -79,7 +86,7 @@ require parcial('encabezado');
     <select id="etiqueta" name="etiqueta">
       <option value="0">Todas</option>
       <?php foreach ($etiquetas as $etiqueta) : ?>
-        <option value="<?= e($etiqueta['id']) ?>"<?= $filtros['etiqueta'] === (int) $etiqueta['id'] ? ' selected' : '' ?>><?= e(str_replace('_', ' ', $etiqueta['nombre'])) ?></option>
+        <option value="<?= e($etiqueta['id']) ?>"<?= $filtros['etiqueta'] === (int) $etiqueta['id'] ? ' selected' : '' ?>><?= e(Tipos::nombre($etiqueta['nombre']) . ($etiqueta['nombre'] === 'sin_tacc' ? ' (apta celíacos)' : '')) ?></option>
       <?php endforeach; ?>
     </select>
   </div>
@@ -94,6 +101,11 @@ require parcial('encabezado');
   <div class="campo casillas">
     <label><input type="checkbox" name="puedo" value="1"<?= $filtros['puedo'] ? ' checked' : '' ?>> Solo las que puedo hacer ya</label>
     <label><input type="checkbox" name="favoritas" value="1"<?= $filtros['favoritas'] ? ' checked' : '' ?>> Solo mis favoritas ♥</label>
+    <?php if ($misDietas !== []) : ?>
+      <input type="hidden" name="dieta_enviada" value="1">
+      <label><input type="checkbox" name="dieta" value="1"<?= $filtros['dieta'] ? ' checked' : '' ?>>
+        Solo de mi dieta (<?= e(implode(', ', array_map([Tipos::class, 'nombre'], Tipos::ordenar($misDietas)))) ?>)</label>
+    <?php endif; ?>
   </div>
   <button class="boton" type="submit">Buscar</button>
   <?php if ($hayFiltros) : ?>

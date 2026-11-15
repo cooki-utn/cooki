@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Cooki\Repositorios;
 
+use Cooki\Dominio\Perfil;
 use Cooki\Dominio\Puntaje;
 use Cooki\Dominio\Texto;
+use Cooki\Dominio\Tipos;
 use PDO;
 
 /** Acceso a las recetas, sus ingredientes, pasos y etiquetas. */
@@ -26,11 +28,13 @@ final class RecetaRepositorio
      *   ingredientes ids de ingredientes que la receta tiene que usar (selector de Mi cocina)
      *   modo         'todos' (usa todos los elegidos, por defecto) o 'alguno' (usa al menos uno)
      *   favoritas    true: solo las que el usuario marcó con ♥
+     *   dieta        true: solo las que van con la dieta del usuario (bienvenida)
      * Si se pasa $usuarioId, cada receta trae cuántos ingredientes tiene el usuario ("tengo"), si es una de sus
-     * favoritas ("favorita") y si usa algo que no puede comer ("restringida").
+     * favoritas ("favorita"), si usa algo que no puede comer ("restringida") y si no va con su dieta
+     * ("fuera_de_dieta").
      *
      * @param array{q?: string, dificultad?: int, etiqueta?: int, puedo?: bool,
-     *              ingredientes?: list<int>, modo?: string, favoritas?: bool} $filtros
+     *              ingredientes?: list<int>, modo?: string, favoritas?: bool, dieta?: bool} $filtros
      * @return list<array<string, mixed>>
      */
     public function buscar(array $filtros = [], int $usuarioId = 0): array
@@ -84,7 +88,18 @@ final class RecetaRepositorio
             . ' ORDER BY titulo';
         $consulta = $this->db->prepare($sql);
         $consulta->execute($parametros);
-        return $consulta->fetchAll();
+        $recetas = $consulta->fetchAll();
+        if ($usuarioId > 0) {
+            $fuera = (new PreferenciasRepositorio($this->db))->fueraDeDieta($usuarioId);
+            foreach ($recetas as &$receta) {
+                $receta['fuera_de_dieta'] = isset($fuera[(int) $receta['id']]);
+            }
+            unset($receta);
+            if (!empty($filtros['dieta'])) {
+                $recetas = array_values(array_filter($recetas, fn (array $r) => !$r['fuera_de_dieta']));
+            }
+        }
+        return $recetas;
     }
 
     /**
@@ -115,7 +130,8 @@ final class RecetaRepositorio
      * Recomendaciones para el usuario con el puntaje del informe (Dominio\Puntaje): cada receta trae
      * "puntaje", "grupo" (ahora, falta1 o casi), "faltantes", "sustituciones" y "usa_lo_que_vence".
      * Las que no entran en ningún grupo no se devuelven; las que usan algo que el usuario no puede
-     * comer (restriccion_usuario) tampoco. Ordenadas de más a menos puntaje.
+     * comer (restriccion_usuario) o no van con su dieta (bienvenida) tampoco. Ordenadas de más a menos puntaje;
+     * sus gustos y su nivel (Dominio\Perfil::ajuste) suben o bajan un poco el puntaje.
      * @return list<array<string, mixed>>
      */
     public function recomendadas(int $usuarioId, int $limite = 60): array
@@ -137,8 +153,9 @@ final class RecetaRepositorio
         }
         $prohibidas = $this->conRestricciones($usuarioId);
         $recientes = $this->cocinadasHacePoco($usuarioId);
+        $perfil = (new PreferenciasRepositorio($this->db))->perfil($usuarioId);
         $resultado = [];
-        foreach ($this->buscar([], $usuarioId) as $receta) {
+        foreach ($this->buscar(['dieta' => true], $usuarioId) as $receta) {
             $id = (int) $receta['id'];
             if (!isset($porReceta[$id]) || isset($prohibidas[$id])) {
                 continue;
@@ -147,6 +164,12 @@ final class RecetaRepositorio
             if ($calculo['grupo'] === null) {
                 continue;
             }
+            $calculo['puntaje'] += Perfil::ajuste(
+                explode(', ', (string) $receta['etiquetas']),
+                (int) $receta['dificultad'],
+                $perfil['gustos'],
+                $perfil['nivel']
+            );
             $resultado[] = $receta + $calculo + ['minutos' => (int) $receta['minutos']];
         }
         usort($resultado, fn ($a, $b) => Puntaje::comparar(
@@ -293,10 +316,11 @@ final class RecetaRepositorio
         return $lista;
     }
 
-    /** @return list<array{id: int, nombre: string}> */
+    /** @return list<array{id: int, nombre: string}> los tipos, en el orden de Dominio\Tipos */
     public function etiquetas(): array
     {
-        return $this->db->query('SELECT id, nombre FROM etiqueta ORDER BY nombre')->fetchAll();
+        $porNombre = array_column($this->db->query('SELECT id, nombre FROM etiqueta')->fetchAll(), null, 'nombre');
+        return array_values(array_map(fn ($clave) => $porNombre[$clave], Tipos::ordenar(array_keys($porNombre))));
     }
 
     /**
@@ -374,6 +398,13 @@ final class RecetaRepositorio
                     'texto' => is_array($paso) ? $paso['texto'] : $paso,
                     'segundos' => is_array($paso) && !empty($paso['segundos']) ? (int) $paso['segundos'] : null,
                 ]);
+            }
+            // "Rápida" no se elige: se calcula con los minutos
+            $rapida = (int) $this->db->query("SELECT id FROM etiqueta WHERE nombre = '" . Tipos::RAPIDA . "'")
+                ->fetchColumn();
+            $etiquetas = array_diff(array_map('intval', $etiquetas), [$rapida]);
+            if ($rapida > 0 && Tipos::esRapida((int) $datos['minutos_prep'], (int) $datos['minutos_coccion'])) {
+                $etiquetas[] = $rapida;
             }
             $insertar = $this->db->prepare(
                 'INSERT INTO receta_etiqueta (receta_id, etiqueta_id) VALUES (:receta, :etiqueta)'

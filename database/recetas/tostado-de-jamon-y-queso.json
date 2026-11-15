@@ -1,0 +1,48 @@
+{
+  "titulo": "Tostado de jamón y queso",
+  "descripcion": "El clásico de la merienda, crocante y con el queso derretido.",
+  "porciones": 2,
+  "minutos_prep": 5,
+  "minutos_coccion": 5,
+  "dificultad": 1,
+  "etiquetas": [
+    "merienda_salada"
+  ],
+  "ingredientes": [
+    {
+      "nombre": "Pan",
+      "cantidad": 4,
+      "unidad": "u",
+      "peso": 3,
+      "nota": "rebanadas de pan lactal"
+    },
+    {
+      "nombre": "Jamón cocido",
+      "cantidad": 100,
+      "unidad": "g",
+      "peso": 3
+    },
+    {
+      "nombre": "Queso cremoso",
+      "cantidad": 100,
+      "unidad": "g",
+      "peso": 3,
+      "nota": "en fetas"
+    },
+    {
+      "nombre": "Manteca",
+      "cantidad": 20,
+      "unidad": "g",
+      "peso": 1,
+      "opcional": true
+    }
+  ],
+  "pasos": [
+    "Armar dos sándwiches con el jamón y el queso.",
+    "Untar el pan por fuera con manteca, si querés que quede más dorado.",
+    {
+      "texto": "Tostarlos en una sartén o tostadora, apretando, hasta que el queso se derrita.",
+      "minutos": 5
+    }
+  ]
+}

@@ -472,6 +472,33 @@ tr:last-child td { border-bottom: none; }
 .etiqueta--alerta { background: var(--color-alerta-fondo); color: var(--color-alerta); }
 .etiqueta--error { background: var(--color-error-fondo); color: var(--color-error); }
 
+/* Tipos de receta (PR D): la cinta con un sticker grande que sobresale a la izquierda */
+.tipos { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 10px 0 2px; padding: 0 0 0 12px; list-style: none; }
+.tipo {
+  position: relative; display: inline-flex; align-items: center; padding: 2px 10px 3px 28px;
+  font: 700 1.15rem/1.1 var(--fuente-mano); background: var(--color-cinta); color: var(--color-texto);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 12%); transform: rotate(-1.5deg);
+}
+.tipo:nth-child(even) { transform: rotate(1.2deg); }
+.tipo img {
+  position: absolute; left: -14px; top: 50%; width: 36px; height: 36px; margin-top: -18px; transform: rotate(-10deg);
+  filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 3px 3px rgb(0 0 0 / 25%));
+}
+.tipo:nth-child(even) img { transform: rotate(8deg); }
+.tipos--receta { margin: 4px 0 18px; }
+.tipos--receta .tipo { font-size: 1.3rem; padding: 3px 12px 4px 32px; }
+.tipos--receta .tipo img { width: 42px; height: 42px; margin-top: -21px; left: -16px; }
+
+/* Dificultad: un semáforo con el texto al lado */
+.dificultad { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.dificultad__luz {
+  flex: none; width: .85em; height: .85em; border-radius: 50%; border: 2px solid #1D1B18;
+  background: radial-gradient(circle at 35% 35%, rgb(255 255 255 / 60%) 0 22%, transparent 24%), var(--luz);
+}
+.dificultad--1 { --luz: #4CAF50; }
+.dificultad--2 { --luz: #FFC107; }
+.dificultad--3 { --luz: #E53935; }
+
 .vacio { text-align: center; color: var(--color-sobre-puerta-suave); padding: 32px 16px; font: 700 1.5rem var(--fuente-mano); }
 .solo-lectores { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .boton:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
@@ -1942,3 +1969,88 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
 }
 .plan-acciones__todo a { margin-left: 10px; color: var(--color-enlace); }
 .plan-comida__en-lista { margin: 0; }
+
+/* ─────────────── Bienvenida (PR D): "Contanos cómo comés", paso a paso con notas ─────────────── */
+.bienvenida-arriba { max-width: 760px; margin: 0 auto 8px; }
+.bienvenida-arriba h1 { margin-bottom: 4px; }
+.pasos__puntos { display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: center; margin: 4px 0 14px; padding: 0; list-style: none; }
+.pasos__puntos li { display: flex; align-items: center; gap: 6px; font: 700 1.25rem var(--fuente-mano); color: var(--color-sobre-puerta-suave); }
+.pasos__puntos li span {
+  display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 2px solid currentColor;
+  font: 800 .95rem var(--fuente);
+}
+.pasos__puntos li[aria-current="step"] { color: var(--color-sobre-puerta); }
+.pasos__puntos li[aria-current="step"] span { background: var(--color-marca); border-color: var(--color-marca); color: #fff; }
+.pasos__puntos li.hecho span { background: var(--color-exito); border-color: var(--color-exito); color: #fff; }
+.paso { max-width: 760px; margin: 10px auto 30px; font: 600 1rem/1.4 var(--fuente); }
+.paso:nth-of-type(even) { --giro: .8deg; }
+.paso h2 { margin: 0 0 6px; font: 700 2rem/1.1 var(--fuente-mano); }
+.paso--rosa { background: #FFD3DD; }
+.paso--celeste { background: #D3ECFF; }
+.paso--verde { background: #DDF5C8; }
+.pasos--js .paso:not(.paso--actual) { display: none; }
+.paso h2:focus { outline: none; }
+.paso h2:focus-visible { outline: 3px solid var(--color-foco); outline-offset: 4px; }
+.paso__botones { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.paso__botones > :only-child { margin-left: auto; }
+.bienvenida fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.bienvenida fieldset + fieldset { margin-top: 20px; }
+.bienvenida legend { padding: 0; font: 700 1.5rem/1.2 var(--fuente-mano); }
+.bienvenida .ayuda { margin: 0; font: 600 .9rem/1.4 var(--fuente); color: var(--color-suave); }
+/* Cada opción es un sticker: gris hasta que se elige; elegido se levanta, se inclina y lleva un ✓ */
+.elegibles { display: flex; flex-wrap: wrap; gap: 10px 12px; margin: 10px 0 0; padding: 0; list-style: none; }
+.elegible { position: relative; }
+.elegible input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.elegible label {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; width: 96px; min-height: 100%; padding: 10px 6px 8px;
+  border: 2px dashed color-mix(in srgb, var(--color-texto) 28%, transparent); border-radius: 14px;
+  background: rgb(255 255 255 / 55%); color: var(--color-texto); cursor: pointer; text-align: center;
+  font-size: .88rem; line-height: 1.15; transition: transform .3s cubic-bezier(.3, 1.5, .5, 1), background .2s, box-shadow .2s;
+}
+.elegible label > img, .elegible label > .dificultad, .elegible__numero { filter: grayscale(.85) opacity(.7); transition: filter .2s, transform .3s; }
+.elegible label > img { width: 46px; height: 46px; }
+.elegible label:hover > img, .elegible label:hover > .dificultad, .elegible label:hover .elegible__numero { filter: none; }
+.elegible input:checked + label {
+  border: 2px solid var(--color-texto); background: #fff; box-shadow: 0 8px 14px rgb(0 0 0 / 16%); transform: rotate(-3deg) translateY(-2px);
+}
+.elegibles li:nth-child(even) input:checked + label { transform: rotate(3deg) translateY(-2px); }
+.elegible input:checked + label > img, .elegible input:checked + label > .dificultad, .elegible input:checked + label .elegible__numero {
+  filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff); transform: scale(1.08);
+}
+.elegible input:checked + label::after {
+  content: "✓"; position: absolute; top: -8px; right: -6px; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--color-exito); color: #fff; font: 800 .9rem/24px var(--fuente); text-align: center; box-shadow: 0 2px 4px rgb(0 0 0 / 25%);
+}
+.elegible input:focus-visible + label { outline: 3px solid var(--color-foco); outline-offset: 3px; }
+.elegible--ancho label { width: 128px; }
+.elegible--chico label { width: 76px; }
+.elegible__numero { display: block; height: 46px; font: 700 2.2rem/46px var(--fuente-mano); }
+.elegible__nuevo { padding: 0 6px; border-radius: 6px; background: var(--color-alerta-fondo); color: var(--color-alerta); font-size: .72rem; }
+.dificultad--grande .dificultad__luz { width: 38px; height: 38px; border-width: 3px; margin: 4px 0; }
+/* "¿Otra cosa?" con stickers */
+.bienvenida__buscar { display: grid; gap: 6px; margin-top: 16px; max-width: 560px; }
+.bienvenida__buscar > label { font-weight: 800; }
+.bienvenida__opciones { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.bienvenida__opciones:empty { display: none; }
+.bienvenida__opciones button {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px 3px 4px; border: 2px solid var(--color-texto);
+  border-radius: 999px; background: #fff; color: var(--color-texto); font: inherit; font-size: .9rem; cursor: pointer;
+}
+.bienvenida__opciones button:hover, .bienvenida__opciones button:focus-visible { background: var(--color-postit); }
+.bienvenida__nuevo { justify-self: start; }
+.bienvenida__aviso { margin: 0; font-size: .88rem; color: var(--color-exito); }
+.bienvenida__aviso:empty { display: none; }
+@media (max-width: 640px) {
+  .elegible label { width: 84px; }
+  .elegible--ancho label { width: 108px; }
+  .elegible--chico label { width: 64px; }
+  .paso h2 { font-size: 1.7rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .elegible label, .elegible label > img { transition: none; }
+}
+.perfil-resumen { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 6px 0 14px; }
+.perfil-resumen dt { font-weight: 800; }
+.perfil-resumen dd { margin: 0; }
+.perfil-resumen small { color: var(--color-suave); }
+@media (max-width: 480px) { .perfil-resumen { grid-template-columns: 1fr; } .perfil-resumen dd { margin-bottom: 6px; } }

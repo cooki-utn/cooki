@@ -134,6 +134,7 @@ const PAGINAS_PARA_VOLVER = [
     'app/mis-recetas-ia.php' => 'Mis recetas de IA',
     'app/perfil.php' => 'Mi cuenta',
     'app/mis-preferencias.php' => 'Mis preferencias',
+    'app/bienvenida.php' => 'Cómo comés',
     'admin/index.php' => 'el panel',
     'admin/recetas.php' => 'Recetas',
     'admin/ingredientes.php' => 'Ingredientes',
@@ -232,4 +233,39 @@ function recurso(string $ruta): string
 {
     $archivo = dirname(__DIR__) . '/public/' . $ruta;
     return url($ruta) . (is_file($archivo) ? '?v=' . filemtime($archivo) : '');
+}
+
+/**
+ * Los tipos de una receta como cintas con su sticker (Dominio\Tipos), en el orden de siempre.
+ * Uso: <?= tiposReceta(['sin_tacc', 'vegetariana']) ?>
+ * @param list<string> $claves claves de la tabla etiqueta ("sin_tacc")
+ */
+function tiposReceta(array $claves, string $clase = ''): string
+{
+    $claves = \Cooki\Dominio\Tipos::ordenar($claves);
+    if ($claves === []) {
+        return '';
+    }
+    $html = '<ul class="tipos' . ($clase !== '' ? ' ' . e($clase) : '') . '" aria-label="Tipo de receta">';
+    foreach ($claves as $clave) {
+        $dibujo = \Cooki\Dominio\Tipos::dibujo($clave);
+        $html .= '<li class="tipo" title="' . e(\Cooki\Dominio\Tipos::explicacion($clave)) . '">'
+            . ($dibujo !== null ? '<img src="' . e(url($dibujo)) . '" alt="" width="38" height="38">' : '')
+            . '<span>' . e(\Cooki\Dominio\Tipos::nombre($clave)) . '</span></li>';
+    }
+    return $html . '</ul>';
+}
+
+/**
+ * La dificultad con un semáforo: verde Fácil, amarillo Media, rojo Difícil. El texto va siempre al lado
+ * (el color solo no alcanza para quien no distingue colores).
+ */
+function dificultadReceta(int $nivel): string
+{
+    $texto = \Cooki\Repositorios\RecetaRepositorio::DIFICULTADES[$nivel] ?? '';
+    if ($texto === '') {
+        return '';
+    }
+    return '<span class="dificultad dificultad--' . $nivel . '">'
+        . '<span class="dificultad__luz" aria-hidden="true"></span>' . e($texto) . '</span>';
 }

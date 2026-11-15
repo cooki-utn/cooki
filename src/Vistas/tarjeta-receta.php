@@ -32,7 +32,7 @@ $maximo = 5;
   <?php endif; ?>
   <p class="tarjeta-receta__datos">
     <span><?= e($receta['minutos']) ?> min</span> ·
-    <span><?= e(RecetaRepositorio::DIFICULTADES[(int) $receta['dificultad']] ?? '') ?></span> ·
+    <?= dificultadReceta((int) $receta['dificultad']) ?> ·
     <span><?= e($receta['porciones_base']) ?> porciones</span>
   </p>
   <?php if (!empty($receta['usa_lo_que_vence']) || !empty($receta['sustituciones'])) : ?>
@@ -49,13 +49,14 @@ $maximo = 5;
     <?php if (!empty($receta['restringida'])) : ?>
       <span class="etiqueta etiqueta--error">Tiene algo que no comés</span>
     <?php endif; ?>
+    <?php if (!empty($receta['fuera_de_dieta'])) : ?>
+      <span class="etiqueta etiqueta--error">No va con tu dieta</span>
+    <?php endif; ?>
     <?php if ($faltan <= 0) : ?>
       <span class="etiqueta etiqueta--exito">Tenés todo</span>
     <?php else : ?>
       <span class="etiqueta<?= $faltan <= 2 ? ' etiqueta--alerta' : '' ?>">Tenés <?= e($receta['tengo']) ?> de <?= e($receta['total']) ?></span>
     <?php endif; ?>
-    <?php foreach (array_filter(explode(', ', (string) $receta['etiquetas'])) as $etiqueta) : ?>
-      <span class="etiqueta"><?= e(str_replace('_', ' ', $etiqueta)) ?></span>
-    <?php endforeach; ?>
   </p>
+  <?= tiposReceta(explode(', ', (string) $receta['etiquetas'])) ?>
 </article>

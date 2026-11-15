@@ -5,7 +5,9 @@
   "minutos_prep": 15,
   "minutos_coccion": 15,
   "dificultad": 1,
-  "etiquetas": [],
+  "etiquetas": [
+    "sin_huevo"
+  ],
   "ingredientes": [
     {
       "nombre": "Tapas de empanada",

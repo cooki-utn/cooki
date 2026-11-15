@@ -135,7 +135,7 @@ require parcial('encabezado');
     <span class="etiqueta"><?= e($contenido['porciones']) ?> porci<?= (int) $contenido['porciones'] === 1 ? 'ón' : 'ones' ?></span>
     <span class="etiqueta">Preparación: <?= e($contenido['minutos_prep']) ?> min</span>
     <span class="etiqueta">Cocción: <?= e($contenido['minutos_coccion']) ?> min</span>
-    <span class="etiqueta"><?= e(RecetaRepositorio::DIFICULTADES[(int) $contenido['dificultad']] ?? '') ?></span>
+    <span class="etiqueta"><?= dificultadReceta((int) $contenido['dificultad']) ?></span>
   </p>
 
   <?php if ($contenido['cambios'] !== []) : ?>

@@ -11,7 +11,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS lista_compra_item, plan_comida, sugerencia_reemplazo, uso_ia, respuesta_ia, receta_ia,
     intento_ingreso, recuperacion, contacto, paso_completado, sesion_cocina, favorito, receta_etiqueta, etiqueta,
-    paso, receta_ingrediente, receta, despensa_item, restriccion_usuario, usuario_basico,
+    paso, receta_ingrediente, receta, despensa_item, usuario_tipo, restriccion_usuario, usuario_basico,
     sustitucion, sinonimo, ingrediente, categoria, usuario;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -28,6 +28,8 @@ CREATE TABLE usuario (
     volumen          TINYINT UNSIGNED NOT NULL DEFAULT 50,   -- volumen de los sonidos, de 0 a 100
     nota_lista       VARCHAR(10)  NOT NULL DEFAULT 'abierta', -- nota de la lista de compras: abierta, cerrada o nunca
     nota_hoy         VARCHAR(10)  NOT NULL DEFAULT 'abierta', -- nota "Hoy" del plan en Mi cocina: abierta, cerrada o nunca
+    nivel_cocina     TINYINT UNSIGNED NULL,          -- bienvenida: 1 recién empieza · 2 se defiende · 3 se anima a todo
+    comensales       TINYINT UNSIGNED NULL,          -- bienvenida: para cuántos cocina (porciones del plan); 5 = 5 o más
     creado_en        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Cuentas de usuario. La identidad la maneja la propia app (sesiones PHP).';
@@ -172,6 +174,17 @@ CREATE TABLE receta_etiqueta (
     PRIMARY KEY (receta_id, etiqueta_id),
     CONSTRAINT fk_re_receta FOREIGN KEY (receta_id) REFERENCES receta(id) ON DELETE CASCADE,
     CONSTRAINT fk_re_etiqueta FOREIGN KEY (etiqueta_id) REFERENCES etiqueta(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Bienvenida (PR D): la dieta de cada usuario (filtro firme: solo se le recomiendan recetas con ese tipo)
+-- y sus gustos (esas recetas van primero). Los dos son tipos de receta de la tabla etiqueta.
+CREATE TABLE usuario_tipo (
+    usuario_id   INT UNSIGNED NOT NULL,
+    clase        ENUM('dieta','gusto') NOT NULL,
+    etiqueta_id  SMALLINT UNSIGNED NOT NULL,
+    PRIMARY KEY (usuario_id, clase, etiqueta_id),
+    CONSTRAINT fk_ut_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ut_etiqueta FOREIGN KEY (etiqueta_id) REFERENCES etiqueta(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE favorito (

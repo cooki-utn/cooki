@@ -14,6 +14,8 @@ declare(strict_types=1);
 require dirname(__DIR__, 2) . '/src/bootstrap.php';
 
 use Cooki\Db;
+use Cooki\Dominio\Perfil;
+use Cooki\Dominio\Tipos;
 use Cooki\Repositorios\IngredienteRepositorio;
 use Cooki\Repositorios\PreferenciasRepositorio;
 use Cooki\Repositorios\RecetaRepositorio;
@@ -62,6 +64,7 @@ if (esPost()) {
     redirigir('app/mis-preferencias.php#' . ($lista === 'restricciones' ? 'no-como' : 'siempre-tengo'));
 }
 
+$perfil = $preferencias->perfil($idUsuario);
 $basicos = $preferencias->ingredientes($idUsuario, 'basicos');
 $restricciones = $preferencias->ingredientes($idUsuario, 'restricciones');
 $favoritas = (new RecetaRepositorio($db))->buscar(['favoritas' => true], $idUsuario);
@@ -115,6 +118,23 @@ $bloque = function (string $lista, string $id, string $tituloBloque, string $exp
 <?= enlaceVolver('app/index.php', 'Volver a Mi cocina', [['app/perfil.php', 'Mi cuenta']]) ?>
 <h1>Mis preferencias</h1>
 <p class="texto-suave">Lo que elegís acá cambia las recomendaciones de Mi cocina y el catálogo de recetas.</p>
+
+<?php /* Lo que contó en la bienvenida (app/bienvenida.php), con el botón para cambiarlo */ ?>
+<section class="tarjeta preferencia" id="como-como">
+  <h2>Cómo comés</h2>
+  <dl class="perfil-resumen">
+    <dt>Dieta</dt>
+    <dd><?= $perfil['dietas'] === [] ? 'Como de todo' : e(implode(', ', array_map([Tipos::class, 'nombre'], Tipos::ordenar($perfil['dietas'])))) ?>
+      <small>(solo te recomendamos recetas que vayan con esto)</small></dd>
+    <dt>Te gusta</dt>
+    <dd><?= $perfil['gustos'] === [] ? 'Sin elegir' : e(implode(', ', array_map(fn ($g) => Perfil::GUSTOS[$g] ?? $g, $perfil['gustos']))) ?></dd>
+    <dt>Con la cocina</dt>
+    <dd><?= e($perfil['nivel'] === null ? 'Sin elegir' : Perfil::NIVELES[$perfil['nivel']]) ?></dd>
+    <dt>Cocinás para</dt>
+    <dd><?= e($perfil['comensales'] === null ? 'Sin elegir (el plan usa las porciones de cada receta)' : ($perfil['comensales'] === 1 ? 'Vos solo/a' : Perfil::COMENSALES[$perfil['comensales']] . ' personas')) ?></dd>
+  </dl>
+  <a class="boton boton--chico" href="<?= e(url('app/bienvenida.php')) ?>">Cambiar mis respuestas</a>
+</section>
 
 <datalist id="lista-ingredientes">
   <?php foreach ($opciones as $nombre) : ?>

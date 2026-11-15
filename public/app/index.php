@@ -55,7 +55,10 @@ $disponibles = $despensa->disponibles($usuario['id']);
 $pedidos = array_map('intval', (array) ($_GET['ing'] ?? []));
 $elegidos = array_values(array_intersect($pedidos, array_map('intval', array_column($disponibles, 'id'))));
 $modo = ($_GET['modo'] ?? '') === 'alguno' ? 'alguno' : 'todos';
-$conElegidos = $elegidos === [] ? [] : $recetas->buscar(['ingredientes' => $elegidos, 'modo' => $modo], $usuario['id']);
+$conElegidos = $elegidos === [] ? [] : $recetas->buscar(
+    ['ingredientes' => $elegidos, 'modo' => $modo, 'dieta' => true],
+    $usuario['id']
+);
 $nombresElegidos = array_column(
     array_filter($disponibles, fn ($ing) => in_array((int) $ing['id'], $elegidos, true)),
     'nombre'

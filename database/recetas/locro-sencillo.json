@@ -6,7 +6,9 @@
   "minutos_coccion": 120,
   "dificultad": 3,
   "etiquetas": [
-    "sin_tacc"
+    "sin_tacc",
+    "sin_lactosa",
+    "sin_huevo"
   ],
   "ingredientes": [
     {

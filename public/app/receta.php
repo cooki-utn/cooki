@@ -111,11 +111,9 @@ require parcial('encabezado');
   <p class="acciones">
     <span class="etiqueta">Preparación: <?= e($receta['minutos_prep']) ?> min</span>
     <span class="etiqueta">Cocción: <?= e($receta['minutos_coccion']) ?> min</span>
-    <span class="etiqueta"><?= e(RecetaRepositorio::DIFICULTADES[(int) $receta['dificultad']]) ?></span>
-    <?php foreach ($receta['etiquetas'] as $etiqueta) : ?>
-      <span class="etiqueta"><?= e(str_replace('_', ' ', $etiqueta['nombre'])) ?></span>
-    <?php endforeach; ?>
+    <span class="etiqueta"><?= dificultadReceta((int) $receta['dificultad']) ?></span>
   </p>
+  <?= tiposReceta(array_column($receta['etiquetas'], 'nombre'), 'tipos--receta') ?>
 
   <?php if ($adaptaciones !== []) : ?>
     <?php /* Adaptar con IA (HU-31). Sin JavaScript es un formulario común a app/receta-ia.php; con JavaScript (ia.js)

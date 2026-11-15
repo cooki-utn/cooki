@@ -172,9 +172,9 @@ final class PlanRepositorio
     /**
      * Recetas para "Armá mi semana" y para el desplegable de cada comida: todo el recetario y, si se pide, las recetas
      * de IA guardadas. Cada una con sus ingredientes, si la cocinó en los últimos 7 días, si es favorita y si tiene
-     * algo que la persona no come (armar() no usa esas).
+     * algo que la persona no come o si no va con su dieta (armar() no usa esas).
      * @return list<array{id: string, titulo: string, minutos: int, dificultad: int, porciones_base: int,
-     *                    reciente: bool, favorita: bool, restringida: bool, ia: bool,
+     *                    reciente: bool, favorita: bool, restringida: bool, fuera_de_dieta: bool, ia: bool,
      *                    ingredientes: list<array<string, mixed>>}>
      */
     public function candidatas(int $usuarioId, bool $conIa): array
@@ -194,6 +194,7 @@ final class PlanRepositorio
         );
         $consulta->execute(['usuario' => $usuarioId, 'usuario2' => $usuarioId, 'usuario3' => $usuarioId]);
         $ingredientes = $this->ingredientes($usuarioId);
+        $fueraDeDieta = (new PreferenciasRepositorio($this->db))->fueraDeDieta($usuarioId);
         $candidatas = [];
         foreach ($consulta->fetchAll() as $fila) {
             $candidatas[] = [
@@ -205,6 +206,7 @@ final class PlanRepositorio
                 'reciente' => (bool) $fila['reciente'],
                 'favorita' => (bool) $fila['favorita'],
                 'restringida' => (bool) $fila['restringida'],
+                'fuera_de_dieta' => isset($fueraDeDieta[(int) $fila['id']]),
                 'ia' => false,
                 'ingredientes' => $ingredientes[(int) $fila['id']] ?? [],
             ];
@@ -214,7 +216,8 @@ final class PlanRepositorio
                 $candidatas[] = [
                     'id' => 'ia:' . $id, 'titulo' => $ia['titulo'], 'minutos' => $ia['minutos'], 'dificultad' => 2,
                     'porciones_base' => $ia['porciones_base'], 'reciente' => false, 'favorita' => false,
-                    'restringida' => false, 'ia' => true, 'ingredientes' => $ia['ingredientes'],
+                    'restringida' => false, 'fuera_de_dieta' => false, 'ia' => true,
+                    'ingredientes' => $ia['ingredientes'],
                 ];
             }
         }

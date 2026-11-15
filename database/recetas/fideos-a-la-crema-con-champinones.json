@@ -6,7 +6,8 @@
   "minutos_coccion": 15,
   "dificultad": 1,
   "etiquetas": [
-    "vegetariana"
+    "vegetariana",
+    "sin_huevo"
   ],
   "ingredientes": [
     {
