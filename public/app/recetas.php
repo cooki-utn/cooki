@@ -72,57 +72,30 @@ require parcial('encabezado');
     <label for="q">Buscar receta o ingrediente</label>
     <input id="q" name="q" type="search" placeholder="Ej.: tarta, pollo, zapallo" value="<?= e($filtros['q']) ?>">
   </div>
-  <div class="campo">
-    <label for="dificultad">Dificultad</label>
-    <select id="dificultad" name="dificultad">
-      <option value="0">Todas</option>
-      <?php foreach (RecetaRepositorio::DIFICULTADES as $valor => $texto) : ?>
-        <option value="<?= $valor ?>"<?= $filtros['dificultad'] === $valor ? ' selected' : '' ?>><?= e($texto) ?></option>
-      <?php endforeach; ?>
-    </select>
-  </div>
-  <?php /* Tipo: una lista desplegable con los stickers de cada tipo (un <select> no puede mostrar dibujos).
-           Sin JavaScript se abre, se elige y se toca Buscar; con JavaScript (elegir-tipo.js) se cierra sola
-           y muestra arriba lo elegido. */ ?>
   <?php
-  $tipoElegido = null;
-  foreach ($etiquetas as $etiqueta) {
-      if ($filtros['etiqueta'] === (int) $etiqueta['id']) {
-          $tipoElegido = $etiqueta['nombre'];
-      }
+  /* Dificultad, tipo y orden: listas desplegables con dibujo (desplegable() en src/ayudas.php), todas iguales */
+  $dibujo = fn (string $ruta): string => '<img src="' . e(url($ruta)) . '" alt="" width="30" height="30">';
+  $opcionesDificultad = [0 => ['Todas', '<span class="semaforo-todas"><i></i><i></i><i></i></span>']];
+  foreach (RecetaRepositorio::DIFICULTADES as $valor => $texto) {
+      $opcionesDificultad[$valor] = [$texto, '<span class="dificultad dificultad--' . $valor . '"><span class="dificultad__luz"></span></span>'];
   }
-  $textoTipo = fn (string $clave): string => Tipos::nombre($clave) . ($clave === 'sin_tacc' ? ' (apta celíacos)' : '');
+  $opcionesTipo = [0 => ['Todos', $dibujo('img/tipos/todo.svg')]];
+  foreach ($etiquetas as $etiqueta) {
+      $clave = $etiqueta['nombre'];
+      $opcionesTipo[(int) $etiqueta['id']] = [
+          Tipos::nombre($clave) . ($clave === 'sin_tacc' ? ' (apta celíacos)' : ''),
+          $dibujo(Tipos::dibujo($clave) ?? 'img/tipos/todo.svg'),
+      ];
+  }
+  $dibujosOrden = ['az' => 'img/menu/recetas.svg', 'recomendadas' => 'img/menu/horno.svg', 'rapidas' => 'img/tipos/rapida.svg'];
+  $opcionesOrden = [];
+  foreach ($ordenes as $valor => $texto) {
+      $opcionesOrden[$valor] = [$texto, $dibujo($dibujosOrden[$valor])];
+  }
   ?>
-  <div class="campo">
-    <span class="campo__rotulo" id="rotulo-tipo">Tipo</span>
-    <details class="elegir-tipo" data-elegir-tipo>
-      <summary class="elegir-tipo__resumen" aria-describedby="rotulo-tipo">
-        <img src="<?= e(url($tipoElegido !== null ? (string) Tipos::dibujo($tipoElegido) : 'img/tipos/todo.svg')) ?>" alt="" width="30" height="30">
-        <span><?= e($tipoElegido !== null ? $textoTipo($tipoElegido) : 'Todos') ?></span>
-      </summary>
-      <fieldset class="elegir-tipo__panel">
-        <legend class="solo-lectores">Tipo de receta</legend>
-        <label class="elegir-tipo__opcion">
-          <input type="radio" name="etiqueta" value="0"<?= $tipoElegido === null ? ' checked' : '' ?>>
-          <img src="<?= e(url('img/tipos/todo.svg')) ?>" alt="" width="30" height="30"><span>Todos</span>
-        </label>
-        <?php foreach ($etiquetas as $etiqueta) : ?>
-          <label class="elegir-tipo__opcion" title="<?= e(Tipos::explicacion($etiqueta['nombre'])) ?>">
-            <input type="radio" name="etiqueta" value="<?= e($etiqueta['id']) ?>"<?= $tipoElegido === $etiqueta['nombre'] ? ' checked' : '' ?>>
-            <img src="<?= e(url((string) (Tipos::dibujo($etiqueta['nombre']) ?? 'img/tipos/todo.svg'))) ?>" alt="" width="30" height="30"><span><?= e($textoTipo($etiqueta['nombre'])) ?></span>
-          </label>
-        <?php endforeach; ?>
-      </fieldset>
-    </details>
-  </div>
-  <div class="campo">
-    <label for="orden">Ordenar</label>
-    <select id="orden" name="orden">
-      <?php foreach ($ordenes as $valor => $texto) : ?>
-        <option value="<?= e($valor) ?>"<?= $orden === $valor ? ' selected' : '' ?>><?= e($texto) ?></option>
-      <?php endforeach; ?>
-    </select>
-  </div>
+  <div class="campo"><?= desplegable('dificultad', 'Dificultad', $opcionesDificultad, $filtros['dificultad']) ?></div>
+  <div class="campo"><?= desplegable('etiqueta', 'Tipo', $opcionesTipo, $filtros['etiqueta']) ?></div>
+  <div class="campo"><?= desplegable('orden', 'Ordenar', $opcionesOrden, $orden) ?></div>
   <div class="campo casillas">
     <label><input type="checkbox" name="puedo" value="1"<?= $filtros['puedo'] ? ' checked' : '' ?>> Solo las que puedo hacer ya</label>
     <label><input type="checkbox" name="favoritas" value="1"<?= $filtros['favoritas'] ? ' checked' : '' ?>> Solo mis favoritas ♥</label>
@@ -158,5 +131,5 @@ require parcial('encabezado');
 <?php endif; ?>
 </div>
 </div>
-<script src="<?= e(recurso('js/elegir-tipo.js')) ?>" defer></script>
+<script src="<?= e(recurso('js/desplegable.js')) ?>" defer></script>
 <?php require parcial('pie'); ?>

@@ -153,10 +153,18 @@ final class BienvenidaTest extends TestCase
         $this->assertStringContainsString('dificultad--1', $html);
         [, $html] = $web->get('app/recetas.php');
         $this->assertStringContainsString(
-            'img/tipos/sin_tacc.svg" alt="" width="30" height="30"><span>Sin TACC (apta celíacos)</span>',
+            'img/tipos/sin_tacc.svg" alt="" width="30" height="30"></span>'
+                . '<span class="desplegable__texto">Sin TACC (apta celíacos)</span>',
             $html,
             'la lista de tipos lleva los stickers'
         );
+        $this->assertStringContainsString(
+            'dificultad--3"><span class="dificultad__luz"></span></span></span>'
+                . '<span class="desplegable__texto">Difícil',
+            $html,
+            'la dificultad con el semáforo'
+        );
+        $this->assertStringContainsString('value="rapidas"><span class="desplegable__dibujo"><img', $html);
         $this->assertStringContainsString("classList.add('js')", $html, 'desde el <head> se sabe que hay JavaScript');
         $tipos = Db::conexion()->query('SELECT nombre FROM etiqueta')->fetchAll(PDO::FETCH_COLUMN);
         $this->assertEqualsCanonicalizing(array_keys(Tipos::TIPOS), $tipos, 'la base tiene los 9 tipos');

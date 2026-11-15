@@ -269,3 +269,32 @@ function dificultadReceta(int $nivel): string
     return '<span class="dificultad dificultad--' . $nivel . '">'
         . '<span class="dificultad__luz" aria-hidden="true"></span>' . e($texto) . '</span>';
 }
+
+/**
+ * Lista desplegable con un dibujo en cada opción (en Recetas: dificultad, tipo y orden). Un <select> no puede
+ * mostrar dibujos: es un <details> con botones de opción (radio). Sin JavaScript se abre, se elige y se manda
+ * el formulario; con JavaScript (js/desplegable.js) se cierra al elegir y muestra arriba lo elegido.
+ *   $opciones  valor => [texto, dibujo]; dibujo es HTML ya armado por la página (nunca datos del usuario)
+ * Uso: <?= desplegable('orden', 'Ordenar', ['az' => ['A a la Z', '<img …>']], $orden) ?>
+ * @param array<string|int, array{0: string, 1: string}> $opciones
+ */
+function desplegable(string $nombre, string $rotulo, array $opciones, string|int $elegido): string
+{
+    $elegido = isset($opciones[$elegido]) ? $elegido : array_key_first($opciones);
+    [$textoElegido, $dibujoElegido] = $opciones[$elegido];
+    $id = 'desplegable-' . $nombre;
+    $html = '<span class="campo__rotulo" id="' . e($id) . '">' . e($rotulo) . '</span>'
+        . '<details class="desplegable" data-desplegable>'
+        . '<summary class="desplegable__resumen" aria-describedby="' . e($id) . '">'
+        . '<span class="desplegable__dibujo">' . $dibujoElegido . '</span>'
+        . '<span class="desplegable__texto">' . e($textoElegido) . '</span></summary>'
+        . '<fieldset class="desplegable__panel"><legend class="solo-lectores">' . e($rotulo) . '</legend>';
+    foreach ($opciones as $valor => [$texto, $dibujo]) {
+        $html .= '<label class="desplegable__opcion">'
+            . '<input type="radio" name="' . e($nombre) . '" value="' . e($valor) . '"'
+            . ((string) $valor === (string) $elegido ? ' checked' : '') . '>'
+            . '<span class="desplegable__dibujo">' . $dibujo . '</span>'
+            . '<span class="desplegable__texto">' . e($texto) . '</span></label>';
+    }
+    return $html . '</fieldset></details>';
+}

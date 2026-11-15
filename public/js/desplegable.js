@@ -1,9 +1,9 @@
-// Lista desplegable de "Tipo" en Recetas, con los stickers (app/recetas.php).
+// Listas desplegables con dibujo (desplegable() en src/ayudas.php): en Recetas, dificultad, tipo y orden.
 // Sin JavaScript es un <details> con opciones: se abre, se elige y se toca Buscar.
 // Con JavaScript: al elegir (clic o Enter) se cierra y muestra arriba el tipo elegido con su dibujo; con las
 // flechas se recorre. También se cierra con Escape o tocando afuera. Como los demás filtros, busca con "Buscar".
 (() => {
-  document.querySelectorAll('[data-elegir-tipo]').forEach((desplegable) => {
+  document.querySelectorAll('[data-desplegable]').forEach((desplegable) => {
     const resumen = desplegable.querySelector('summary');
     const cerrar = (devolverFoco) => {
       desplegable.open = false;
@@ -16,8 +16,10 @@
     const elegir = () => cerrar(true);
     desplegable.addEventListener('change', (evento) => {
       const opcion = evento.target.closest('label');
-      resumen.querySelector('img').src = opcion.querySelector('img').src;
-      resumen.querySelector('span').textContent = opcion.querySelector('span').textContent;
+      // El dibujo es HTML de la propia página (no del usuario): se copia el nodo; el texto, con textContent
+      resumen.querySelector('.desplegable__dibujo')
+        .replaceWith(opcion.querySelector('.desplegable__dibujo').cloneNode(true));
+      resumen.querySelector('.desplegable__texto').textContent = opcion.querySelector('.desplegable__texto').textContent;
       if (!conFlechas) {
         elegir();
       }
@@ -40,6 +42,7 @@
         elegir();
       }
     });
+    // Se cierra al tocar afuera o al abrir otra lista
     document.addEventListener('click', (evento) => {
       if (desplegable.open && !desplegable.contains(evento.target)) {
         cerrar(false);
