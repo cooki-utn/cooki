@@ -2096,3 +2096,14 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
 /* Bienvenida: con JavaScript (clase "js" puesta en el <head>, antes de dibujar) se ve una nota por vez desde el
    primer momento; sin JavaScript se ven las 4 juntas y no aparecen los botones de paso ni los puntitos */
 html:not(.js) .pasos__puntos, html:not(.js) .pasos [data-paso] { display: none; }
+
+/* Recetas: "¿Falta algún tipo?" (una nota rosa al final) */
+.falta-tipo { max-width: 620px; margin: 30px 0 10px; background: #FFD3DD; --giro: .8deg; font: 600 1rem/1.4 var(--fuente); }
+.falta-tipo h2 { margin: 0 0 4px; font: 700 1.9rem/1.1 var(--fuente-mano); }
+.falta-tipo p { margin: 0 0 8px; }
+.falta-tipo__fila { display: flex; flex-wrap: wrap; gap: 8px; }
+.falta-tipo__fila input { flex: 1 1 220px; }
+.falta-tipo__ok { color: var(--color-exito); font-weight: 800; }
+/* Panel de administración: el aviso de ingredientes nuevos va arriba de las notas */
+.aviso-panel { max-width: none; font: 600 1rem/1.4 var(--fuente); }
+.aviso-panel a { font-weight: 800; }

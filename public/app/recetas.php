@@ -5,6 +5,8 @@
  * Busca por título, descripción o ingrediente, y filtra por dificultad, etiqueta
  * y "solo lo que puedo hacer con mi despensa". Se ordena alfabéticamente, por recomendación
  * (puntaje: primero lo que se puede hacer y usa lo que vence) o por tiempo.
+ *   POST accion=sugerir_tipo tipo=<texto>  → "¿Falta algún tipo?": queda como consulta de Contacto con el asunto
+ *                                            "Sugerencia de tipo" (el administrador la ve y la responde en Consultas)
  */
 
 declare(strict_types=1);
@@ -14,6 +16,7 @@ require dirname(__DIR__, 2) . '/src/bootstrap.php';
 use Cooki\Db;
 use Cooki\Dominio\Paginacion;
 use Cooki\Dominio\Tipos;
+use Cooki\Repositorios\ContactoRepositorio;
 use Cooki\Repositorios\PreferenciasRepositorio;
 use Cooki\Repositorios\RecetaRepositorio;
 use Cooki\Sesion;
@@ -22,6 +25,29 @@ Sesion::requiereLogin();
 
 $db = Db::conexion();
 $repo = new RecetaRepositorio($db);
+
+// "¿Falta algún tipo?" (al final de la página)
+$errorTipo = '';
+$tipoSugerido = '';
+if (esPost() && campo('accion') === 'sugerir_tipo') {
+    Sesion::verificarCsrf();
+    $tipoSugerido = trim((string) preg_replace('/\s+/u', ' ', campo('tipo')));
+    $contacto = new ContactoRepositorio($db);
+    $usuario = Sesion::usuario() ?? [];
+    if (mb_strlen($tipoSugerido) < 3 || mb_strlen($tipoSugerido) > 60) {
+        $errorTipo = 'Escribí el tipo que falta (de 3 a 60 letras).';
+    } elseif ($contacto->contarDeHoy(Sesion::idUsuario(), ContactoRepositorio::ASUNTO_TIPO) >= ContactoRepositorio::TIPOS_POR_DIA) {
+        $errorTipo = 'Ya mandaste ' . ContactoRepositorio::TIPOS_POR_DIA . ' sugerencias hoy. ¡Gracias! Probá mañana.';
+    } else {
+        $contacto->crear([
+            'nombre' => (string) ($usuario['nombre'] ?? ''),
+            'email' => (string) ($usuario['email'] ?? ''),
+            'asunto' => ContactoRepositorio::ASUNTO_TIPO,
+            'mensaje' => 'Me gustaría que haya recetas del tipo: ' . $tipoSugerido,
+        ], Sesion::idUsuario());
+        redirigir('app/recetas.php?sugerido=1#falta-tipo');
+    }
+}
 // La dieta de la bienvenida: el filtro viene puesto y se puede sacar. "dieta_enviada" dice que el formulario
 // ya se mandó (si no, cualquier enlace con ?orden=… la apagaría sin querer).
 $misDietas = (new PreferenciasRepositorio($db))->perfil(Sesion::idUsuario())['dietas'];
@@ -117,7 +143,7 @@ require parcial('encabezado');
 </form>
 
 <div class="catalogo__resultados">
-<p class="texto-suave" role="status"><?= count($recetas) ?> receta<?= count($recetas) === 1 ? '' : 's' ?><?= $hayFiltros ? ' encontradas' : '' ?></p>
+<p class="texto-suave" role="status"><?= count($recetas) ?> receta<?= count($recetas) === 1 ? '' : 's' ?><?= $hayFiltros ? ' encontrada' . (count($recetas) === 1 ? '' : 's') : '' ?></p>
 
 <?php if ($recetas === []) : ?>
   <p class="vacio">No encontramos recetas con esos filtros. Probá con otra palabra o sacá algún filtro.</p>
@@ -129,6 +155,26 @@ require parcial('encabezado');
   </div>
   <?php require parcial('paginacion'); ?>
 <?php endif; ?>
+
+<?php /* ¿Falta algún tipo? Le llega al administrador como una consulta (ver arriba) */ ?>
+<form class="postit falta-tipo" id="falta-tipo" method="post" action="<?= e(url('app/recetas.php')) ?>#falta-tipo">
+  <span class="postit__chinche" aria-hidden="true"></span>
+  <?= Sesion::campoCsrf() ?>
+  <input type="hidden" name="accion" value="sugerir_tipo">
+  <h2>¿Falta algún tipo?</h2>
+  <p>Contanos cuál y se lo pasamos al administrador. La respuesta te llega en <a href="<?= e(url('contacto.php')) ?>">Contacto</a>.</p>
+  <div class="falta-tipo__fila">
+    <label class="solo-lectores" for="tipo-que-falta">Tipo que falta</label>
+    <input id="tipo-que-falta" name="tipo" type="text" required minlength="3" maxlength="60" value="<?= e($tipoSugerido) ?>"
+           placeholder="Ej.: sin azúcar, para chicos, picante…"<?= $errorTipo !== '' ? ' aria-invalid="true" aria-describedby="error-tipo"' : '' ?>>
+    <button class="boton" type="submit">Mandar</button>
+  </div>
+  <?php if ($errorTipo !== '') : ?>
+    <p class="error-campo" id="error-tipo" role="alert"><?= e($errorTipo) ?></p>
+  <?php elseif (isset($_GET['sugerido'])) : ?>
+    <p class="falta-tipo__ok" role="status">¡Gracias! Se lo pasamos al administrador.</p>
+  <?php endif; ?>
+</form>
 </div>
 </div>
 <script src="<?= e(recurso('js/desplegable.js')) ?>" defer></script>
