@@ -156,7 +156,11 @@ require parcial('encabezado');
   <?php require parcial('paginacion'); ?>
 <?php endif; ?>
 
-<?php /* ¿Falta algún tipo? Le llega al administrador como una consulta (ver arriba) */ ?>
+<?php /* ¿Falta algún tipo? Le llega al administrador como una consulta (ver arriba). La nota va centrada y a los
+         costados, dibujos sueltos (en pantallas angostas no se muestran) */ ?>
+<div class="falta-tipo-zona">
+<?php $sueltos = [[2, 6, 66, -10], [13, 46, 54, 12], [4, 72, 46, 8], [84, 4, 62, 9], [93, 42, 50, -12], [82, 68, 46, -6]]; ?>
+<?php require parcial('dibujos-sueltos'); ?>
 <form class="postit falta-tipo" id="falta-tipo" method="post" action="<?= e(url('app/recetas.php')) ?>#falta-tipo">
   <span class="postit__chinche" aria-hidden="true"></span>
   <?= Sesion::campoCsrf() ?>
@@ -175,6 +179,7 @@ require parcial('encabezado');
     <p class="falta-tipo__ok" role="status">¡Gracias! Se lo pasamos al administrador.</p>
   <?php endif; ?>
 </form>
+</div>
 </div>
 </div>
 <script src="<?= e(recurso('js/desplegable.js')) ?>" defer></script>
