@@ -6,12 +6,60 @@ Formato: decisiones tipo ADR (ver la guía de metodología del equipo, sección 
 
 ---
 
-## DEC-022 · AAAA-MM-DD · (título)
+## DEC-025 · AAAA-MM-DD · (título)
 - **Contexto:** 
 - **Decisión:** 
 - **Alternativas descartadas:** 
 - **Consecuencias:** 
 - **Participaron:** 
+
+---
+
+## DEC-024 · 2026-11-13 · Menú de stickers con dibujo, notas que se enderezan y letras sin salto
+- **Contexto:** al probar el incremento 3 en el hosting, el equipo pidió un menú más claro que las bolitas de colores, notas más cómodas de tocar y el pie con Contacto y Quiénes somos. También se notó que al cambiar de página "se agrandaba todo y después se acomodaba".
+- **Decisión:**
+  - **Menú de stickers con dibujo.** Se compararon 8 estilos en una página de prueba y se eligió el de **stickers con dibujo**: cada enlace lleva su dibujo (horno para Mi cocina, heladera para Mi despensa, libro, plan, bolsa, sobre, llave…) en `public/img/menu/`, con el texto abajo. La página actual tiene el texto resaltado con fibra. Los stickers se reparten a lo ancho de la barra con un espacio parejo (`--espacio-menu`), y la cuenta y "Preferencias" (antes "Ajustes", sin cuenta) siguen el mismo estilo. En el celular, los dibujos son de 32 px dentro del menú desplegable.
+  - **Con cuenta, Contacto y Quiénes somos van al pie** como stickers chicos, arriba de "Cooki · año · Proyecto integrador…". Sin cuenta, Contacto sigue en el menú.
+  - **Notas con algo para tocar** (un enlace, un botón o un campo): están un poco inclinadas, se ponen **derechas** con el mouse encima, y al salir se hamacan y vuelven a su inclinación (amplía DEC-021 y la entrega B).
+  - **Letras sin salto:** el texto se muestra enseguida con una letra del sistema del mismo ancho (`@font-face` de respaldo con `size-adjust`: Segoe Print al 68,5 % para Caveat, Consolas al 111,3 % para Space Mono, y otras dos de reserva). Las tres letras principales se piden por adelantado (`<link rel="preload">`) y el navegador guarda las letras, los dibujos y el CSS/JS (`public/.htaccess` con `mod_expires` y `mod_headers`, dentro de `IfModule`).
+- **Alternativas descartadas:**
+  - Otros estilos de menú: letras magnéticas, rótulos de cinta, chapitas, una tira magnética o una columna al costado. La columna quedó probada en un ejemplo y no se adoptó por ahora.
+  - `font-display: block` (texto invisible hasta que llega la letra): en el hosting gratuito puede tardar y la página queda en blanco.
+  - Sacar las letras propias: son parte del estilo Heladera.
+- **Consecuencias:** 12 dibujos nuevos en `public/img/menu/` y `public/img/plan.svg`. La imagen de Docker activa `expires` y `headers` (hay que reconstruirla con `--build`). Si el hosting no tiene esos módulos, todo anda igual, sin caché. Medido con las letras bloqueadas: el menú pasó de 627 px a 482 px (el real mide 490), y el título del inicio de 190 px (3 renglones) a 68 px.
+- **Participaron:** P2 (pantallas, dibujos y CSS)
+
+---
+
+## DEC-023 · 2026-11-09 · MySQL usa la misma hora que PHP
+- **Contexto:** PHP trabaja con la hora de Argentina (`bootstrap.php`), pero el MySQL del hosting está en UTC. Entre las 21 y las 24, `CURDATE()` ya era el día siguiente: "vence hoy", "hace poco", los límites diarios de la IA y el plan semanal se corrían un día.
+- **Decisión:** al conectarse, `Db::conexion()` ejecuta `SET time_zone` con el desfase de PHP (por ejemplo `-03:00`). Se manda como número y no como nombre de zona porque los servidores compartidos no siempre tienen cargada la tabla de zonas horarias.
+- **Alternativas descartadas:**
+  - Calcular todas las fechas en PHP y no usar `CURDATE()`/`NOW()`: hay que tocar muchas consultas y es fácil olvidarse de una.
+  - `SET time_zone = 'America/Argentina/Buenos_Aires'`: falla si el servidor no tiene las zonas cargadas.
+- **Consecuencias:** una consulta más al conectarse (no se nota). Si Argentina volviera a tener horario de verano, el desfase sigue a PHP solo.
+- **Participaron:** P1 (base de datos y hosting)
+
+---
+
+## DEC-022 · 2026-11-10 · Plan semanal: lo que falta gastando la despensa en orden y "Armá mi semana"
+- **Contexto:** el plan semanal (HU-35 a HU-37) tiene que decir qué le falta a cada comida y armar la semana sola. Si cada comida se mira por separado, el almuerzo y la cena "usan" los mismos 2 huevos y la lista sale corta. El hosting no tiene tareas programadas y la IA tiene un cupo diario.
+- **Decisión:**
+  - **Lógica pura** en `src/Dominio/PlanSemanal.php` (sin base de datos, con `PlanSemanalTest`). La semana son los 7 días desde hoy, con almuerzo y cena. En cada lugar va una receta del recetario o una de "Mis recetas de IA", con sus porciones (de 1 a 12; si no se eligen, las de la receta).
+  - **Simulación en orden:** `simular()` recorre las comidas de hoy en adelante y "gasta" lo que usa cada una con la lógica de `Descuento` (resta la cantidad, o baja un nivel si no se puede comparar). Cada ingrediente queda como **tengo**, **usado** (lo gastó una comida anterior, y dice cuál), **vence** (vence antes de ese día) o **falta**. Lo opcional, los básicos, "Siempre tengo" y lo que la persona no come no cuentan, como en la lista de compras.
+  - **"Armá mi semana"** (`armar()`) completa solo los lugares vacíos, en orden. En cada uno elige con el `Puntaje` de Mi cocina, mirando lo que dejaron las comidas anteriores: primero las que entran en un grupo (ahora, falta 1, casi) y si no, la de más puntaje. No repite recetas en la semana ni usa las que tienen algo que la persona no come. **No usa la IA**: las recetas de IA guardadas entran solo si se marca "Incluir mis recetas de IA".
+  - **El desplegable** de cada lugar agrupa las recetas por lo que les faltaría **ahí** ("Tenés todo", "Te falta 1 cosa", "Te faltan 2 cosas", "Te faltan 3 o más"), contando lo que usan las comidas de antes. Las favoritas llevan ♥ y las de IA, "(IA)".
+  - **Lo que falta, a la lista:** de una comida o de toda la semana, con las cantidades de la simulación y la suma de la lista (DEC-018).
+  - **Sin tareas programadas:** lo planeado para días que ya pasaron se borra cuando la persona guarda algo.
+  - **Con JavaScript** (`plan.js`), guardar, quitar y "+ lista" no recargan la página. Como un cambio cambia lo que falta en las comidas siguientes, después de cada cambio se vuelve a pedir la página (con `X-Requested-With`) y se reemplazan las comidas. Sin JavaScript todo anda con formularios comunes.
+  - **Nota "Hoy" en Mi cocina:** el almuerzo y la cena de hoy, con "Cocinar" (modo cocina con las porciones del plan). Se cierra y se apaga como la nota de la lista (`usuario.nota_hoy`, migración 009).
+- **Alternativas descartadas:**
+  - Calcular cada comida por separado: la lista de la semana sale corta y "Tenés todo" engaña.
+  - Armar la semana con la IA: gasta el cupo diario y puede tardar más de los 20 segundos del hosting.
+  - Buscar la mejor combinación de toda la semana: son demasiadas combinaciones para 14 lugares. Elegir lugar por lugar, en orden, ya usa primero lo que vence y responde enseguida.
+  - Que `plan.js` arme el HTML de las comidas: duplicaría en JavaScript la lógica de PHP. Pedir la página otra vez reusa la misma vista.
+- **Consecuencias:** la tabla `plan_comida` ya venía en la migración 007 (DEC-018); la 009 suma `usuario.nota_hoy`. API nueva: `GET /plan`, `PUT` y `DELETE /plan/{fecha}/{momento}` (con `Router::put()`). 22 pruebas nuevas (`PlanSemanalTest` y `PlanTest`).
+- **Participaron:** P3 (lógica del plan y recetas), P2 (pantallas, `plan.js` y la lista)
 
 ---
 
