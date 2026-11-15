@@ -165,12 +165,14 @@ IA_LIMITE_GLOBAL_DIA=200
 - [ ] Una página con error muestra "Algo salió mal", y no el detalle técnico.
 - [ ] Si configuraste la IA, Mi cocina arma una receta y Administración → IA muestra el pedido (paso 7).
 - [ ] En **Plan**, "Armá mi semana" completa los lugares vacíos, y Mi cocina muestra la nota "Hoy" con las comidas de hoy.
+- [ ] Al crear una cuenta se abre **Contanos cómo comés**; en Recetas, las listas de Dificultad, Tipo y Ordenar muestran sus dibujos.
 - [ ] En las herramientas del navegador (F12 → Red), una letra `.woff2` llega con `Cache-Control: public, max-age=31536000, immutable`. Si no aparece, el hosting no tiene `mod_headers`: anda igual, sin esa caché.
 - [ ] Cambiaste las contraseñas de los usuarios de prueba (paso 4).
 
 ## 9. Actualizar una versión publicada
 
 1. Armá el paquete otra vez y subí los archivos que cambiaron. El `.env` y la carpeta `public/img/recetas/` del hosting no se tocan.
-   Si subís a mano, fijate si hay **carpetas nuevas** (por ejemplo `public/img/menu/`, que trae el incremento 3) y también el `public/.htaccess`, que es un archivo oculto: en FileZilla, Servidor → Forzar mostrar archivos ocultos.
+   Si subís a mano, fijate si hay **carpetas nuevas** (por ejemplo `public/img/menu/` y `public/img/tipos/`, que trae el incremento 3) y también el `public/.htaccess`, que es un archivo oculto: en FileZilla, Servidor → Forzar mostrar archivos ocultos.
 2. Si hay migraciones nuevas en `database/migraciones/`, importalas en phpMyAdmin, en orden y solo las que todavía no corriste.
+   Cada una dice al principio si se puede importar más de una vez (la `010-personalizar.sql`, por ejemplo, no).
 3. Repetí la comprobación del paso 8.

@@ -5,6 +5,7 @@
 > Los de la tanda 3 (inicio nuevo con vitrina, manija desplazadora, volumen, administración con dibujos, 76 ingredientes con dibujo) están en [estilo-heladera-tanda-3.md](estilo-heladera-tanda-3.md).
 > Los de la tanda 4 (barra toda de imanes, color sin cuenta, dibujos en las partes vacías, buscador con stickers e ingredientes propios, aviso al borrar, responder consultas, ver la contraseña y confirmar al salir) están en [estilo-heladera-tanda-4.md](estilo-heladera-tanda-4.md).
 > Los de la tanda 5, del incremento 3 (menú de stickers con dibujo, Contacto y Quiénes somos en el pie, notas que se enderezan, letras sin salto, saltar al contenido, foco visible y el plan semanal), están en [estilo-heladera-tanda-5.md](estilo-heladera-tanda-5.md).
+> Los de la tanda 6, también del incremento 3 (tipos de receta con sticker, dificultad con semáforo, listas desplegables con dibujo, la bienvenida paso a paso y "¿Falta algún tipo?"), están en [estilo-heladera-tanda-6.md](estilo-heladera-tanda-6.md).
 
 La versión Heladera es **el mismo proyecto** (mismas páginas, base de datos, consultas, validaciones y pruebas) con otra estética: la página es la puerta de una heladera.
 

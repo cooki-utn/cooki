@@ -8,7 +8,7 @@ Proyecto integrador · Tecnicatura Universitaria en Programación · UTN Faculta
 **Stack:** HTML + CSS + JavaScript (sin frameworks) · PHP 8 · MariaDB / MySQL
 
 - 📋 Tablero: _(link al GitHub Project)_
-- 🎯 Versión actual: **incremento 3**: lista de compras, recetas con IA (Gemini), plan semanal y correo desde el hosting. Qué cambió: [docs/cambios-incremento-3.md](docs/cambios-incremento-3.md). Qué cumple cada requisito del parcial (incremento 2): [docs/requisitos-parcial.md](docs/requisitos-parcial.md)
+- 🎯 Versión actual: **incremento 3**: lista de compras, recetas con IA (Gemini), plan semanal, correo desde el hosting y la bienvenida "Contanos cómo comés" con tipos de receta con dibujo. Qué cambió: [docs/cambios-incremento-3.md](docs/cambios-incremento-3.md). Qué cumple cada requisito del parcial (incremento 2): [docs/requisitos-parcial.md](docs/requisitos-parcial.md)
 - 🌐 Publicarlo en un hosting: [docs/publicar.md](docs/publicar.md)
 
 ## Usuarios de prueba
@@ -32,7 +32,7 @@ public/                 ← lo único que ve el navegador (raíz web)
   nosotros.php          Quiénes somos (imán "Nosotros" sin cuenta; los datos están en src/equipo.php)
   app/                  páginas del usuario logueado: Mi cocina, Mi despensa, Recetas, modo cocina (cocinar.php),
                         Lista de compras (lista.php), Plan semanal (plan.php), recetas de la IA (receta-ia.php, mis-recetas-ia.php),
-                        Mis preferencias, Mi cuenta
+                        la bienvenida "Contanos cómo comés" (bienvenida.php), Mis preferencias, Mi cuenta
   admin/                páginas solo para administradores: panel, ABM, correo e IA (ia.php)
   css/ · js/ · img/      (img/equipo: los dibujos de cada integrante para Quiénes somos)
   api/index.php         API JSON: sesión, recetas, recomendaciones, despensa, favoritas, lista, IA y plan (docs/api.md)
@@ -42,7 +42,8 @@ src/                    código PHP que no se ve desde el navegador
   Sesion.php            sesión del usuario, roles, protección de páginas y token CSRF
   Correo.php · Smtp.php envío de correos con el cliente SMTP propio (o mail() si no hay MAIL_HOST)
   Dominio/              reglas sin base de datos: puntaje, porciones, descuento, bloqueo, paginación, foto,
-                        lista de compras, lo que devuelve la IA (RecetaIa) y el plan semanal (PlanSemanal)
+                        lista de compras, lo que devuelve la IA (RecetaIa), el plan semanal (PlanSemanal),
+                        los tipos de receta (Tipos) y lo que se cuenta en la bienvenida (Perfil)
   Ia/                   la IA (Gemini): cliente, instrucciones, límites y caché. Sin IA_CLAVE queda apagada
   equipo.php            integrantes para "Quiénes somos": nombre, actividades, GitHub, LinkedIn y correo
   Repositorios/         todas las consultas SQL (una clase por tabla principal)
@@ -88,7 +89,7 @@ docker compose exec web composer install
 | Comando                      | Qué hace                                                  | Con Docker                                           |
 | ---------------------------- | --------------------------------------------------------- | ---------------------------------------------------- |
 | `composer lint`              | Sintaxis de todos los .php + estilo PSR-12                | `docker compose exec web composer lint`              |
-| `composer test`              | 204 pruebas, unitarias y de páginas (sin la IA real)      | `docker compose exec web composer test`              |
+| `composer test`              | 221 pruebas, unitarias y de páginas (sin la IA real)      | `docker compose exec web composer test`              |
 | `composer servidor`          | Servidor PHP en http://localhost:8080 (sin Docker)        | —                                                    |
 | `php scripts/empaquetar.php` | Arma `cooki-hosting.zip` para subir al hosting            | `docker compose exec web php scripts/empaquetar.php` |
 | `docker compose down -v`     | Apagar y **borrar** la base local (se recrea al levantar) |                                                      |
