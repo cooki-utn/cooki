@@ -8,6 +8,7 @@
 declare(strict_types=1);
 
 use Cooki\Config;
+use Cooki\Controladores\IaControlador;
 use Cooki\Controladores\IngredientesControlador;
 use Cooki\Controladores\ListaControlador;
 use Cooki\Controladores\RecetasControlador;
@@ -40,6 +41,11 @@ $router->post('/lista', fn () => ListaControlador::agregar());
 $router->post('/lista/{id}/comprado', fn (array $p) => ListaControlador::comprar($p));
 $router->delete('/lista/{id}/comprado', fn (array $p) => ListaControlador::deshacer($p));
 $router->delete('/lista/{id}', fn (array $p) => ListaControlador::quitar($p));
+// Incremento 3: IA en las recetas
+$router->get('/ia', fn () => IaControlador::estado());
+$router->post('/ia/receta', fn () => IaControlador::receta());
+$router->post('/ia/adaptar/{id}', fn (array $p) => IaControlador::adaptar($p));
+$router->post('/ia/reemplazo', fn () => IaControlador::reemplazo());
 
 $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 

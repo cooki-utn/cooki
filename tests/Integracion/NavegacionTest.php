@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cooki\Tests\Integracion;
 
 use Cooki\Db;
+use Cooki\Repositorios\IaRepositorio;
 use PDOException;
 use PHPUnit\Framework\TestCase;
 
@@ -65,6 +66,45 @@ final class NavegacionTest extends TestCase
         [, $html] = $web->desde('https://otro-sitio.example/app/index.php')->get('app/receta.php?id=1');
         $this->assertStringContainsString('Volver a Recetas', self::barra($html));
         $this->assertStringNotContainsString('otro-sitio', $html);
+    }
+
+    public function testLasRecetasDeIaVuelvenAMisRecetasDeIaYAMiCocina(): void
+    {
+        $db = Db::conexion();
+        $maria = (int) $db->query("SELECT id FROM usuario WHERE email = 'maria@cooki.test'")->fetchColumn();
+        $repo = new IaRepositorio($db);
+        $id = $repo->crearReceta($maria, 'nueva', null, ['titulo' => 'Prueba de volver', 'porciones' => 2,
+            'minutos_prep' => 5, 'minutos_coccion' => 0, 'dificultad' => 1, 'etiquetas' => [], 'descripcion' => '',
+            'ingredientes' => [['id' => 5, 'nombre' => 'Zapallito', 'categoria_id' => 1, 'cantidad' => 1.0,
+                'unidad' => 'u', 'peso' => 3]],
+            'pasos' => [['texto' => 'Cortar.', 'minutos' => null]], 'por_que' => '', 'cambios' => []]);
+        $repo->marcarGuardada($maria, $id, true);
+        try {
+            $web = new Navegador();
+            $web->ingresar('maria@cooki.test', 'Usuario1234');
+            [, $html] = $web->get('app/receta-ia.php?id=' . $id);
+            $barra = self::barra($html);
+            $this->assertStringContainsString('Volver a Mis recetas de IA', $barra, 'Sin saber de dónde vino');
+            $this->assertStringNotContainsString('>Mis recetas de IA</a>', $barra, 'El atajo no repite la flecha');
+            [, $html] = $web->desde('app/index.php')->get('app/mis-recetas-ia.php');
+            $this->assertStringContainsString('Volver a Mi cocina', self::barra($html));
+            $this->assertStringContainsString('Prueba de volver', $html);
+            [, $html] = $web->desde('app/mis-recetas-ia.php')->get('app/receta-ia.php?id=' . $id);
+            $this->assertStringContainsString('Volver a Mis recetas de IA', self::barra($html));
+            [, $html] = $web->desde('app/index.php')->get('app/receta-ia.php?id=' . $id);
+            $this->assertStringContainsString('Volver a Mi cocina', self::barra($html));
+            $this->assertStringContainsString('class="atajo"', self::barra($html), 'y un atajo a Mis recetas de IA');
+        } finally {
+            $repo->borrarReceta($maria, $id);
+        }
+    }
+
+    public function testDeLaAdministracionDeLaIaSeVuelveALaIa(): void
+    {
+        $web = new Navegador();
+        $web->ingresar('admin@cooki.test', 'Admin1234');
+        [, $html] = $web->desde('admin/ia.php')->get('app/receta.php?id=1');
+        $this->assertStringContainsString('Volver a la IA', self::barra($html));
     }
 
     public function testMiCocinaNoPoneLoVencidoEnUsaloPronto(): void

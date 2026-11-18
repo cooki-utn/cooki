@@ -25,6 +25,10 @@ un formulario de otro sitio no puede hacerlo sin permiso, así que eso también 
 | POST | `/api/lista/{id}/comprado` | Sí | Lo marca como comprado y pasa a la despensa | Incremento 3 |
 | DELETE | `/api/lista/{id}/comprado` | Sí | Deshace la compra de hoy | Incremento 3 |
 | DELETE | `/api/lista/{id}` | Sí | Lo quita de la lista | Incremento 3 |
+| GET | `/api/ia` | Sí | Si hay IA y cuántos pedidos le quedan hoy | Incremento 3 |
+| POST | `/api/ia/receta` | Sí | Receta nueva con lo que tiene en la despensa (o "Pedir otra") | Incremento 3 |
+| POST | `/api/ia/adaptar/{id}` | Sí | Adapta una receta del recetario (sin huevo, sin TACC…) | Incremento 3 |
+| POST | `/api/ia/reemplazo` | Sí | Con qué reemplazar un ingrediente que falta | Incremento 3 |
 
 Códigos comunes:
 - `401`: hace falta iniciar sesión.
@@ -32,7 +36,7 @@ Códigos comunes:
 - `405`: el método no va con esa ruta.
 - `415`: no se mandó JSON.
 - `422`: datos inválidos.
-- `429`: demasiados intentos.
+- `429`: demasiados intentos (o, en la IA, el límite del día).
 
 ---
 
@@ -186,3 +190,64 @@ Si se compró otra cantidad de la prevista, el `POST` puede llevar `{ "cantidad"
 ## DELETE /api/lista/{id}
 
 Pide sesión. **Respuesta 200:** `{ "id": 7, "quitado": true }`. **Errores:** `404` si no está en la lista del usuario.
+
+## La IA (incremento 3)
+
+Las cuatro rutas piden sesión. Ninguna manda a Google el nombre ni el correo: solo ingredientes, restricciones y las
+opciones elegidas. Cada persona tiene `IA_LIMITE_USUARIO_DIA` pedidos por día (5 por defecto) y todo el sitio
+`IA_LIMITE_GLOBAL_DIA` (200). Solo descuentan los pedidos que salieron bien; la misma consulta, durante 7 días, sale
+de la caché y no descuenta. Los reemplazos gastan 1 pedido cada 5. Ver DEC-020.
+
+Si la IA no puede, responde `{ "error": "..." }` con un mensaje para mostrar tal cual:
+
+| Código | Cuándo |
+|---|---|
+| `503` | La IA no está configurada (falta `IA_CLAVE`) |
+| `429` | Se llegó al límite del día (de la persona o del sitio) |
+| `422` | Faltan datos o el pedido no tiene sentido (menos de 2 ingredientes en la despensa, una adaptación que la receta ya cumple, un ingrediente que ya tiene) |
+| `504` | Gemini tardó más de `IA_TIMEOUT` segundos |
+| `502` | Gemini falló o respondió algo que no sirve (también si la receta usaba algo que la persona no come) |
+
+## GET /api/ia
+
+**Respuesta 200:** `{ "disponible": true, "restantes": 3, "limite": 5 }`. Sin IA: `disponible` es `false` y `restantes`, 0.
+
+## POST /api/ia/receta
+
+**Cuerpo:** `{ "porciones": 2, "minutos": 30, "tipo": "almuerzo_cena" }`. `minutos` es 15, 30 o 60; `tipo`,
+`almuerzo_cena`, `dulce` o `rapida`; `porciones`, de 1 a 8. Lo que no sirva se cambia por el valor por defecto.
+Para **"Pedir otra"**: `{ "otra_de": 12 }` (una receta de IA de la persona): usa las mismas opciones, le pide a la IA que
+no repita las que ya vio y no sale de la caché.
+
+**Respuesta 201**
+```json
+{ "id": 13, "titulo": "Revuelto de zapallitos", "url": "/app/receta-ia.php?id=13", "restantes": 2 }
+```
+
+**Errores:** los de la tabla de arriba y `404` si `otra_de` no es una receta de IA de la persona.
+
+## POST /api/ia/adaptar/{id}
+
+**Cuerpo:** `{ "adaptacion": "sin_huevo", "porciones": 4 }`. `adaptacion` es `sin_huevo`, `sin_tacc`, `sin_lactosa`,
+`vegetariana` o `con_lo_que_tengo` (reemplaza lo que falta por cosas de la despensa: es la única que manda la
+despensa). La receta original no cambia: se crea una receta de IA adaptada, con "Qué cambió".
+
+**Respuesta 201:** igual que `POST /api/ia/receta`.
+
+**Errores:** `404` si la receta no existe; `422` si esa adaptación no hace falta (la receta ya la cumple).
+
+## POST /api/ia/reemplazo
+
+**Cuerpo:** `{ "receta": 1, "ingrediente": 15, "porciones": 4 }`: un ingrediente que la receta lleva y que a la persona
+le falta. La respuesta no se guarda en la cuenta, pero queda anotada (sin datos de la persona) para que la
+administración la pase a la tabla de sustituciones.
+
+**Respuesta 200**
+```json
+{ "reemplazo": "Leche", "ingrediente_id": 24, "ratio": 1, "nota": "Queda más suave.",
+  "frase": "Usá leche: la misma cantidad (600 g).", "tengo": true, "restantes": 4, "sin_gastar": 4,
+  "aviso": "Te quedan 4 reemplazos sin gastar pedidos (cada 5 reemplazos se gasta 1 pedido)." }
+```
+`ingrediente_id` es `null` si el reemplazo no está en el catálogo; `tengo` dice si está en la despensa.
+
+**Errores:** `404` si la receta no existe; `422` si el ingrediente no está en la receta o ya lo tiene.

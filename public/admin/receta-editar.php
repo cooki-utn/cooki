@@ -4,6 +4,8 @@
  * ABM de recetas · alta (receta-editar.php) y modificación (receta-editar.php?id=5).
  * Una receta tiene datos generales, una lista de ingredientes, pasos, etiquetas y una foto opcional
  * (JPG, PNG o WebP de hasta 2 MB; se valida en Dominio\FotoReceta y se guarda en public/img/recetas).
+ * "Pasar al recetario" (HU-34): receta-editar.php?desde_ia=N llena el formulario con una receta de IA guardada
+ * (RecetaIa::paraRecetario). Nada se publica hasta que la administración la revisa y la guarda.
  */
 
 declare(strict_types=1);
@@ -14,6 +16,8 @@ use Cooki\Db;
 use Cooki\Dominio\FotoReceta;
 use Cooki\Dominio\Pasos;
 use Cooki\Dominio\Puntaje;
+use Cooki\Dominio\RecetaIa;
+use Cooki\Repositorios\IaRepositorio;
 use Cooki\Repositorios\IngredienteRepositorio;
 use Cooki\Repositorios\RecetaRepositorio;
 use Cooki\Sesion;
@@ -35,6 +39,33 @@ $receta = [
 $ingredientes = [['id' => 0, 'cantidad' => null, 'unidad' => '', 'peso' => 2, 'opcional' => false]];
 $pasos = [];
 $etiquetasElegidas = [];
+$iaRepo = new IaRepositorio($db);
+$desdeIa = $id > 0 ? 0 : (int) ($_GET['desde_ia'] ?? $_POST['desde_ia'] ?? 0);
+$afuera = [];   // ingredientes de la receta de IA que no están en el catálogo general
+
+if ($desdeIa > 0) {
+    $recetaIa = $iaRepo->recetaParaRevisar($desdeIa);
+    if ($recetaIa === null) {
+        Sesion::avisar('error', 'Esa receta de IA ya no existe o nadie la guardó.');
+        redirigir('admin/ia.php#recetas');
+    }
+    if ($recetaIa['pasada_a'] !== null) {
+        Sesion::avisar('info', '“' . $recetaIa['titulo'] . '” ya está en el recetario.');
+        redirigir('admin/ia.php#receta-ia-' . $desdeIa);
+    }
+    if (!esPost()) {
+        $paraEditor = RecetaIa::paraRecetario($recetaIa['contenido'], array_map('intval', $idsValidos));
+        $receta = $paraEditor['receta'];
+        $ingredientes = $paraEditor['ingredientes'] ?: $ingredientes;
+        $pasos = $paraEditor['pasos'];
+        $porNombre = array_column($etiquetas, 'id', 'nombre');
+        $etiquetasElegidas = array_values(array_map(
+            'intval',
+            array_intersect_key($porNombre, array_flip($paraEditor['etiquetas']))
+        ));
+        $afuera = $paraEditor['afuera'];
+    }
+}
 
 if ($id > 0 && !esPost()) {
     $guardada = $repo->obtener($id);
@@ -134,6 +165,9 @@ if (esPost()) {
 
     if ($errores === []) {
         $id = $repo->guardar($receta, $ingredientes, $pasos, $etiquetasElegidas, Sesion::idUsuario(), $id);
+        if ($desdeIa > 0) {
+            $iaRepo->marcarPasada($desdeIa, $id);
+        }
         // La foto se guarda después de la receta (hace falta su id para el nombre del archivo)
         $publico = dirname(__DIR__) . '/';
         $anterior = null;
@@ -175,11 +209,22 @@ $opciones = function (int $elegido) use ($catalogo): string {
 };
 $error = fn (string $campo) => isset($errores[$campo]) ? '<p class="error-campo">' . e($errores[$campo]) . '</p>' : '';
 
-$titulo = $id ? 'Editar receta' : 'Nueva receta';
+$titulo = $id ? 'Editar receta' : ($desdeIa > 0 ? 'Pasar al recetario' : 'Nueva receta');
 require parcial('encabezado');
 ?>
-<?= enlaceVolver('admin/recetas.php', 'Volver a Recetas', $id ? [['admin/recetas.php', 'Recetas'], ['app/receta.php?id=' . $id, 'Ver cómo se ve']] : [['admin/recetas.php', 'Recetas']]) ?>
+<?php if ($desdeIa > 0) : ?>
+  <?= enlaceVolver('admin/ia.php#recetas', 'Volver a IA') ?>
+<?php else : ?>
+  <?= enlaceVolver('admin/recetas.php', 'Volver a Recetas', $id ? [['admin/recetas.php', 'Recetas'], ['app/receta.php?id=' . $id, 'Ver cómo se ve']] : [['admin/recetas.php', 'Recetas']]) ?>
+<?php endif; ?>
 <h1><?= e($titulo) ?></h1>
+<?php if ($desdeIa > 0) : ?>
+  <p class="aviso aviso--info">La escribió la IA: revisá cantidades, tiempos y pasos antes de guardarla. Recién al guardar queda en el recetario.</p>
+<?php endif; ?>
+<?php if ($afuera !== []) : ?>
+  <p class="aviso aviso--alerta" role="status">No están en el catálogo y quedaron afuera: <strong><?= e(implode(', ', $afuera)) ?></strong>.
+    Si hacen falta, cargalos en <a href="<?= e(url('admin/ingredientes.php?nuevo')) ?>" target="_blank" rel="noopener">Ingredientes</a> (se abre aparte) y agregalos acá.</p>
+<?php endif; ?>
 <?php if ($errores !== []) : ?>
   <p class="aviso aviso--error" role="alert">Revisá los campos marcados.</p>
 <?php endif; ?>
@@ -187,6 +232,9 @@ require parcial('encabezado');
 <form class="formulario formulario--ancho" method="post" id="form-receta" enctype="multipart/form-data">
   <?= Sesion::campoCsrf() ?>
   <input type="hidden" name="id" value="<?= e($id) ?>">
+  <?php if ($desdeIa > 0) : ?>
+    <input type="hidden" name="desde_ia" value="<?= e($desdeIa) ?>">
+  <?php endif; ?>
 
   <section class="tarjeta">
     <h2>Datos generales</h2>
@@ -304,7 +352,7 @@ require parcial('encabezado');
 
   <div class="acciones">
     <button class="boton" type="submit">Guardar receta</button>
-    <a class="boton boton--secundario" href="<?= e(url('admin/recetas.php')) ?>">Cancelar</a>
+    <a class="boton boton--secundario" href="<?= e(url($desdeIa > 0 ? 'admin/ia.php#recetas' : 'admin/recetas.php')) ?>">Cancelar</a>
   </div>
 </form>
 <script src="<?= e(recurso('js/receta-form.js')) ?>" defer></script>

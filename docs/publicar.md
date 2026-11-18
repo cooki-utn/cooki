@@ -119,7 +119,40 @@ Después probá también "¿Olvidaste tu contraseña?" con una cuenta real.
 Con Docker los correos van a Mailpit (<http://localhost:8025>) y no hace falta configurar nada. Si el correo no
 funciona, todo lo demás sigue andando y las consultas quedan guardadas.
 
-## 7. Comprobar que quedó bien
+## 7. La IA (Gemini)
+
+La IA es optativa: sin `IA_CLAVE`, sus botones no aparecen y el resto del sitio anda igual (DEC-020).
+
+1. Entrá en <https://aistudio.google.com/apikey> con la cuenta de Gmail del proyecto y tocá **Create API key**.
+   El plan gratuito alcanza: el sitio se frena solo antes del cupo de Google.
+2. En el `.env` del hosting:
+
+```ini
+IA_PROVEEDOR=gemini
+IA_CLAVE=la-clave-que-copiaste
+IA_MODELO=gemini-3.5-flash-lite
+IA_URL=https://generativelanguage.googleapis.com/v1beta
+IA_TIMEOUT=12
+IA_LIMITE_USUARIO_DIA=5
+IA_LIMITE_GLOBAL_DIA=200
+```
+
+- `IA_TIMEOUT` tiene que quedar bastante por debajo de 20: el hosting corta cada página a los 20 segundos.
+- La clave **nunca** va al repositorio ni a los registros. Si se filtra, borrala en AI Studio y creá otra.
+
+3. Para probarla, entrá con una cuenta común, cargá al menos 2 ingredientes en la despensa y, en Mi cocina, pedí una
+   receta en **¿Y si inventamos algo?**. Después, como administración, mirá **IA** en el panel: tiene que aparecer el
+   pedido de hoy.
+
+| Lo que dice Administración → IA | Qué hacer |
+|---|---|
+| "Apagada" | Falta `IA_CLAVE` en el `.env` |
+| "El modelo configurado ya no existe" | Google retiró el modelo: buscá el nuevo en AI Studio y cambiá `IA_MODELO` |
+| "Gemini rechazó la clave" | La clave está mal copiada o se borró: revisá `IA_CLAVE` o creá otra |
+| "cupo agotado (429)" | Se llegó al cupo gratuito de Google por hoy: bajá `IA_LIMITE_GLOBAL_DIA` |
+| "Gemini no respondió en 12 s" | Fue lento esa vez; si pasa siempre, el hosting puede estar bloqueando la salida |
+
+## 8. Comprobar que quedó bien
 
 - [ ] `https://tu-dominio/api/salud` responde `{"api":"ok","base_de_datos":"ok",...}`.
 - [ ] El inicio, Quiénes somos y Contacto abren, y el mapa se ve.
@@ -129,10 +162,11 @@ funciona, todo lo demás sigue andando y las consultas quedan guardadas.
 - [ ] Administración → Correo manda el correo de prueba, y "¿Olvidaste tu contraseña?" manda el suyo (paso 6).
 - [ ] `https://tu-dominio/src/Db.php` y `https://tu-dominio/.env` **no** abren (403 o 404).
 - [ ] Una página con error muestra "Algo salió mal", y no el detalle técnico.
+- [ ] Si configuraste la IA, Mi cocina arma una receta y Administración → IA muestra el pedido (paso 7).
 - [ ] Cambiaste las contraseñas de los usuarios de prueba (paso 4).
 
-## 8. Actualizar una versión publicada
+## 9. Actualizar una versión publicada
 
 1. Armá el paquete otra vez y subí los archivos que cambiaron. El `.env` y la carpeta `public/img/recetas/` del hosting no se tocan.
 2. Si hay migraciones nuevas en `database/migraciones/`, importalas en phpMyAdmin, en orden y solo las que todavía no corriste.
-3. Repetí la comprobación del paso 7.
+3. Repetí la comprobación del paso 8.

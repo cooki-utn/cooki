@@ -6,6 +6,8 @@
  *   POST accion=agregar           → ingrediente_id (o texto libre), cantidad y unidad opcionales.
  *                                   Con receta=ID (+ porciones): la cantidad sale de la receta, escalada
  *   POST accion=receta            → receta=ID porciones=N: agrega todo lo que falta de esa receta
+ *                                   (o receta_ia=ID: lo que falta de una receta de la IA)
+ *   POST accion=agregar receta_ia=ID n=N → el ingrediente N de una receta de la IA (puede no estar en el catálogo)
  *   POST accion=comprar ids[]=…   → lo tildado pasa a la despensa
  *   POST accion=comprar_todo      → todo lo que falta comprar pasa a la despensa
  *   POST comprar_uno=ID           → "Otra cantidad": ese renglón, con lo que de verdad se compró
@@ -22,6 +24,8 @@ require dirname(__DIR__, 2) . '/src/bootstrap.php';
 use Cooki\Db;
 use Cooki\Dominio\ListaCompras;
 use Cooki\Dominio\Porciones;
+use Cooki\Dominio\RecetaIa;
+use Cooki\Repositorios\IaRepositorio;
 use Cooki\Repositorios\IngredienteRepositorio;
 use Cooki\Repositorios\ListaRepositorio;
 use Cooki\Repositorios\RecetaRepositorio;
@@ -111,6 +115,30 @@ if (esPost()) {
             $hechos === 1 => 'Anotado como comprado. Si es un ingrediente, ya está en tu despensa.',
             default => "Anotamos {$hechos} cosas como compradas. Los ingredientes ya están en tu despensa.",
         });
+    }
+
+    // Desde una receta de la IA (app/receta-ia.php): todo lo que falta, o un ingrediente (por su número)
+    $recetaIaId = (int) ($_POST['receta_ia'] ?? 0);
+    if ($recetaIaId > 0 && in_array($accion, ['receta', 'agregar'], true)) {
+        $iaRepo = new IaRepositorio($db);
+        $recetaIa = $iaRepo->receta($usuarioId, $recetaIaId);
+        if ($recetaIa === null) {
+            $responder(false, 'No encontramos esa receta.');
+        }
+        $faltanIa = RecetaIa::faltantes(RecetaIa::marcar($recetaIa['contenido'], $iaRepo->idsQueTengo($usuarioId)));
+        if ($accion === 'agregar') {
+            $nombre = $recetaIa['contenido']['ingredientes'][(int) ($_POST['n'] ?? -1)]['nombre'] ?? '';
+            $faltanIa = array_values(array_filter($faltanIa, fn (array $f) => $f['nombre'] === $nombre));
+            if ($faltanIa === []) {
+                $responder(false, 'Ese ingrediente no te falta para esta receta.');
+            }
+        }
+        $agregados = $repo->agregarFaltantes($usuarioId, $faltanIa, null, $recetaIaId);
+        $responder(true, match ($agregados) {
+            0 => 'Eso ya estaba en tu lista de compras.',
+            1 => 'Agregamos 1 ingrediente a tu lista de compras.',
+            default => "Agregamos {$agregados} ingredientes a tu lista de compras.",
+        }, ['agregados' => $agregados]);
     }
 
     $recetaId = (int) ($_POST['receta'] ?? 0);

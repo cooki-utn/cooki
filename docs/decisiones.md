@@ -6,12 +6,36 @@ Formato: decisiones tipo ADR (ver la guía de metodología del equipo, sección 
 
 ---
 
-## DEC-020 · AAAA-MM-DD · (título)
+## DEC-021 · AAAA-MM-DD · (título)
 - **Contexto:** 
 - **Decisión:** 
 - **Alternativas descartadas:** 
 - **Consecuencias:** 
 - **Participaron:** 
+
+---
+
+## DEC-020 · 2026-11-09 · La IA: Gemini gratuito, con límites, caché y revisión de la administración
+- **Contexto:** el incremento 3 suma tres usos de la IA: una receta nueva con lo que hay en la despensa (HU-30), adaptar una receta del recetario (HU-31) y "¿Con qué lo reemplazo?" (HU-32). El hosting gratuito corta cada página a los 20 segundos y no tiene tareas programadas. El proyecto no tiene presupuesto, una respuesta de la IA puede estar mal y nadie tiene que mandar datos personales a otra empresa.
+- **Decisión:**
+  - **Gemini, plan gratuito**, modelo `gemini-3.5-flash-lite` con `thinkingLevel: minimal` (respondió en 1,3 s en la prueba del hosting). El modelo va **solo** en `IA_MODELO`: Google retira modelos, y si pasa, Administración → IA lo avisa. Sin `IA_CLAVE` la IA queda apagada y el resto del sitio anda igual. Todo pasa por la interfaz `ProveedorIa`, así las pruebas usan un Gemini de mentira y se podría cambiar de proveedor.
+  - **Privacidad:** a Google se le mandan solo ingredientes, restricciones y las opciones elegidas, nunca el nombre ni el correo. La persona elige opciones (porciones, tiempo, tipo, adaptación), no escribe texto libre: así nadie le da instrucciones raras a la IA.
+  - **No se confía en la respuesta:** `RecetaIa` la valida (unidades, cantidades, hasta 15 ingredientes y 12 pasos), la cruza con el catálogo por nombre, plural y sinónimo, y la **rechaza** si usa algo que la persona no come o si no cumple la adaptación pedida. Cada receta lleva el sello "Sugerida por IA · revisala antes de cocinar".
+  - **El tiempo:** `IA_TIMEOUT` de 12 s y un solo reintento, solo si la respuesta vino mal y todavía da el tiempo.
+  - **Límites:** `IA_LIMITE_USUARIO_DIA` (5) por persona y `IA_LIMITE_GLOBAL_DIA` (200) para todo el sitio, por debajo del cupo gratuito. A la persona solo le descuentan los pedidos que salieron bien; al sitio, todas las llamadas reales. Los reemplazos gastan **1 pedido cada 5** (el primero de cada 5), y la pantalla dice cuántos quedan sin gastar.
+  - **Caché de 7 días:** la misma consulta (mismo tipo y mismos datos, en cualquier orden) sale de la caché sin llamar a Google ni descontar, y la pantalla marca "ya consultado · no gasta". "Pedir otra" no sale de la caché: le pasa a la IA los títulos que ya vio. Solo "Con lo que tengo" manda la despensa, así las otras adaptaciones sirven para todos.
+  - **Sin tareas programadas:** la caché vieja y las recetas que nadie guardó se borran a los 7 días, cuando alguien le pide algo a la IA.
+  - **Solo lo que hace falta:** "Adaptar con IA" ofrece las adaptaciones que la receta no cumple; "¿Con qué lo reemplazo?" aparece en lo que falta y no tiene reemplazo en la tabla. La respuesta del reemplazo no se guarda en la cuenta.
+  - **Nada de la IA entra solo al recetario.** En Administración → IA se ve el uso de hoy y de 7 días por tipo, con los errores. "Pasar al recetario" abre la receta en el editor, revisable; recién al guardar se publica, y queda anotada para no pasarla dos veces. Lo que no está en el catálogo general queda afuera con un aviso. Se convierte directo al formulario, con los mismos campos y unidades que el importador JSON, porque el importador rechaza la receta entera si falta un ingrediente. Los reemplazos sugeridos se pasan a `sustitucion` con calidad 3 o se descartan (y no vuelven). Las recetas se muestran sin decir quién las guardó.
+- **Alternativas descartadas:**
+  - Una IA paga o un modelo propio: no hay presupuesto ni servidor.
+  - Un campo de texto libre para pedir la receta: abre la puerta a instrucciones raras y no deja usar la caché.
+  - Descontar también los errores: la persona pagaría por fallas de Google.
+  - Limpiar con una tarea programada (cron): el hosting no tiene.
+  - Pasar las recetas de IA por `ImportadorRecetas`: no deja revisar la receta si le falta un solo ingrediente del catálogo.
+  - Publicar sola una receta de IA bien valorada: una receta mal escrita no puede llegar al recetario sin que alguien la lea.
+- **Consecuencias:** variables `IA_*` nuevas en el `.env` ([publicar.md](publicar.md), paso 7). Las tablas ya estaban en la migración 007 (DEC-018); `sugerencia_reemplazo.pasada` quiere decir "ya revisada". Ninguna prueba usa la IA real (`servidor-ia-falso.php`, `IaTest`, `ClienteGeminiTest`, `RecetaIaTest`). Hay una nota **IA** en el panel.
+- **Participaron:** P1 (límites, privacidad y administración), P3 (recetas, catálogo y base de datos), P2 (pantallas y `ia.js`)
 
 ---
 

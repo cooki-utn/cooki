@@ -7,6 +7,7 @@
  * (Dominio\Puntaje) y agrupadas en "Podés hacerla ahora", "Te falta 1" y "Casi".
  *   index.php?ing[]=15&ing[]=1&modo=todos|alguno → recetas con esos ingredientes
  * Con JavaScript (cocina.js) el resultado del selector cambia sin recargar la página.
+ * Si la IA está configurada, la nota "¿Y si inventamos algo?" pide una receta nueva (src/Vistas/nota-ia.php).
  */
 
 declare(strict_types=1);
@@ -15,6 +16,7 @@ require dirname(__DIR__, 2) . '/src/bootstrap.php';
 
 use Cooki\Db;
 use Cooki\Dominio\Puntaje;
+use Cooki\Ia\Ia;
 use Cooki\Repositorios\CocinaRepositorio;
 use Cooki\Repositorios\DespensaRepositorio;
 use Cooki\Repositorios\ListaRepositorio;
@@ -41,6 +43,8 @@ foreach ($recetas->recomendadas($usuario['id']) as $recomendada) {
     }
 }
 $hayRecomendaciones = array_filter($porGrupo) !== [];
+// IA (HU-30): sin IA_CLAVE la nota no aparece
+$iaRestantes = Ia::disponible() ? (new Ia($db))->restantesHoy($usuario['id']) : null;
 
 // Selector de ingredientes: solo se aceptan ingredientes que el usuario tiene
 $disponibles = $despensa->disponibles($usuario['id']);
@@ -136,6 +140,10 @@ require parcial('encabezado');
   <?php endif; ?>
 </section>
 
+<?php if ($iaRestantes !== null) : ?>
+  <?php require parcial('nota-ia'); ?>
+<?php endif; ?>
+
 </div>
 
 <div class="cocina__principal">
@@ -180,4 +188,7 @@ require parcial('encabezado');
 </div>
 </div>
 <script src="<?= e(recurso('js/cocina.js')) ?>" defer></script>
+<?php if ($iaRestantes !== null) : ?>
+  <script src="<?= e(recurso('js/ia.js')) ?>" defer></script>
+<?php endif; ?>
 <?php require parcial('pie'); ?>

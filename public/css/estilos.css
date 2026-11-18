@@ -346,6 +346,19 @@ img { max-width: 100%; }
   75% { transform: translateY(-4px) rotate(calc(var(--giro) - .6deg)); }
   100% { transform: translateY(-4px) rotate(calc(var(--giro) + 1.2deg)); }
 }
+/* Las notas que tienen algo para tocar (un enlace, un botón, un campo) no se hamacan mientras el mouse está encima:
+   se levantan y se quedan quietas en esa inclinación, así es fácil darle al enlace. Al soltarlas (cuando el mouse
+   sale), sitio.js les pone .nota--soltada y recién ahí se hamacan hasta volver a su lugar. */
+:is(.aviso, .postit):has(a, button, input, select, textarea, summary):hover { animation: none; }
+.nota--soltada { animation: hamacar-soltar 1.4s ease-out; }
+@keyframes hamacar-soltar {
+  0% { transform: translateY(-4px) rotate(calc(var(--giro) + 1.2deg)); }
+  20% { transform: translateY(-2px) rotate(calc(var(--giro) - 3deg)); }
+  40% { transform: rotate(calc(var(--giro) + 2.2deg)); }
+  60% { transform: rotate(calc(var(--giro) - 1.2deg)); }
+  80% { transform: rotate(calc(var(--giro) + .4deg)); }
+  100% { transform: rotate(var(--giro)); }
+}
 .aviso::before {   /* la chinche */
   content: ""; position: absolute; top: -9px; left: 50%; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #9FD3FF, var(--color-azul) 70%);
@@ -354,6 +367,7 @@ img { max-width: 100%; }
 .aviso--exito { background: var(--color-exito-fondo); color: var(--color-exito); }
 .aviso--error { background: var(--color-error-fondo); color: var(--color-error); }
 .aviso--info { background: var(--color-postit); color: var(--color-texto); }
+.aviso--alerta { background: var(--color-alerta-fondo); color: var(--color-alerta); }
 
 /* ─────────────── Botones ─────────────── */
 .boton {
@@ -949,7 +963,7 @@ td small { display: block; }
 .nota-panel h2 a:focus-visible { outline: none; }
 .nota-panel:focus-within { outline: 3px solid var(--color-azul); outline-offset: 4px; }
 .nota-panel p { margin: 0 0 6px; }
-.nota-panel__dato { font: 800 1.05rem var(--fuente); }
+.nota-panel__dato { font: 800 1.05rem var(--fuente); padding-right: 48px; }
 .nota-panel__ir { display: inline-block; margin-top: 6px; font: 700 1.3rem var(--fuente-mano); color: var(--color-marca); }
 .nota-panel__dibujo {
   position: absolute; top: 10px; right: 12px; width: 64px; height: 64px; transform: rotate(8deg);
@@ -1693,3 +1707,102 @@ a.etiqueta--lista:hover { text-decoration: underline; }
 @media print { .renglon__otra, .lista-compras__todo { display: none !important; } }
 .nota-lista .postit__titulo { flex-wrap: nowrap; }
 .nota-lista .postit__titulo h2 { font-size: 1.9rem; }
+
+/* ══════════ Incremento 3 · IA en las recetas ══════════ */
+/* Mi cocina: "¿Y si inventamos algo?" es un post-it verde con el gorro y la chispa */
+.nota-ia { background: #D7F2DD; --giro: .7deg; max-width: none; }
+.nota-ia .postit__chinche { background: radial-gradient(circle at 35% 30%, #9FD3FF, var(--color-azul) 70%); }
+.nota-ia h2 { padding-right: 70px; }
+.nota-ia__dibujo { position: absolute; top: 10px; right: 14px; width: 64px; height: 64px; transform: rotate(8deg); }
+.nota-ia p { margin: 0 0 10px; }
+.nota-ia__form { display: grid; gap: 10px; }
+.nota-ia__opciones { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: flex-end; }
+.nota-ia__porciones { display: grid; gap: 4px; font-weight: 800; }
+.nota-ia__porciones select { width: auto; min-width: 72px; }
+.nota-ia fieldset.chips { border: none; padding: 0; margin: 0; gap: 6px; }
+.nota-ia fieldset.chips legend { width: 100%; padding: 0; margin-bottom: 4px; font-weight: 800; }
+.nota-ia .chip { position: relative; padding: 0; cursor: pointer; }
+.nota-ia .chip input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.nota-ia .chip span { display: inline-block; padding: 8px 12px; min-height: 40px; line-height: 1.5; border-radius: 99px; }
+.nota-ia .chip:has(input:checked) { background: var(--color-texto); color: #fff; }
+.nota-ia .chip:has(input:focus-visible) { outline: 3px solid var(--color-azul); outline-offset: 2px; }
+.nota-ia__boton { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 4px 0 0 !important; }
+.nota-ia__quedan { color: var(--color-suave); font-weight: 600; }
+.nota-ia__estado { margin: 0 !important; font: 700 1.3rem/1.2 var(--fuente-mano); color: var(--color-azul); }
+.nota-ia__estado:empty { display: none; }
+.nota-ia__estado--error { color: var(--color-error); }
+.nota-ia__privacidad { color: var(--color-suave); }
+.nota-ia__mis { margin: 0 !important; font-weight: 700; }
+/* Mientras piensa, el gorro se mueve (no se mueve con "reducir movimiento") */
+form.pensando button[aria-busy="true"] { cursor: progress; }
+.nota-ia:has(form.pensando) .nota-ia__dibujo { animation: pensar 1s ease-in-out infinite alternate; }
+@keyframes pensar { from { transform: rotate(-6deg) translateY(0); } to { transform: rotate(10deg) translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .nota-ia:has(form.pensando) .nota-ia__dibujo { animation: none; } }
+
+/* "Adaptar con IA" en una receta (HU-31): un botón que despliega una nota verde con las opciones */
+.adaptar-ia { margin: 0 0 20px; }
+.adaptar-ia > summary { display: inline-flex; align-items: center; gap: 8px; list-style: none; cursor: pointer; }
+.adaptar-ia > summary::-webkit-details-marker { display: none; }
+.adaptar-ia > summary::after { content: "▾"; font-size: .9em; }
+.adaptar-ia[open] > summary::after { content: "▴"; }
+.adaptar-ia > summary img { width: 28px; height: 28px; }
+.adaptar-ia[open] > summary { margin-bottom: 14px; }
+.adaptar-ia__nota { max-width: 640px; }
+
+/* "¿Con qué lo reemplazo? (IA)" (HU-32): un botón chico en lo que falta y la respuesta en un renglón propio */
+.reemplazo-ia-form { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; }
+.reemplazo-ia-form__boton {
+  min-height: 32px; padding: 0 10px; border: 2px dashed #3B8F55; border-radius: 8px; background: #EAF7EE;
+  color: #23633A; font: 700 1.05rem/1 var(--fuente-mano); cursor: pointer;
+}
+.reemplazo-ia-form__boton:hover { background: #D7F2DD; }
+.reemplazo-ia-form__boton:disabled { opacity: .5; cursor: not-allowed; }
+.reemplazo-ia-form .nota-ia__estado { font-size: 1.1rem; }
+/* Ya consultado: borde lleno y el detalle "no gasta" (se ve sin la IA, sale de la caché) */
+.reemplazo-ia-form__boton--visto { border-style: solid; display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.reemplazo-ia-form__boton small, .chip--vista small { font-family: system-ui, sans-serif; font-size: .8rem; font-weight: 700; line-height: 1.2; opacity: .85; }
+.nota-ia .chip--vista:not(:has(input:checked)) { box-shadow: inset 0 0 0 2px #3B8F55; }
+.nota-ia .chip:has(input:disabled) { opacity: .45; cursor: not-allowed; }
+.reemplazo-ia-aviso { margin: 6px 0 0; color: #23633A; font-weight: 700; }
+.reemplazo-ia {
+  flex-basis: 100%; margin: 2px 0 8px 26px; padding: 6px 10px; border-left: 4px solid #3B8F55;
+  background: #EAF7EE; color: #1E3B28; line-height: 1.4;
+}
+.reemplazo-ia small { display: block; color: #3D5A46; }
+
+/* Una receta de IA: el sello "Sugerida por IA · revisala antes de cocinar" y "Por qué esta receta" */
+.sello-ia {
+  display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 6px 14px 6px 8px;
+  background: #FFF4C2; border: 2px dashed var(--color-texto); border-radius: 12px; transform: rotate(-1deg);
+  font-weight: 700; color: var(--color-texto);   /* siempre oscuro: va sobre amarillo, también en la heladera noche */
+}
+.receta-ia__porque { background: #D7F2DD; --giro: -.6deg; max-width: 760px; }
+.receta-ia__porque h2 { font-size: 1.8rem; }
+.receta-ia__porque ul { margin: 0 0 8px; padding-left: 20px; }
+.receta-ia__porque p { margin: 0; }
+.receta-ia__acciones { align-items: flex-start; margin: 0 0 24px; }
+.receta-ia__acciones form { margin: 0; display: grid; gap: 6px; }
+.receta-ia .lista-pasos .paso { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.receta-ia__borrar { margin-top: 24px; }
+.tarjeta-ia h2 a { color: inherit; }
+
+/* ══════════ Administración de la IA (admin/ia.php · HU-34) ══════════ */
+.tabla-ia { margin-bottom: 18px; }
+.tabla-ia caption { caption-side: top; text-align: left; padding: 10px 12px 4px; font: 700 1.6rem var(--fuente-mano); }
+.tabla-total td { border-top: 2px solid var(--color-borde); }
+.rotulo-celular { display: none; }
+.ia-errores summary { cursor: pointer; font-weight: 700; }
+.ia-errores ul { margin: 10px 0 0; padding-left: 20px; }
+.ia-errores li { margin-bottom: 6px; overflow-wrap: anywhere; }
+.ia-revisar h3 { margin: 0 0 4px; }
+.ia-revisar details { margin: 4px 0 10px; }
+.ia-revisar summary { cursor: pointer; font-weight: 700; color: var(--color-enlace); }
+.ia-revisar__ingredientes { list-style: none; padding: 0; margin: 10px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 16px; }
+.ia-revisar__ingredientes li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+#recetas, #reemplazos { margin-top: 28px; }
+@media (max-width: 700px) {
+  .rotulo-celular { display: inline; }
+  .tabla-ia td:last-child:empty { display: none; }
+  .tabla-total td { border-top: none; }
+  .tabla-ia .tabla-total { border-top: 2px solid var(--color-borde); }
+}

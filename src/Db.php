@@ -28,6 +28,10 @@ final class Db
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
             ]);
+            // MySQL usa la misma hora que PHP (Argentina, en bootstrap.php). Si no, en un servidor en UTC,
+            // entre las 21 y las 24 CURDATE() ya es mañana: "vence hoy", "hace poco" y los límites del día se corren.
+            // Se manda como desfase (-03:00) porque los servidores compartidos no siempre tienen los nombres de zonas.
+            self::$pdo->exec("SET time_zone = '" . (new \DateTimeImmutable())->format('P') . "'");
         }
         return self::$pdo;
     }
