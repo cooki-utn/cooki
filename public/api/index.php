@@ -11,6 +11,7 @@ use Cooki\Config;
 use Cooki\Controladores\IaControlador;
 use Cooki\Controladores\IngredientesControlador;
 use Cooki\Controladores\ListaControlador;
+use Cooki\Controladores\PlanControlador;
 use Cooki\Controladores\RecetasControlador;
 use Cooki\Controladores\SaludControlador;
 use Cooki\Controladores\SesionControlador;
@@ -46,6 +47,10 @@ $router->get('/ia', fn () => IaControlador::estado());
 $router->post('/ia/receta', fn () => IaControlador::receta());
 $router->post('/ia/adaptar/{id}', fn (array $p) => IaControlador::adaptar($p));
 $router->post('/ia/reemplazo', fn () => IaControlador::reemplazo());
+// Incremento 3: plan semanal
+$router->get('/plan', fn () => PlanControlador::ver());
+$router->put('/plan/{fecha}/{momento}', fn (array $p) => PlanControlador::guardar($p));
+$router->delete('/plan/{fecha}/{momento}', fn (array $p) => PlanControlador::quitar($p));
 
 $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 

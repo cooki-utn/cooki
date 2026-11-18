@@ -29,8 +29,12 @@ un formulario de otro sitio no puede hacerlo sin permiso, así que eso también 
 | POST | `/api/ia/receta` | Sí | Receta nueva con lo que tiene en la despensa (o "Pedir otra") | Incremento 3 |
 | POST | `/api/ia/adaptar/{id}` | Sí | Adapta una receta del recetario (sin huevo, sin TACC…) | Incremento 3 |
 | POST | `/api/ia/reemplazo` | Sí | Con qué reemplazar un ingrediente que falta | Incremento 3 |
+| GET | `/api/plan` | Sí | El plan de los 7 días desde hoy, con lo que falta en cada comida | Incremento 3 |
+| PUT | `/api/plan/{fecha}/{momento}` | Sí | Pone o cambia la receta de un almuerzo o una cena | Incremento 3 |
+| DELETE | `/api/plan/{fecha}/{momento}` | Sí | Deja ese lugar vacío | Incremento 3 |
 
 Códigos comunes:
+- `400`: el pedido está mal armado (en el plan: no vino ninguna receta, vinieron las dos o las porciones no son un número entero).
 - `401`: hace falta iniciar sesión.
 - `404`: no existe.
 - `405`: el método no va con esa ruta.
@@ -251,3 +255,43 @@ administración la pase a la tabla de sustituciones.
 `ingrediente_id` es `null` si el reemplazo no está en el catálogo; `tengo` dice si está en la despensa.
 
 **Errores:** `404` si la receta no existe; `422` si el ingrediente no está en la receta o ya lo tiene.
+
+## El plan semanal (incremento 3)
+
+Las tres rutas piden sesión. La semana son los 7 días a partir de hoy, con almuerzo y cena. `{fecha}` es `AAAA-MM-DD`
+(de hoy a 6 días más) y `{momento}`, `almuerzo` o `cena`; cualquier otro lugar responde `422`. Lo que falta en cada
+comida se calcula gastando la despensa en orden: lo que usa el almuerzo ya no está para la cena (DEC-022).
+
+## GET /api/plan
+
+**Respuesta 200**
+```json
+{ "dias": [
+  { "fecha": "2026-11-14", "dia": "Hoy",
+    "almuerzo": { "receta_id": 3, "receta_ia_id": null, "titulo": "Tortilla de papas", "porciones": 4, "minutos": 40,
+                  "tiene_todo": false,
+                  "faltantes": [ { "ingrediente_id": 15, "nombre": "Huevo", "cantidad": 2, "unidad": "u" } ] },
+    "cena": null },
+  { "fecha": "2026-11-15", "dia": "Mañana", "almuerzo": null, "cena": null }
+] }
+```
+Un lugar vacío es `null`. En `faltantes`, `cantidad` y `unidad` son `null` cuando no se puede calcular (por ejemplo,
+"sal a gusto"); `ingrediente_id` es `null` en lo que una receta de IA usa y no está en el catálogo.
+
+## PUT /api/plan/{fecha}/{momento}
+
+**Cuerpo:** `{ "receta_id": 3, "porciones": 4 }` o `{ "receta_ia_id": 5 }`: una de las dos, nunca las dos. `porciones`
+es opcional (de 1 a 12); si no viene, van las de la receta. Si en ese lugar ya había una receta, se cambia.
+
+**Respuesta 200:** `{ "fecha": "2026-11-14", "momento": "almuerzo", "receta_id": 3, "receta_ia_id": null,
+"titulo": "Tortilla de papas", "porciones": 4, "minutos": 40 }`. Para ver qué falta, pedí `GET /api/plan`, porque
+cambiar una comida cambia lo que falta en las siguientes.
+
+**Errores:** `400` si no vino ninguna receta, vinieron las dos o `porciones` no es un entero de 1 a 12; `404` si la
+receta no existe o la receta de IA no es de la persona; `422` si el lugar no es de esta semana.
+
+## DELETE /api/plan/{fecha}/{momento}
+
+**Respuesta 200:** `{ "fecha": "2026-11-14", "momento": "almuerzo", "quitado": true }`.
+
+**Errores:** `404` si en ese lugar no había nada; `422` si el lugar no es de esta semana.

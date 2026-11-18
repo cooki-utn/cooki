@@ -170,28 +170,32 @@ if (marca && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   });
 }
 
-// Nota de la lista de compras (Mi cocina y Mi despensa): "Cerrar" la deja como un recuadro chico y el recuadro
-// la vuelve a desplegar. Cambia en el momento y se guarda en la cuenta en segundo plano.
-// Sin JavaScript, cada botón envía su formulario a app/preferencias.php y la página se recarga.
-const notaLista = document.querySelector('.nota-lista');
-if (notaLista) {
-  const abierta = notaLista.querySelector('.nota-lista__abierta');
-  const cerrada = notaLista.querySelector('.nota-lista__cerrada');
-  notaLista.addEventListener('submit', (evento) => {
+// Notas que se pliegan: la de la lista de compras (Mi cocina y Mi despensa) y la de "Hoy" del plan (Mi cocina).
+// "Cerrar" la deja como un recuadro chico y el recuadro la vuelve a desplegar. Cambia en el momento y se guarda en
+// la cuenta en segundo plano. Sin JavaScript, cada botón envía su formulario a app/preferencias.php y se recarga.
+function notaPlegable(nota, campo, abierta, cerrada) {
+  if (!nota || !abierta || !cerrada) return;
+  nota.addEventListener('submit', (evento) => {
     const boton = evento.submitter;
-    if (!boton || boton.name !== 'nota_lista') return;
+    if (!boton || boton.name !== campo) return;
     evento.preventDefault();
     const abrir = boton.value === 'abierta';
     abierta.hidden = !abrir;
     cerrada.hidden = abrir;
-    notaLista.dataset.estado = boton.value;
+    nota.dataset.estado = boton.value;
     window.sonar?.(abrir ? 'nota-despega' : 'nota-pega');
     (abrir ? abierta.querySelector('.nota-lista__cerrar') : cerrada.querySelector('button'))?.focus();
     const datos = new FormData(evento.target);
-    datos.append('nota_lista', boton.value);
+    datos.append(campo, boton.value);
     fetch(evento.target.action, { method: 'POST', body: datos, headers: { 'X-Requested-With': 'fetch' } });
   });
 }
+const notaLista = document.querySelector('.nota-lista');
+notaLista && notaPlegable(notaLista, 'nota_lista', notaLista.querySelector('.nota-lista__abierta'),
+  notaLista.querySelector('.nota-lista__cerrada'));
+const notaHoy = document.querySelector('.nota-hoy-plegable');
+notaHoy && notaPlegable(notaHoy, 'nota_hoy', notaHoy.querySelector('.nota-plegable__abierta'),
+  notaHoy.querySelector('.nota-plegable__cerrada'));
 
 // "Ver N más" de la nota de la lista: se cierra al tocar afuera o con Escape (sin JavaScript se cierra con el mismo botón)
 const masLista = document.querySelector('.nota-lista__mas');
@@ -207,8 +211,8 @@ if (masLista) {
   });
 }
 
-// 8. Las notas con algo para tocar (enlace, botón, campo) quedan quietas mientras el mouse está encima (estilos.css)
-//    y se hamacan recién cuando el mouse sale. Sin JavaScript o con "reducir movimiento", solo vuelven a su lugar.
+// 8. Las notas con algo para tocar (enlace, botón, campo) se ponen derechas mientras el mouse está encima (estilos.css)
+//    y se hamacan recién cuando el mouse sale. Sin JavaScript o con "reducir movimiento", solo vuelven a su giro.
 const NOTA_CON_ENLACE = ':is(.aviso, .postit):has(a, button, input, select, textarea, summary)';
 if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   document.addEventListener('mouseout', (evento) => {
@@ -225,4 +229,89 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       evento.target.classList.remove('nota--soltada');
     }
   });
+}
+
+// 9. "Volver" deja la pantalla a la misma altura: antes de salir de cada página se anota hasta dónde se había
+//    bajado (por dirección: ruta + parámetros, sin "atras"). Al tocar una flecha de volver se anota adónde se va;
+//    si la página que se abre es esa, baja hasta la altura guardada, sin desplazamiento suave.
+//    No usa history.back(): si la receta se recargó (porciones, "+ lista"), volvería a la receta y no a Mi cocina.
+//    Sin JavaScript (o si el navegador no deja usar sessionStorage) la flecha lleva al principio, como siempre.
+const POSICIONES = 'cooki-posiciones';
+const VOLVIENDO = 'cooki-volviendo';
+
+function claveDePagina(direccion) {
+  const url = new URL(direccion, window.location.href);
+  url.searchParams.delete('atras');
+  url.searchParams.sort();
+  return url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '');
+}
+
+function leerAlmacen(nombre) {
+  try {
+    return window.sessionStorage.getItem(nombre);
+  } catch (error) {
+    return null;
+  }
+}
+
+function guardarAlmacen(nombre, valor) {
+  try {
+    if (valor === null) {
+      window.sessionStorage.removeItem(nombre);
+    } else {
+      window.sessionStorage.setItem(nombre, valor);
+    }
+  } catch (error) {
+    // Sin sessionStorage (ventana privada, sitio bloqueado): la flecha anda como sin JavaScript
+  }
+}
+
+function leerPosiciones() {
+  try {
+    const posiciones = JSON.parse(leerAlmacen(POSICIONES) || '{}');
+    return posiciones && typeof posiciones === 'object' ? posiciones : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+const paginaActual = claveDePagina(window.location.href);
+
+window.addEventListener('pagehide', () => {
+  const posiciones = leerPosiciones();
+  delete posiciones[paginaActual];
+  posiciones[paginaActual] = Math.round(window.scrollY);
+  // Solo las últimas 30 páginas, para no llenar el almacenamiento de la pestaña
+  const claves = Object.keys(posiciones);
+  claves.slice(0, Math.max(0, claves.length - 30)).forEach((clave) => delete posiciones[clave]);
+  guardarAlmacen(POSICIONES, JSON.stringify(posiciones));
+});
+
+document.addEventListener('click', (evento) => {
+  const flecha = evento.target.closest('a.volver');
+  if (flecha) {
+    guardarAlmacen(VOLVIENDO, claveDePagina(flecha.href));
+  }
+});
+
+// La marca se usa una sola vez: si la página que se abrió es otra (una redirección, por ejemplo), se olvida igual
+const volviendoA = leerAlmacen(VOLVIENDO);
+guardarAlmacen(VOLVIENDO, null);
+if (volviendoA === paginaActual) {
+  const altura = Number(leerPosiciones()[paginaActual]);
+  if (altura > 0 && !window.location.hash) {
+    const bajar = () => window.scrollTo({ top: altura, left: 0, behavior: 'instant' });
+    bajar();
+    // Las fotos que terminan de cargar pueden cambiar el alto: se vuelve a bajar si la persona no se movió
+    let tocada = false;
+    const marcar = () => { tocada = true; };
+    ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach((tipo) => {
+      window.addEventListener(tipo, marcar, { once: true, passive: true });
+    });
+    window.addEventListener('load', () => {
+      if (!tocada) {
+        bajar();
+      }
+    }, { once: true });
+  }
 }

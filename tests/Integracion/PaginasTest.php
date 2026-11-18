@@ -44,7 +44,7 @@ final class PaginasTest extends TestCase
         }
     }
 
-    public function testQuienesSomosMuestraAlEquipoYSoloEstaEnElMenuSinCuenta(): void
+    public function testQuienesSomosMuestraAlEquipoYConCuentaEstaEnElPie(): void
     {
         $web = new Navegador();
         [$estado, $html] = $web->get('nosotros.php');
@@ -76,7 +76,20 @@ final class PaginasTest extends TestCase
         $this->assertMatchesRegularExpression($imanNosotros, $inicio, 'Sin cuenta, el menú tiene el imán Nosotros');
         $web->ingresar('maria@cooki.test', 'Usuario1234');
         [, $cocina] = $web->get('app/index.php');
-        $this->assertStringNotContainsString('nosotros.php', $cocina, 'Con cuenta no está en el menú');
+        $inicioMenu = (int) strpos($cocina, 'id="menu-principal"');
+        $menu = substr($cocina, $inicioMenu, (int) strpos($cocina, '</nav>', $inicioMenu) - $inicioMenu);
+        $this->assertStringNotContainsString('nosotros.php', $menu, 'Con cuenta no está en el menú');
+        $this->assertStringNotContainsString('contacto.php', $menu, 'Con cuenta, Contacto tampoco');
+        $pie = substr($cocina, (int) strpos($cocina, '<footer'));
+        $this->assertMatchesRegularExpression(
+            '#class="pie__enlace" href="[^"]*contacto\.php".*menu/contacto\.svg#s',
+            $pie
+        );
+        $this->assertMatchesRegularExpression(
+            '#class="pie__enlace" href="[^"]*nosotros\.php".*menu/nosotros\.svg#s',
+            $pie
+        );
+        $this->assertStringContainsString('Cooki · ' . date('Y') . ' · Proyecto integrador', $pie);
     }
 
     public function testLasTipografiasNoDependenDeGoogle(): void
@@ -484,14 +497,22 @@ final class PaginasTest extends TestCase
     }
 
     /** El HTML del resultado del selector (sin el resto de la página, que también tiene recetas). */
-    public function testLaBarraSinCuentaEsTodaDeImanesConAjustes(): void
+    public function testLaBarraSinCuentaEsTodaDeStickersConPreferencias(): void
     {
         [, $html] = (new Navegador())->get('index.php');
         $inicio = (int) strpos($html, '<ul>');
         $menu = substr($html, $inicio, (int) strpos($html, '</ul>') - $inicio);
-        $this->assertStringContainsString('login.php">Ingresar</a></li>', $menu, 'Ingresar es un imán más del menú');
-        $this->assertStringContainsString('registro.php">Crear cuenta</a></li>', $menu);
+        $this->assertMatchesRegularExpression(
+            '#login\.php"><img class="menu__dibujo" src="[^"]*menu/ingresar\.svg" alt=""[^>]*>'
+            . '<span class="menu__texto">Ingresar</span></a></li>#',
+            $menu,
+            'Ingresar es un sticker más del menú'
+        );
+        $this->assertStringContainsString('<span class="menu__texto">Crear cuenta</span>', $menu);
+        $this->assertSame(5, substr_count($menu, 'class="menu__dibujo"'), 'Cada enlace lleva su dibujo');
+        $this->assertStringContainsString('img/menu/ajustes.svg', $html);
         $this->assertStringContainsString('cuenta--ajustes', $html);
+        $this->assertStringContainsString('<span class="cuenta__nombre">Preferencias<span', $html);
         $this->assertStringContainsString('class="marca__letra"', $html, 'Letras separadas para la ola');
         $this->assertMatchesRegularExpression('#js/sitio\.js\?v=\d+#', $html, 'El JS lleva versión');
         [, $login] = (new Navegador())->get('login.php');

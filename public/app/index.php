@@ -7,6 +7,7 @@
  * (Dominio\Puntaje) y agrupadas en "Podés hacerla ahora", "Te falta 1" y "Casi".
  *   index.php?ing[]=15&ing[]=1&modo=todos|alguno → recetas con esos ingredientes
  * Con JavaScript (cocina.js) el resultado del selector cambia sin recargar la página.
+ * La nota "Hoy" muestra lo que dice el plan semanal para hoy (src/Vistas/nota-hoy.php).
  * Si la IA está configurada, la nota "¿Y si inventamos algo?" pide una receta nueva (src/Vistas/nota-ia.php).
  */
 
@@ -20,6 +21,7 @@ use Cooki\Ia\Ia;
 use Cooki\Repositorios\CocinaRepositorio;
 use Cooki\Repositorios\DespensaRepositorio;
 use Cooki\Repositorios\ListaRepositorio;
+use Cooki\Repositorios\PlanRepositorio;
 use Cooki\Repositorios\RecetaRepositorio;
 use Cooki\Sesion;
 
@@ -35,6 +37,8 @@ $vencidos = count(array_filter($porVencer, fn ($item) => (int) $item['dias'] < 0
 $porVencer = array_values(array_filter($porVencer, fn ($item) => (int) $item['dias'] >= 0));
 $cocinando = (new CocinaRepositorio($db))->enCurso($usuario['id']);
 $notaLista = (new ListaRepositorio($db))->faltaComprar($usuario['id']);   // la nota de la lista de compras
+$fechaHoy = date('Y-m-d');
+$comidasHoy = (new PlanRepositorio($db))->semana($usuario['id'], $fechaHoy, $fechaHoy);   // la nota "Hoy" del plan
 // Recomendaciones por grupo (hasta 6 en cada uno, las de más puntaje primero)
 $porGrupo = array_fill_keys(array_keys(Puntaje::GRUPOS), []);
 foreach ($recetas->recomendadas($usuario['id']) as $recomendada) {
@@ -75,7 +79,7 @@ require parcial('encabezado');
 <div class="cocina">
 <div class="cocina__lateral">
 
-<?php /* "Usalo pronto" y, al lado, la nota de la lista de compras (se puede cerrar o apagar en Mis preferencias) */ ?>
+<?php /* "Hoy" (el plan), "Usalo pronto" y la nota de la lista de compras (se puede cerrar o apagar en Mis preferencias) */ ?>
 <div class="cocina__notas">
 <section class="postit">
   <span class="postit__chinche" aria-hidden="true"></span>
@@ -104,7 +108,10 @@ require parcial('encabezado');
     </ul>
   <?php endif; ?>
 </section>
+<div class="cocina__columna">
+<?php require parcial('nota-hoy'); ?>
 <?php require parcial('nota-lista'); ?>
+</div>
 </div>
 
 <section class="selector" aria-labelledby="titulo-selector">

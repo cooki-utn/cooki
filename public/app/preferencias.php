@@ -1,11 +1,12 @@
 <?php
 
 /**
- * Guarda las preferencias de pantalla (menú de la cuenta, o "Ajustes" sin cuenta):
+ * Guarda las preferencias de pantalla (menú de la cuenta, o "Preferencias" sin cuenta):
  *   POST color=verde|crema|celeste|rosa|noche        → color de la heladera
  *   POST disposicion=normal|panoramica               → disposición en la computadora
  *   POST volumen=0..100                              → volumen de los sonidos
  *   POST nota_lista=abierta|cerrada|nunca            → la nota de la lista de compras (Mi cocina y Mi despensa)
+ *   POST nota_hoy=abierta|cerrada|nunca              → la nota "Hoy" del plan semanal (Mi cocina)
  *   POST avisar=1                                    → muestra "Guardamos tu preferencia" (Mis preferencias)
  *   POST volver=/ruta/de/la/pagina                   → a dónde vuelve (solo rutas de este sitio)
  * Sin cuenta solo se puede elegir el color, y se guarda en una cookie (Sesion::recordarColor).
@@ -30,7 +31,7 @@ Sesion::verificarCsrf();
 $guardado = false;
 if (Sesion::estaLogueado()) {
     $repo = new UsuarioRepositorio(Db::conexion());
-    foreach (['color', 'disposicion', 'volumen', 'nota_lista'] as $clave) {
+    foreach (['color', 'disposicion', 'volumen', 'nota_lista', 'nota_hoy'] as $clave) {
         if (isset($_POST[$clave]) && $repo->guardarPreferencia(Sesion::idUsuario(), $clave, campo($clave))) {
             Sesion::cambiarPreferencia($clave, campo($clave));
             $guardado = true;

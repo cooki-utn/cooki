@@ -9,6 +9,7 @@ Guía para subir el sistema a un hosting con PHP y MySQL (gratuito o pago). Los 
 - **Subir archivos:** por FTP o con el administrador de archivos del panel.
 - **Apache con `mod_rewrite`:** es lo común. Sin Apache, la API no funciona, pero las páginas sí.
 - **Recomendado:** certificado HTTPS. Muchos hostings lo dan gratis.
+- **Opcional:** los módulos `mod_expires` y `mod_headers` de Apache, para que el navegador guarde las letras, los dibujos, el CSS y el JS (`public/.htaccess`). Sin ellos anda igual, pero cada página vuelve a pedir esos archivos.
 
 ## 2. Armar el paquete
 
@@ -163,10 +164,13 @@ IA_LIMITE_GLOBAL_DIA=200
 - [ ] `https://tu-dominio/src/Db.php` y `https://tu-dominio/.env` **no** abren (403 o 404).
 - [ ] Una página con error muestra "Algo salió mal", y no el detalle técnico.
 - [ ] Si configuraste la IA, Mi cocina arma una receta y Administración → IA muestra el pedido (paso 7).
+- [ ] En **Plan**, "Armá mi semana" completa los lugares vacíos, y Mi cocina muestra la nota "Hoy" con las comidas de hoy.
+- [ ] En las herramientas del navegador (F12 → Red), una letra `.woff2` llega con `Cache-Control: public, max-age=31536000, immutable`. Si no aparece, el hosting no tiene `mod_headers`: anda igual, sin esa caché.
 - [ ] Cambiaste las contraseñas de los usuarios de prueba (paso 4).
 
 ## 9. Actualizar una versión publicada
 
 1. Armá el paquete otra vez y subí los archivos que cambiaron. El `.env` y la carpeta `public/img/recetas/` del hosting no se tocan.
+   Si subís a mano, fijate si hay **carpetas nuevas** (por ejemplo `public/img/menu/`, que trae el incremento 3) y también el `public/.htaccess`, que es un archivo oculto: en FileZilla, Servidor → Forzar mostrar archivos ocultos.
 2. Si hay migraciones nuevas en `database/migraciones/`, importalas en phpMyAdmin, en orden y solo las que todavía no corriste.
 3. Repetí la comprobación del paso 8.

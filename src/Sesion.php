@@ -75,6 +75,7 @@ final class Sesion
             'disposicion' => (string) ($usuario['disposicion'] ?? 'normal'),
             'volumen' => (int) ($usuario['volumen'] ?? 50),
             'nota_lista' => (string) ($usuario['nota_lista'] ?? 'abierta'),
+            'nota_hoy' => (string) ($usuario['nota_hoy'] ?? 'abierta'),
         ];
     }
 
@@ -90,6 +91,12 @@ final class Sesion
         return (string) (self::usuario()['nota_lista'] ?? 'abierta');
     }
 
+    /** La nota "Hoy" del plan semanal en Mi cocina: 'abierta', 'cerrada' o 'nunca'. */
+    public static function notaHoy(): string
+    {
+        return (string) (self::usuario()['nota_hoy'] ?? 'abierta');
+    }
+
     /** Disposición de la pantalla del usuario logueado: 'normal' o 'panoramica'. */
     public static function disposicion(): string
     {
@@ -97,7 +104,7 @@ final class Sesion
     }
 
     /**
-     * Color de la heladera: el de la cuenta; sin cuenta, el de la cookie (lo elige en "Ajustes").
+     * Color de la heladera: el de la cuenta; sin cuenta, el de la cookie (lo elige en "Preferencias").
      * 'verde' si no eligió ninguno.
      */
     public static function color(): string
@@ -129,7 +136,7 @@ final class Sesion
     }
 
     /**
-     * Actualiza una preferencia guardada en la sesión ('color', 'disposicion', 'nota_lista' o 'volumen').
+     * Actualiza una preferencia guardada en la sesión ('color', 'disposicion', 'nota_lista', 'nota_hoy' o 'volumen').
      * La base la actualiza UsuarioRepositorio::guardarPreferencia().
      */
     public static function cambiarPreferencia(string $clave, string $valor): void

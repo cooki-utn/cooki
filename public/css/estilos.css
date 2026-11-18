@@ -15,6 +15,13 @@
 @font-face { font-family: "Figtree"; font-weight: 700; font-display: swap; src: url("../fonts/figtree-latin-700-normal.woff2") format("woff2"); }
 @font-face { font-family: "Figtree"; font-weight: 800; font-display: swap; src: url("../fonts/figtree-latin-800-normal.woff2") format("woff2"); }
 @font-face { font-family: "Space Mono"; font-weight: 700; font-display: swap; src: url("../fonts/space-mono-latin-700-normal.woff2") format("woff2"); }
+/* Letras de reemplazo mientras cargan las de arriba: las que trae la computadora, achicadas o agrandadas (size-adjust)
+   para que ocupen el mismo ancho. Así la página no se agranda y se achica al cambiar de página. Medido en Edge:
+   Caveat ocupa el 68,5 % de Segoe Print y el 70,2 % de Comic Sans; Space Mono, el 111,3 % de Consolas y el 102 % de Courier */
+@font-face { font-family: "Caveat respaldo"; font-weight: 700; src: local("Segoe Print Bold"), local("SegoePrint-Bold"), local("Segoe Print"); size-adjust: 68.5%; }
+@font-face { font-family: "Caveat respaldo 2"; font-weight: 700; src: local("Comic Sans MS Bold"), local("ComicSansMS-Bold"), local("Comic Sans MS"); size-adjust: 70.2%; }
+@font-face { font-family: "Space Mono respaldo"; font-weight: 700; src: local("Consolas Bold"), local("Consolas-Bold"), local("Consolas"); size-adjust: 111.3%; }
+@font-face { font-family: "Space Mono respaldo 2"; font-weight: 700; src: local("Courier New Bold"), local("CourierNewPS-BoldMT"), local("Courier New"); size-adjust: 102%; }
 
 :root {
   /* Puerta, tinta y papel */
@@ -60,8 +67,8 @@
   --color-sobre-puerta-suave: var(--color-suave);
   --color-enlace: var(--color-azul);
   --fuente: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --fuente-mano: "Caveat", "Segoe Print", cursive;
-  --fuente-rotulo: "Space Mono", ui-monospace, monospace;
+  --fuente-mano: "Caveat", "Caveat respaldo", "Caveat respaldo 2", cursive;
+  --fuente-rotulo: "Space Mono", "Space Mono respaldo", "Space Mono respaldo 2", ui-monospace, monospace;
   --ancho: 1180px;
 }
 
@@ -124,10 +131,10 @@ img { max-width: 100%; }
   max-width: var(--ancho); margin: 0 auto; padding: 22px 16px 8px;
   display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px;
 }
-/* Alineación: todo lo de la barra se alinea con el centro de los imanes del menú (no con su texto).
-   El imán mide 34 px y arranca 4 px abajo → su centro queda a 21 px; logo, nombre y botones (44 px) también. */
+/* Alineación: todo lo de la barra se alinea con el centro de los stickers del menú (no con su texto):
+   el sticker mide 44 px, igual que el logo, el nombre y los botones. */
 .barra__interior > .marca, .menu__cuenta, .menu ul { margin-top: 0; }
-.barra__interior > .marca { min-height: 44px; }
+.barra__interior > .marca { min-height: 44px; margin-top: 14px; }   /* a la altura de los stickers */
 /* Logo: el sticker de los fideos (el dibujo de la aplicación) pegado al rótulo negro */
 .marca { position: relative; display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
 .marca__dibujo {
@@ -163,54 +170,48 @@ img { max-width: 100%; }
   100% { opacity: 0; transform: translateY(-14px) rotate(14deg) scaleY(1.2); }
 }
 .barra__boton { display: none; }
-.menu { display: flex; align-items: flex-start; gap: 20px; }
-.menu ul { list-style: none; display: flex; gap: 10px; margin: 0; padding: 0; }
+/* Los stickers van a la derecha, con el mismo espacio entre uno y otro (también antes de la cuenta), y dejan un
+   lugar libre después del logo. Cada uno ocupa lo que mide su nombre */
+.menu {
+  --espacio-menu: clamp(14px, 2vw, 28px);
+  flex: 1; display: flex; justify-content: flex-end; align-items: flex-start; gap: 10px var(--espacio-menu);
+  margin-left: 32px;   /* lo mínimo libre después del logo; con lugar, queda más (los stickers van a la derecha) */
+}
+.menu ul { list-style: none; display: flex; gap: var(--espacio-menu); margin: 0; padding: 0; }
 .menu ul a {
   display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 4px 8px; color: var(--color-sobre-puerta); text-decoration: none;
-  font: 700 1.35rem/1.1 var(--fuente-mano);
-  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+  padding: 0 4px 2px; color: var(--color-sobre-puerta); text-decoration: none;
+  font: 700 1.35rem/1.1 var(--fuente-mano); white-space: nowrap;
 }
-/* Cada link tiene su imán de color */
-.menu ul a::before {
-  content: ""; width: 34px; height: 34px; border-radius: 50%;
-  --claro: #FFE08A; --base: #F2B705;
-  background: radial-gradient(circle at 35% 30%, var(--claro), var(--base) 70%);
-  box-shadow: var(--sombra-iman);
-  transition: box-shadow .25s;
+/* Cada enlace es un sticker con el dibujo de su sección, troquelado con borde blanco y un poco torcido.
+   Con el mouse encima se endereza, sube y se agranda; la página actual lleva el nombre resaltado con fibra */
+.menu__dibujo {
+  width: 44px; height: 44px; flex: none; transform: rotate(var(--giro-sticker, -5deg));
+  filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 4px 4px rgb(30 50 40 / 30%));
+  transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), filter .3s;
 }
-.menu li:nth-child(2) a::before { --claro: #FF9C8F; --base: var(--color-marca); }
-.menu li:nth-child(3) a::before { --claro: #9FD3FF; --base: var(--color-azul); }
-.menu li:nth-child(4) a::before { --claro: #A8E6B8; --base: var(--color-exito); }
-.menu li:nth-child(5) a::before { --claro: #E4C6F5; --base: #7B4FA0; }
-.menu ul a[href$="registro.php"]::before { --claro: #A8E6B8; --base: var(--color-exito); }
-.menu ul a:hover { transform: translateY(-3px) rotate(-4deg); }
-.menu ul a:hover::before { box-shadow: var(--sombra-iman-alto); }
-.menu ul a[aria-current="page"]::before { outline: 3px dashed var(--color-sobre-puerta); outline-offset: 3px; }
+.menu li:nth-child(even) .menu__dibujo { --giro-sticker: 6deg; }
+.menu ul a:hover .menu__dibujo, .menu ul a:focus-visible .menu__dibujo,
+.cuenta__resumen:hover .menu__dibujo, .cuenta[open] .cuenta__resumen .menu__dibujo {
+  transform: translateY(-3px) rotate(0deg) scale(1.15);
+  filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 10px 8px rgb(30 50 40 / 30%));
+}
+.menu ul a[aria-current="page"] .menu__texto, .cuenta[open] .cuenta__nombre {
+  background-image: linear-gradient(transparent 58%, rgb(255 242 122 / 85%) 58%);
+}
+:root[data-color="noche"] .menu ul a[aria-current="page"] .menu__texto,
+:root[data-color="noche"] .cuenta[open] .cuenta__nombre { background-image: linear-gradient(transparent 58%, rgb(255 156 143 / 40%) 58%); }
 .menu__cuenta { position: relative; display: flex; align-items: center; gap: 10px; }
 
-/* Menú de la cuenta (y "Ajustes" sin cuenta): un imán más de la barra, con el nombre y una flechita abajo.
+/* Menú de la cuenta (y "Preferencias" sin cuenta): un imán más de la barra, con el nombre y una flechita abajo.
    Despliega una nota con colores, disposición, sonido y Salir */
 .cuenta { position: relative; }
 .cuenta__resumen {
-  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 8px; cursor: pointer;
-  list-style: none; color: var(--color-sobre-puerta); font: 700 1.35rem/1.1 var(--fuente-mano);
-  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0 4px 2px; cursor: pointer;
+  list-style: none; color: var(--color-sobre-puerta); font: 700 1.35rem/1.1 var(--fuente-mano); white-space: nowrap;
 }
+.cuenta__resumen .menu__dibujo { --giro-sticker: 5deg; }
 .cuenta__resumen::-webkit-details-marker { display: none; }
-.cuenta__resumen::before {   /* imán de la cuenta */
-  content: ""; width: 34px; height: 34px; border-radius: 50%; box-shadow: var(--sombra-iman); transition: box-shadow .25s;
-  background: radial-gradient(circle at 35% 30%, #9FE6DE, #1F8A80 70%);
-}
-/* Sin cuenta, el imán de "Ajustes" tiene los colores de la heladera */
-.cuenta__resumen--ajustes::before {
-  background:
-    radial-gradient(circle at 35% 30%, rgb(255 255 255 / 55%), transparent 55%),
-    conic-gradient(#CFE6DC 0 20%, #F2E6D0 0 40%, #D9E4F2 0 60%, #F4D8DE 0 80%, #2A3136 0);
-}
-.cuenta__resumen:hover { transform: translateY(-3px) rotate(-4deg); }
-.cuenta__resumen:hover::before, .cuenta[open] .cuenta__resumen::before { box-shadow: var(--sombra-iman-alto); }
-.cuenta[open] .cuenta__resumen::before { outline: 3px dashed var(--color-sobre-puerta); outline-offset: 3px; }
 .cuenta__nombre { display: inline-flex; align-items: center; gap: 6px; }
 .cuenta__flecha { width: 8px; height: 8px; border-right: 2.5px solid currentColor; border-bottom: 2.5px solid currentColor; transform: translateY(-3px) rotate(45deg); transition: transform .2s; }
 .cuenta[open] .cuenta__flecha { transform: translateY(2px) rotate(-135deg); }
@@ -255,13 +256,14 @@ img { max-width: 100%; }
     background: var(--color-superficie); padding: 12px; box-shadow: var(--sombra);
     --color-sobre-puerta: var(--color-texto); --color-sobre-puerta-suave: var(--color-suave); color: var(--color-texto); }
   .menu.abierto { display: flex; }
+  .menu { margin-left: 0; }
+  .barra__interior > .marca { margin-top: 0; }   /* en el celular, a la altura del botón Menú */
   .menu ul { flex-direction: column; gap: 4px; }
-  .menu ul a { flex-direction: row; gap: 12px; }
-  .menu ul a::before { width: 26px; height: 26px; }
+  .menu ul a { flex-direction: row; gap: 12px; padding: 4px 8px; }
+  .menu__dibujo { width: 32px; height: 32px; }
   .menu__cuenta { flex-wrap: wrap; justify-content: flex-start; }
   .cuenta { width: 100%; }
   .cuenta__resumen { flex-direction: row; gap: 12px; padding: 4px 8px; color: var(--color-texto); }
-  .cuenta__resumen::before { width: 26px; height: 26px; }
   .cuenta__panel { position: static; width: auto; transform: none; margin-top: 12px; padding: 18px 0 4px; background: transparent; box-shadow: none; border-top: 2px dashed var(--color-borde); }
   .cuenta__panel::before { display: none; }
   .marca__rotulo { font-size: 1.25rem; letter-spacing: 6px; }
@@ -277,9 +279,23 @@ img { max-width: 100%; }
 }
 .pie { color: var(--color-sobre-puerta-suave); text-align: center; padding: 18px 16px; font: 700 1.2rem var(--fuente-mano); }
 .pie p { margin: 2px 0; }
+/* Pie: Contacto y Quiénes somos como stickers chicos (igual que los del menú), arriba del texto */
+.pie__enlaces { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 30px; margin: 0 0 10px; }
+.pie__enlace { display: inline-flex; align-items: center; gap: 8px; padding: 2px 4px; color: var(--color-sobre-puerta); text-decoration: none; }
+.pie__dibujo {
+  width: 34px; height: 34px; flex: none; transform: rotate(-6deg);
+  filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 3px 3px rgb(30 50 40 / 30%));
+  transition: transform .3s cubic-bezier(.3, 1.6, .5, 1);
+}
+.pie__enlace:nth-child(even) .pie__dibujo { transform: rotate(6deg); }
+.pie__enlace:hover .pie__dibujo, .pie__enlace:focus-visible .pie__dibujo { transform: translateY(-2px) rotate(0deg) scale(1.15); }
+.pie__enlace[aria-current="page"] span { background-image: linear-gradient(transparent 58%, rgb(255 242 122 / 85%) 58%); }
+:root[data-color="noche"] .pie__enlace[aria-current="page"] span { background-image: linear-gradient(transparent 58%, rgb(255 156 143 / 40%) 58%); }
 
 /* Las hojas de papel (tarjetas, post-its, tablas, la nota del editor) vuelven el texto a tinta */
-.tarjeta, .postit, .aviso, .tabla-contenedor, .nota-despegada {
+/* Lo que va sobre papel lleva tinta oscura aunque la heladera sea noche (la hoja de la lista también) */
+.tarjeta, .postit, .aviso, .tabla-contenedor, .nota-despegada, .lista-compras {
+  --color-foco: var(--color-azul);
   --color-sobre-puerta: var(--color-texto);
   --color-sobre-puerta-suave: var(--color-suave);
   --color-enlace: var(--color-azul);
@@ -346,13 +362,15 @@ img { max-width: 100%; }
   75% { transform: translateY(-4px) rotate(calc(var(--giro) - .6deg)); }
   100% { transform: translateY(-4px) rotate(calc(var(--giro) + 1.2deg)); }
 }
-/* Las notas que tienen algo para tocar (un enlace, un botón, un campo) no se hamacan mientras el mouse está encima:
-   se levantan y se quedan quietas en esa inclinación, así es fácil darle al enlace. Al soltarlas (cuando el mouse
-   sale), sitio.js les pone .nota--soltada y recién ahí se hamacan hasta volver a su lugar. */
-:is(.aviso, .postit):has(a, button, input, select, textarea, summary):hover { animation: none; }
+/* Las notas que tienen algo para tocar (un enlace, un botón, un campo) están un poco inclinadas (--giro) y, con el
+   mouse encima, se levantan y se ponen derechas (sin hamacarse), así el texto se lee derecho y es fácil darle al
+   enlace. Al soltarlas (cuando el mouse sale), sitio.js les pone .nota--soltada y se hamacan hasta volver a su giro. */
+:is(.aviso, .postit):has(a, button, input, select, textarea, summary):hover {
+  animation: none; transform: translateY(-4px) rotate(0deg);
+}
 .nota--soltada { animation: hamacar-soltar 1.4s ease-out; }
 @keyframes hamacar-soltar {
-  0% { transform: translateY(-4px) rotate(calc(var(--giro) + 1.2deg)); }
+  0% { transform: translateY(-4px) rotate(0deg); }
   20% { transform: translateY(-2px) rotate(calc(var(--giro) - 3deg)); }
   40% { transform: rotate(calc(var(--giro) + 2.2deg)); }
   60% { transform: rotate(calc(var(--giro) - 1.2deg)); }
@@ -399,9 +417,18 @@ input[type="number"], input[type="date"], select, textarea {
   background: #fff; border: 2px solid var(--color-texto); border-radius: 10px;
 }
 textarea { min-height: 120px; resize: vertical; }
-input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
-  outline: 3px solid var(--color-azul); outline-offset: 2px;
+/* El contorno del foco: azul sobre el papel y la heladera clara; celeste sobre la heladera noche */
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible,
+summary:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid var(--color-foco, var(--color-azul)); outline-offset: 2px;
 }
+/* "Saltar al contenido": el primer Tab de cada página; aparece como una etiqueta pegada arriba a la izquierda */
+.saltar {
+  position: absolute; left: 12px; top: -80px; z-index: 100; padding: 10px 16px; border: 2px solid var(--color-texto);
+  border-radius: 8px; background: #FFF6A8; color: var(--color-texto); font-weight: 700; box-shadow: var(--sombra);
+  --color-foco: var(--color-azul);
+}
+.saltar:focus { top: 12px; }
 fieldset { border: 2px dashed var(--color-borde); border-radius: 10px; padding: 12px 16px; margin: 0; }
 .casillas { display: flex; flex-wrap: wrap; gap: 8px 20px; }
 .casillas label { font-weight: 600; display: inline-flex; gap: 6px; align-items: center; }
@@ -470,6 +497,7 @@ tr:last-child td { border-bottom: none; }
   --color-sobre-puerta: #EEF3F0;
   --color-sobre-puerta-suave: #B5C7BF;
   --color-enlace: #A9D4FF;
+  --color-foco: #A9D4FF;
 }
 :root[data-color="noche"] body {
   background-image:
@@ -478,7 +506,8 @@ tr:last-child td { border-bottom: none; }
 }
 /* En la heladera oscura, los botones negros que van directo sobre la puerta pasan a ser claros */
 :root[data-color="noche"] .portada .boton:not(.boton--secundario, .boton--agregar),
-:root[data-color="noche"] .encabezado-pagina > .boton:not(.boton--secundario, .boton--agregar) {
+:root[data-color="noche"] .encabezado-pagina > .boton:not(.boton--secundario, .boton--agregar),
+:root[data-color="noche"] .plan-acciones .boton:not(.boton--secundario, .boton--agregar, [disabled]) {
   background: #F2F2EE; border-color: #F2F2EE; color: var(--color-texto);
 }
 :root[data-color="noche"] .manija { background: linear-gradient(90deg, #3E474C, #9AA6AE 42%, #6B777D 62%, #353D41); }
@@ -1358,10 +1387,6 @@ td > .acciones { flex-wrap: nowrap; }
 }
 /* Inicio: el enlace a "Quiénes somos" dentro de "¿Por qué Cooki?" */
 .portada__equipo { font-weight: 800; }
-/* Menú sin cuenta: Inicio, Nosotros (imán naranja, el único de ese color), Contacto, Ingresar y Crear cuenta */
-.menu__invitado li:nth-child(2) a::before { --claro: #FFC48A; --base: #E8731C; }
-.menu__invitado li:nth-child(3) a::before { --claro: #FF9C8F; --base: var(--color-marca); }
-.menu__invitado li:nth-child(4) a::before { --claro: #9FD3FF; --base: var(--color-azul); }
 
 /* ══════════ Incremento 2 · Modo cocina (P4) ══════════ */
 /* Detalle de receta: el botón grande para empezar a cocinar */
@@ -1371,7 +1396,7 @@ td > .acciones { flex-wrap: nowrap; }
 .boton--cocinar {
   min-height: 52px; padding: 0 26px; font-size: 1.05rem; background: var(--color-marca); border-color: var(--color-marca);
 }
-.boton--cocinar small { font-weight: 600; opacity: .85; }
+.boton--cocinar small { font-weight: 600; }
 .boton--cocinar:hover { background: var(--color-marca-oscuro); border-color: var(--color-marca-oscuro); }
 /* Mi cocina: aviso de la receta que está cocinando */
 .cocinando a { white-space: nowrap; }
@@ -1552,8 +1577,6 @@ a.paginacion__numero:hover, .paginacion__flecha:hover { transform: translateY(-2
 }
 
 /* ══════════ Incremento 3 · Lista de compras (P2) ══════════ */
-/* Sexto imán del menú (con Administración, la barra tiene seis) */
-.menu li:nth-child(6) a::before { --claro: #FFC48A; --base: #D9731A; }
 /* "+ lista" en la receta y en Mi despensa: un papelito chico con borde de birome */
 .mas-lista { display: inline; margin: 0; }
 .mas-lista__boton {
@@ -1806,3 +1829,116 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
   .tabla-total td { border-top: none; }
   .tabla-ia .tabla-total { border-top: 2px solid var(--color-borde); }
 }
+
+/* ══════════ Plan semanal (app/plan.php · HU-35 a HU-37) ══════════ */
+.plan-encabezado { align-items: center; }
+.plan-encabezado__dibujo { width: 72px; height: 72px; transform: rotate(-6deg); }
+.plan-ayuda { color: var(--color-sobre-puerta); margin: -6px 0 26px; }
+/* Cada día es una nota de color con chinche; el almuerzo y la cena van separados por una línea punteada */
+/* 1 columna en el celular, 2 en una tablet y 3 en la computadora: así se sabe cuánto lugar queda después del domingo */
+.plan { position: relative; display: grid; gap: 44px 30px; grid-template-columns: minmax(0, 1fr); align-items: start; margin-bottom: 40px; }
+@media (min-width: 640px) { .plan { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1000px) { .plan { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.plan .plan-dia { max-width: none; margin: 0; padding: 24px 18px 16px; }
+.plan-dia--0 { --giro: -1deg; }
+.plan-dia--1 { background: #F7C9D4; --giro: .9deg; }
+.plan-dia--2 { background: #CFE0F2; --giro: -.6deg; }
+.plan-dia--3 { background: #D7F2DD; --giro: 1.2deg; }
+.plan-dia--1 .postit__chinche, .plan-dia--2 .postit__chinche, .plan-dia--3 .postit__chinche { background: radial-gradient(circle at 35% 30%, #9FD3FF, var(--color-azul) 70%); }
+.plan-dia h2 { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.plan-dia h2 small { font: 700 1rem var(--fuente-rotulo); color: var(--color-suave); }
+.plan-comida { padding: 10px 0 8px; border-top: 2px dashed rgb(0 0 0 / 22%); }
+.plan-comida__momento { margin: 0 0 6px; font: 700 .85rem var(--fuente-rotulo); text-transform: uppercase; letter-spacing: .06em; }
+.plan-comida__receta { margin: 0 0 6px; }
+.plan-comida__receta a { font-weight: 700; }
+.plan-comida__receta small { display: block; color: var(--color-suave); }
+.plan-comida__form { display: grid; gap: 8px; margin: 0; }
+.plan-comida__form select { width: 100%; min-width: 0; }
+.plan-comida__fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.plan-comida__fila input { width: 9.5em; }
+.plan-comida__cambiar { display: inline-block; margin-right: 8px; vertical-align: top; }
+.plan-comida__cambiar[open] { display: block; margin: 0 0 8px; }
+.plan-comida__cambiar summary { cursor: pointer; font-weight: 700; color: var(--color-enlace); padding: 4px 0; }
+.plan-comida__cambiar[open] summary { margin-bottom: 6px; }
+.plan-comida__quitar { display: inline-block; margin: 0; }
+
+/* Mi cocina: la nota "Hoy" del plan, chica y naranja, al lado de "Usalo pronto" */
+.nota-hoy { background: #FFD9A8; --giro: 1deg; }
+/* "Hoy" y la lista van una arriba de la otra, al lado de "Usalo pronto" */
+.cocina__columna { flex: 0 1 360px; display: grid; gap: 4px; }
+.cocina__columna .nota-hoy { margin-top: 10px; }
+.cocina__columna .nota-hoy { margin-bottom: 26px; }
+.nota-hoy-plegable .nota-lista__cerrada { margin: 10px 0 14px; }
+.cocina__columna > .nota-plegable:has(.nota-plegable__abierta[hidden]) { justify-self: start; }
+@media (min-width: 1100px) {
+  [data-disposicion="panoramica"] .cocina__columna { flex-basis: 100%; }
+}
+.nota-hoy .postit__titulo { gap: 8px 12px; }
+.nota-hoy__asomada { background: #FFD9A8; }
+.nota-hoy__dibujo { width: 44px; height: 44px; transform: rotate(-7deg); }
+.nota-hoy p { margin: 0 0 6px; }
+.nota-hoy__comidas { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 8px; }
+.nota-hoy__comidas li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.nota-hoy__momento { font: 700 .85rem var(--fuente-rotulo); text-transform: uppercase; letter-spacing: .05em; }
+.nota-hoy__cocinar { margin: 0; }
+.nota-hoy__ver { font-size: .95rem; }
+.cocina__columna > .nota-lista:has(.nota-lista__abierta[hidden]) { justify-self: start; }
+
+/* Arriba del plan: "Armá mi semana" y "Agregar lo que falta para la semana" */
+.plan-acciones { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px 34px; margin: 0 0 34px; }
+.plan-acciones form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0; max-width: 560px; }
+.plan-acciones__nota { flex-basis: 100%; color: var(--color-sobre-puerta-suave); }
+.plan-acciones__ia { display: inline-flex; align-items: center; gap: 6px; color: var(--color-sobre-puerta); font-weight: 600; }
+.plan-acciones__todo { margin: 6px 0 0; }
+/* Deshabilitado: punteado y sin relleno, con texto que se lee en todas las heladeras (también la noche) */
+.plan-acciones .boton[disabled] {
+  opacity: 1; background: transparent; border: 2px dashed var(--color-sobre-puerta-suave);
+  color: var(--color-sobre-puerta-suave); box-shadow: none; cursor: not-allowed;
+}
+.plan[aria-busy="true"] { cursor: progress; }
+.plan-aviso .aviso { margin-bottom: 22px; }
+/* En cada comida: los dibujos (lo que falta, tachado), "Tenés todo" o lo que falta y por qué */
+.plan .plan-comida__ingredientes { height: auto; margin: 2px 0 4px; gap: 0 4px; }
+.plan .plan-comida__ingredientes li { flex: 0 1 36px; min-width: 24px; height: 44px; }
+.plan .plan-comida__ingredientes img { max-width: 34px; }
+.plan .plan-comida__ingredientes li.mini-ingredientes__mas { font-size: 1.25rem; }
+.plan-comida__estado { margin: 0 0 8px; font-size: .95rem; line-height: 1.45; }
+.plan-comida__estado .etiqueta { margin: 0; }
+.plan-comida__estado--falta strong { color: var(--color-marca-oscuro); }
+.plan-comida__falta:not(:last-child)::after { content: " · "; color: var(--color-suave); }
+.plan-comida__falta small { color: var(--color-suave); }
+.plan-comida__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.plan-comida--vacia .plan-comida__acciones { display: block; }
+.plan-comida__acciones .plan-comida__cambiar { margin: 0; }
+.plan-comida__acciones .plan-comida__cambiar[open] { flex-basis: 100%; }
+.plan-comida__boton { margin: 0; }
+.plan-comida__boton .boton--agregar { min-height: 0; padding: 6px 14px; font-size: .85rem; box-shadow: 0 3px 0 var(--color-marca-oscuro); }
+/* Decoración: un sticker chico pegado en el borde de cada nota (asoma en el espacio entre notas)… */
+.plan-dia__sticker {
+  position: absolute; bottom: -24px; width: 46px; height: 46px; z-index: 2; pointer-events: none;
+  filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 4px 4px rgb(30 50 40 / 28%));
+  animation: mecer 4s ease-in-out infinite alternate;
+}
+.plan-dia__sticker--derecha { right: 18px; transform: rotate(12deg); }
+.plan-dia__sticker--izquierda { left: 22px; transform: rotate(-10deg); animation-delay: 1.2s; }
+/* …y los grandes desparramados en el lugar que queda vacío después del último día (2 lugares con 3 columnas,
+   1 con 2 columnas), cada uno a otra altura, tamaño y giro, como los dibujos sueltos de las otras páginas */
+.plan-relleno { position: relative; align-self: stretch; min-height: 340px; }
+.plan-relleno__dibujo {
+  position: absolute; left: var(--x); top: var(--y); width: var(--t); height: auto; transform: rotate(var(--r));
+  filter: drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 7px 8px rgb(30 50 40 / 30%));
+  animation: mecer 4s ease-in-out var(--d) infinite alternate;
+  transition: scale .3s cubic-bezier(.3, 1.6, .5, 1);
+}
+.plan-relleno__dibujo:hover { scale: 1.2; animation: menear .5s ease-in-out infinite alternate; }
+@media (min-width: 1000px) { .plan-relleno { grid-column: span 2; } }
+/* Con 2 columnas el lugar es angosto: más chicos */
+@media (min-width: 640px) and (max-width: 999px) { .plan-relleno__dibujo { width: calc(var(--t) * .75); } }
+/* En el celular no hay lugar vacío: una franja baja con 5, más chicos */
+@media (max-width: 639px) {
+  .plan-relleno { min-height: 170px; }
+  .plan-relleno__dibujo { width: calc(var(--t) * .58); top: calc(var(--y) * .9); }
+  .plan-relleno__dibujo:nth-child(n+6) { display: none; }
+}
+.plan-acciones__todo a { margin-left: 10px; color: var(--color-enlace); }
+.plan-comida__en-lista { margin: 0; }

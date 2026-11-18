@@ -21,6 +21,8 @@ final class Navegador
     private string $otrasCookies = '';
     /** Página de la que "viene" el próximo pedido (el encabezado Referer, como al tocar un enlace). */
     private string $referer = '';
+    /** Si el próximo pedido va como los de JavaScript (encabezado X-Requested-With: fetch). */
+    private bool $comoFetch = false;
 
     /** @param string $base otro servidor (ClienteApi::servidorCon); vacío = el de siempre */
     public function __construct(private string $base = '')
@@ -56,6 +58,21 @@ final class Navegador
             $campos['csrf'] = $m[1];
         }
         return $this->pedir('POST', $ruta, http_build_query($campos));
+    }
+
+    /**
+     * Envía un formulario como lo hace JavaScript (X-Requested-With: fetch): las páginas responden JSON.
+     * @param array<string, mixed> $campos
+     * @return array{0: int, 1: string, 2: string}
+     */
+    public function postFetch(string $ruta, array $campos): array
+    {
+        $this->comoFetch = true;
+        try {
+            return $this->post($ruta, $campos);
+        } finally {
+            $this->comoFetch = false;
+        }
     }
 
     /**
@@ -111,6 +128,9 @@ final class Navegador
         $cookies = ltrim($this->cookie . $this->otrasCookies, '; ');
         if ($cookies !== '') {
             $encabezados[] = 'Cookie: ' . $cookies;
+        }
+        if ($this->comoFetch) {
+            $encabezados[] = 'X-Requested-With: fetch';
         }
         if ($this->referer !== '') {
             $encabezados[] = 'Referer: ' . $this->referer;

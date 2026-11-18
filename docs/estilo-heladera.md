@@ -4,13 +4,14 @@
 > Los de la tanda 2 (sonidos en todo, menú de la cuenta, hojas que se levantan, pasos con casilla, vencidos y contador, disposición panorámica) están en [estilo-heladera-tanda-2.md](estilo-heladera-tanda-2.md).
 > Los de la tanda 3 (inicio nuevo con vitrina, manija desplazadora, volumen, administración con dibujos, 76 ingredientes con dibujo) están en [estilo-heladera-tanda-3.md](estilo-heladera-tanda-3.md).
 > Los de la tanda 4 (barra toda de imanes, color sin cuenta, dibujos en las partes vacías, buscador con stickers e ingredientes propios, aviso al borrar, responder consultas, ver la contraseña y confirmar al salir) están en [estilo-heladera-tanda-4.md](estilo-heladera-tanda-4.md).
+> Los de la tanda 5, del incremento 3 (menú de stickers con dibujo, Contacto y Quiénes somos en el pie, notas que se enderezan, letras sin salto, saltar al contenido, foco visible y el plan semanal), están en [estilo-heladera-tanda-5.md](estilo-heladera-tanda-5.md).
 
 La versión Heladera es **el mismo proyecto** (mismas páginas, base de datos, consultas, validaciones y pruebas) con otra estética: la página es la puerta de una heladera.
 
 - Los ingredientes de la despensa son **stickers** que se pueden poner y quitar.
 - Los avisos y "Usalo pronto" son **post-its** con chinche.
 - Las tarjetas son **hojas de cuaderno** con renglones, margen rojo y cinta.
-- El menú son **imanes** de colores.
+- El menú son **stickers** con dibujo (antes, imanes de colores: ver la tanda 5).
 - El logo es un **rótulo** de letras de imprenta.
 
 Se probó igual que la base: `composer lint` sin errores, **22 pruebas en verde** y recorrido en el navegador a 390 px y a 1280 px.
