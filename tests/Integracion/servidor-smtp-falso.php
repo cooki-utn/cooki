@@ -62,5 +62,7 @@ while (($linea = fgets($cliente)) !== false) {
         break;
     }
 }
-file_put_contents($salida, $registro);
+// Primero a un archivo aparte y después se renombra: así la prueba nunca lee el archivo a medio escribir
+file_put_contents($salida . '.tmp', $registro);
+rename($salida . '.tmp', $salida);
 fclose($cliente);

@@ -33,7 +33,8 @@ final class SmtpTest extends TestCase
             escapeshellarg($this->salida),
             $modo
         );
-        $this->proceso = proc_open($comando, [], $tuberias);
+        // Lo que el servidor diga por la salida de errores queda en .err, para saber qué pasó si la prueba falla
+        $this->proceso = proc_open($comando, [2 => ['file', $this->salida . '.err', 'w']], $tuberias);
         for ($i = 0; $i < 50 && !is_file($this->salida . '.listo'); $i++) {
             usleep(50_000);
         }
@@ -47,13 +48,22 @@ final class SmtpTest extends TestCase
         }
         @unlink($this->salida);
         @unlink($this->salida . '.listo');
+        @unlink($this->salida . '.err');
     }
 
+    /** Lo que guardó el servidor: lo escribe de una vez al terminar la conversación (hasta 5 segundos). */
     private function conversacion(): string
     {
-        for ($i = 0; $i < 50 && !is_file($this->salida); $i++) {
+        for ($i = 0; $i < 100 && !is_file($this->salida); $i++) {
             usleep(50_000);
         }
+        $estado = $this->proceso ? proc_get_status($this->proceso) : [];
+        $this->assertFileExists($this->salida, sprintf(
+            'El servidor falso no guardó la conversación (sigue andando: %s, salida: %s, errores: %s)',
+            var_export($estado['running'] ?? null, true),
+            var_export($estado['exitcode'] ?? null, true),
+            (string) @file_get_contents($this->salida . '.err')
+        ));
         return (string) file_get_contents($this->salida);
     }
 
