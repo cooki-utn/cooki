@@ -639,10 +639,12 @@ body { transition: background-color .5s; }
 .vitrina__dibujo img {
   display: block; width: 84px; height: 84px;
   filter: drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 6px 7px rgb(30 50 40 / 30%));
-  transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), filter .3s;
+  transition: transform .3s cubic-bezier(.3, 1.3, .5, 1), filter .3s;
 }
-.vitrina__dibujo:hover img { transform: scale(1.18) rotate(-8deg); animation: menear .6s ease-in-out infinite alternate; }
+/* Al pasar el mouse, los ingredientes crecen un poco y se mecen suave (menear-suave: unos 3° para cada lado) */
+.vitrina__dibujo:hover img { transform: scale(1.1) rotate(-4deg); animation: menear-suave .8s ease-in-out infinite alternate; }
 @keyframes menear { from { rotate: -6deg; } to { rotate: 8deg; } }
+@keyframes menear-suave { from { rotate: -3deg; } to { rotate: 4deg; } }
 .vitrina__dibujo .ya { top: -12px; right: -10px; width: 36px; height: 36px; font-size: 1.1rem; font-style: normal; }
 @keyframes vitrina { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @media (max-width: 520px) {
@@ -1161,9 +1163,9 @@ td > .acciones { flex-wrap: nowrap; }
     transform: rotate(var(--r));
     filter: drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 7px 8px rgb(30 50 40 / 30%));
     animation: mecer 4s ease-in-out var(--d) infinite alternate;
-    transition: scale .3s cubic-bezier(.3, 1.6, .5, 1);
+    transition: scale .3s cubic-bezier(.3, 1.3, .5, 1);
   }
-  .stickers-deco__dibujo:hover { scale: 1.25; animation: menear .5s ease-in-out infinite alternate; }
+  .stickers-deco__dibujo:hover { scale: 1.12; animation: menear-suave .8s ease-in-out infinite alternate; }
   /* Los de abajo no llegan hasta el borde inferior de su zona */
   .stickers-deco--abajo .stickers-deco__dibujo { top: min(var(--y), calc(100% - 120px)); }
   /* Inicio: a los costados de "¿Por qué Cooki?", un poco más chicos */
@@ -1186,9 +1188,9 @@ td > .acciones { flex-wrap: nowrap; }
     transform: rotate(var(--r));
     filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 5px 6px rgb(30 50 40 / 28%));
     animation: mecer 4s ease-in-out var(--d) infinite alternate;
-    transition: scale .3s cubic-bezier(.3, 1.6, .5, 1);
+    transition: scale .3s cubic-bezier(.3, 1.3, .5, 1);
   }
-  .sueltos__dibujo:hover { scale: 1.2; animation: menear .5s ease-in-out infinite alternate; }
+  .sueltos__dibujo:hover { scale: 1.1; animation: menear-suave .8s ease-in-out infinite alternate; }
 }
 
 /* Dibujo pegado en la esquina de una hoja (error, "Dónde estamos") */
@@ -1955,9 +1957,9 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
   position: absolute; left: var(--x); top: var(--y); width: var(--t); height: auto; transform: rotate(var(--r));
   filter: drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 7px 8px rgb(30 50 40 / 30%));
   animation: mecer 4s ease-in-out var(--d) infinite alternate;
-  transition: scale .3s cubic-bezier(.3, 1.6, .5, 1);
+  transition: scale .3s cubic-bezier(.3, 1.3, .5, 1);
 }
-.plan-relleno__dibujo:hover { scale: 1.2; animation: menear .5s ease-in-out infinite alternate; }
+.plan-relleno__dibujo:hover { scale: 1.1; animation: menear-suave .8s ease-in-out infinite alternate; }
 @media (min-width: 1000px) { .plan-relleno { grid-column: span 2; } }
 /* Con 2 columnas el lugar es angosto: más chicos */
 @media (min-width: 640px) and (max-width: 999px) { .plan-relleno__dibujo { width: calc(var(--t) * .75); } }

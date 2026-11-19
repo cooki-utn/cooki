@@ -83,3 +83,7 @@ Las decisiones están en **DEC-025** (tipos y listas con dibujo) y **DEC-026** (
   mouse) iba de +4° a −3° en 1,4 s; ahora se mece apenas hacia su lado (entre 0,6° y 2,4° más que su giro) en 1 segundo.
 - Al volver a su lugar, las notas y la hoja "¿Por qué Cooki?" se pasaban de largo (`cubic-bezier(.3, 1.5, .5, 1)`);
   ahora se pasan mucho menos (`1.2`).
+- Los ingredientes sueltos (la vitrina de la portada, los costados de las páginas, los del plan y los de "¿Falta algún
+  tipo?") también se mueven menos con el mouse encima: crecen 10 a 12 % en lugar de 18 a 25 %, y se mecen con
+  `menear-suave` (−3° a 4°, en 0,8 s) en lugar de `menear` (−6° a 8°, en 0,5 s). `menear` queda para los dibujos que se
+  menean solos (al confirmar y al cambiar el dibujo de una receta).
