@@ -73,3 +73,13 @@ Las decisiones están en **DEC-025** (tipos y listas con dibujo) y **DEC-026** (
 
 - Arriba de las notas de Administración, un aviso amarillo: "Hay N ingredientes nuevos para revisar…" con el enlace a
   Ingredientes. La nota de Ingredientes también lo dice.
+
+## 7. Notas más tranquilas al soltarlas
+
+- Al sacar el mouse de una nota con enlaces, `hamacar-soltar` se movía demasiado (hasta 3° y cuatro idas y vueltas en
+  1,4 s). Ahora es un balanceo corto: 1,5° como mucho, dos idas y vueltas que se apagan, en 1 segundo. Con "reducir
+  movimiento", la nota sigue volviendo a su giro sin balancearse.
+- Lo mismo para las notas sin enlaces, como los 3 papeles de "Cómo funciona" en la portada: `hamacar` (al pasar el
+  mouse) iba de +4° a −3° en 1,4 s; ahora se mece apenas hacia su lado (entre 0,6° y 2,4° más que su giro) en 1 segundo.
+- Al volver a su lugar, las notas y la hoja "¿Por qué Cooki?" se pasaban de largo (`cubic-bezier(.3, 1.5, .5, 1)`);
+  ahora se pasan mucho menos (`1.2`).

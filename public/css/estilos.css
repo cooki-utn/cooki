@@ -345,21 +345,21 @@ img { max-width: 100%; }
 /* Las notas pegadas (avisos y post-its) se hamacan desde la chinche al pasar el mouse */
 .aviso, .postit {
   transform-origin: 50% 0;
-  transition: transform .4s cubic-bezier(.3, 1.5, .5, 1), box-shadow .4s;
+  transition: transform .4s cubic-bezier(.3, 1.2, .5, 1), box-shadow .4s;
 }
 /* Al pasar el mouse la nota se despega un poco de la puerta (queda levantada, con la sombra más lejos)
    y se hamaca desde la chinche. Si el sistema pide "reducir movimiento", queda solo levantada, sin hamacarse. */
 .aviso:hover, .postit:hover {
   transform: translateY(-4px) rotate(calc(var(--giro) + 1.2deg));
   box-shadow: 0 8px 12px rgb(0 0 0 / 10%), 0 26px 34px rgb(0 0 0 / 22%);
-  animation: hamacar 1.4s ease-out;
+  animation: hamacar 1s ease-out;
 }
+/* Balanceo corto y suave, como al soltarlas: de su giro a 1,2° más, pasando una vez apenas para cada lado */
 @keyframes hamacar {
   0% { transform: rotate(var(--giro)); }
-  15% { transform: translateY(-4px) rotate(calc(var(--giro) + 4deg)); }
-  35% { transform: translateY(-4px) rotate(calc(var(--giro) - 3deg)); }
-  55% { transform: translateY(-4px) rotate(calc(var(--giro) + 2.4deg)); }
-  75% { transform: translateY(-4px) rotate(calc(var(--giro) - .6deg)); }
+  30% { transform: translateY(-4px) rotate(calc(var(--giro) + 2.4deg)); }
+  60% { transform: translateY(-4px) rotate(calc(var(--giro) + .6deg)); }
+  85% { transform: translateY(-4px) rotate(calc(var(--giro) + 1.4deg)); }
   100% { transform: translateY(-4px) rotate(calc(var(--giro) + 1.2deg)); }
 }
 /* Las notas que tienen algo para tocar (un enlace, un botón, un campo) están un poco inclinadas (--giro) y, con el
@@ -368,13 +368,13 @@ img { max-width: 100%; }
 :is(.aviso, .postit):has(a, button, input, select, textarea, summary):hover {
   animation: none; transform: translateY(-4px) rotate(0deg);
 }
-.nota--soltada { animation: hamacar-soltar 1.4s ease-out; }
+/* Un balanceo corto y suave (unos 1,5° y 1 segundo), para que no parezca que la nota se mueve de más */
+.nota--soltada { animation: hamacar-soltar 1s ease-out; }
 @keyframes hamacar-soltar {
   0% { transform: translateY(-4px) rotate(0deg); }
-  20% { transform: translateY(-2px) rotate(calc(var(--giro) - 3deg)); }
-  40% { transform: rotate(calc(var(--giro) + 2.2deg)); }
-  60% { transform: rotate(calc(var(--giro) - 1.2deg)); }
-  80% { transform: rotate(calc(var(--giro) + .4deg)); }
+  30% { transform: translateY(-1px) rotate(calc(var(--giro) - 1.5deg)); }
+  60% { transform: rotate(calc(var(--giro) + .7deg)); }
+  85% { transform: rotate(calc(var(--giro) - .2deg)); }
   100% { transform: rotate(var(--giro)); }
 }
 .aviso::before {   /* la chinche */
@@ -666,7 +666,7 @@ body { transition: background-color .5s; }
   max-width: 760px; margin-inline: auto;
   --giro: .5deg;
   transform: rotate(var(--giro));
-  transition: transform .35s cubic-bezier(.3, 1.5, .5, 1), box-shadow .35s;
+  transition: transform .4s cubic-bezier(.3, 1.2, .5, 1), box-shadow .4s;
 }
 /* Al pasar el mouse se levanta como las hojas de recetas: sube, se inclina al otro lado y la sombra se aleja */
 .portada__porque:hover, .portada__porque:focus-within {
