@@ -94,3 +94,7 @@ Las decisiones están en **DEC-025** (tipos y listas con dibujo) y **DEC-026** (
   la mitad y crece 20 % en lugar de 45 %; al cambiarlo gira 20° en lugar de 40°), los dibujos de las notas del panel y
   de las hojas, el corazón de favoritos, el dibujo de "pensando" de la IA, las opciones con dibujo y los imanes.
 - Todos los rebotes al crecer y al volver bajan: `cubic-bezier(.3, 1.6, .5, 1)` pasa a `1.3`.
+- Los ingredientes que se mecen solos (los de "¿Por qué Cooki?", los costados de Ingresar, "¿Falta algún tipo?" y el
+  plan) daban un salto al pasar el mouse: se cortaba su vaivén (`mecer`) y arrancaba otro desde otra posición. Ahora
+  siguen con su vaivén, crecen 8 % y se les **suma** un meneo de 2° (`menear-sumado`, con `animation-composition: add`)
+  que arranca desde donde están. En los navegadores viejos que no suman animaciones, el meneo de 2° reemplaza el giro.
