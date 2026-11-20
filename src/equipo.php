@@ -38,7 +38,7 @@ return [
             . 'animaciones e interacción con JavaScript.',
         'imagen' => 'julian',
         'github' => 'https://github.com/julianmartinez093-tech',
-        'linkedin' => '',
+        'linkedin' => 'https://www.linkedin.com/in/julianmartinez-dev',
         'correo' => '',
     ],
     // P3
