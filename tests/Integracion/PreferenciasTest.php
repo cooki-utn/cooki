@@ -107,7 +107,7 @@ final class PreferenciasTest extends TestCase
         $this->assertStringContainsString('En mis favoritas', $html);
 
         [, $html] = $web->get('app/recetas.php?favoritas=1');
-        $this->assertStringContainsString('1 receta encontradas', $html);
+        $this->assertStringContainsString('1 receta encontrada<', $html);
         $this->assertStringContainsString('Tortilla de papas', $html);
         [, $html] = $web->get('app/mis-preferencias.php');
         $this->assertStringContainsString('Tortilla de papas', $html);

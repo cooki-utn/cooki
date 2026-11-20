@@ -6,12 +6,51 @@ Formato: decisiones tipo ADR (ver la guía de metodología del equipo, sección 
 
 ---
 
-## DEC-025 · AAAA-MM-DD · (título)
+## DEC-027 · AAAA-MM-DD · (título)
 - **Contexto:** 
 - **Decisión:** 
 - **Alternativas descartadas:** 
 - **Consecuencias:** 
 - **Participaron:** 
+
+---
+
+## DEC-026 · 2026-11-14 · Bienvenida "Contanos cómo comés": la dieta filtra, los gustos ordenan
+- **Contexto:** una cuenta nueva veía recetas que no le servían (con carne para quien es vegano, con harina para quien es celíaco) hasta que encontraba "No puedo comer" en Mis preferencias. El equipo pidió una pantalla de personalización al crear la cuenta. Se compararon tres formas en una página de prueba (una hoja, paso a paso, "armá tu heladera") y se eligió **paso a paso**.
+- **Decisión:**
+  - Después de "Crear cuenta" se abre `app/bienvenida.php`: 4 notas (cómo comés · lo que no · tus gustos, cómo te llevás con la cocina y para cuántos cocinás · lo que siempre hay). Todo es opcional ("Lo hago después") y se vuelve a abrir desde **Mis preferencias → Cómo comés**. Con JavaScript se ve una nota por vez; sin JavaScript, las 4 juntas con un solo botón al final.
+  - **La dieta es un filtro firme** (vegetariana, vegana, sin TACC, sin lactosa; ninguna = "Como de todo"): en Mi cocina, en el selector de ingredientes y en "Armá mi semana" solo entran recetas con **todos** esos tipos (vegana cuenta como vegetariana). En Recetas, la casilla "Solo de mi dieta" viene marcada y se puede sacar; las que no van dicen "No va con tu dieta". En el desplegable del plan siguen apareciendo, con "(no va con tu dieta)".
+  - **Los gustos y el nivel solo ordenan** (`Perfil::ajuste`): +5 de puntaje por cada gusto que cumple la receta (lo dulce, lo salado = merienda salada, lo rápido, lo económico) y −6 por cada punto de dificultad por encima del nivel. No se esconde nada.
+  - **Para cuántos cocina** son las porciones con que se anota cada comida del plan si no se escriben otras.
+  - **Lo que no come y lo que siempre hay** usan las listas que ya existían (`restriccion_usuario`, `usuario_basico`). Algunas opciones son grupos ("Pescado" = merluza y atún; "Cerdo" = cerdo, panceta, chorizo y jamón). Lo que no está en el catálogo se agrega **como ingrediente propio** (DEC-006) y el panel de Administración avisa "Hay N ingredientes nuevos para revisar", sin correo.
+  - Dieta y gustos se guardan en una tabla nueva, `usuario_tipo` (usuario, clase `dieta`/`gusto`, tipo de receta); nivel y comensales, en `usuario`. La lógica pura está en `src/Dominio/Perfil.php` (con `PerfilTest`).
+- **Alternativas descartadas:**
+  - Que la dieta solo ordene o solo avise: a quien es celíaco no le sirve que la receta con harina aparezca más abajo.
+  - Pasar la dieta a "No puedo comer" ingrediente por ingrediente: "vegana" son decenas de ingredientes y cada receta nueva obligaría a revisarlos; con los tipos, el importador ya garantiza que la receta cumple (DEC-025).
+  - Guardar todo en una columna JSON del usuario: no se puede consultar con SQL para filtrar las recetas.
+  - Mandar un correo al administrador por cada ingrediente nuevo: con el aviso en el panel alcanza y no gasta el cupo de Gmail.
+- **Consecuencias:** migración `010-personalizar.sql`. Las recetas de IA no tienen tipos revisados, así que en el plan no se filtran por dieta. Se arregló un error viejo que la bienvenida hacía más común: no se podía borrar una cuenta con un ingrediente propio en sus listas (`UsuarioRepositorio::borrar()` borra antes listas, despensa y lista de compras).
+- **Participaron:** P3 (lógica y recomendación), P2 (pantallas), P1 (base de datos), P4 revisa
+
+---
+
+## DEC-025 · 2026-11-14 · Tipos de receta con dibujo, "Rápida" calculada y listas desplegables con dibujo
+- **Contexto:** los tipos se mostraban como estaban en la base ("sin tacc", "economica"), sin mayúscula ni tildes, y había solo 4. El equipo pidió tipos con dibujo, tipos nuevos con recetas nuevas y un dibujo para la dificultad.
+- **Decisión:**
+  - **9 tipos** con nombre, explicación y sticker en `src/Dominio/Tipos.php` (con `TiposTest`): Vegetariana, **Vegana**, Sin TACC ("apta celíacos"), **Sin lactosa**, **Sin huevo**, **Rápida**, Económica, Dulce y **Merienda salada**. En la base sigue la clave (`sin_tacc`); el nombre lindo se arma al mostrar. Los dibujos están en `public/img/tipos/`.
+  - **Las reglas de cada dieta** están en un solo lugar (`Tipos::rompe()`): vegetariana sin carnes ni atún; vegana además sin lácteos, huevo, miel, dulce de leche, mayonesa, tapas (llevan grasa), galletitas ni chocolate; sin lactosa sin lácteos ni dulce de leche; sin huevo sin huevo ni mayonesa. Los opcionales también cuentan: para una alergia, más vale no arriesgar. El importador las revisa y no carga una receta que dice "vegana" y lleva manteca.
+  - **"Rápida" no se elige: se calcula** (preparación + cocción ≤ 30 minutos) al importar y al guardar desde la administración. Escribirla en un JSON es un error.
+  - **Estilo:** la cinta de papel con el sticker que sobresale a la izquierda; la **dificultad con un semáforo** (verde Fácil, amarillo Media, rojo Difícil) con el texto siempre al lado. Se compararon cinta, sticker y chapita para los tipos, y gorros, llamitas, cucharas y semáforo para la dificultad.
+  - **Listas desplegables con dibujo** en Recetas (dificultad, tipo y orden): un `<select>` no puede mostrar dibujos, así que `desplegable()` (`src/ayudas.php`) arma un `<details>` con botones de opción y `js/desplegable.js` lo cierra al elegir. Sin JavaScript se abre, se elige y se toca Buscar.
+  - **8 recetas nuevas** con ingredientes del catálogo: 4 veganas y 4 meriendas saladas. Las que ya estaban suman Vegana, Sin lactosa y Sin huevo si cumplen la regla.
+  - **"¿Falta algún tipo?"** al final de Recetas: queda como consulta de Contacto con el asunto "Sugerencia de tipo" (hasta 5 por día y por persona).
+- **Alternativas descartadas:**
+  - Un tipo "Celíaca" aparte: es lo mismo que Sin TACC; se aclara en el filtro y en la bienvenida.
+  - Calcular todos los tipos de dieta solos: un ingrediente puede tener variantes (fideos con o sin huevo) y el equipo prefiere decidir cada receta; el importador evita los errores.
+  - Una librería de listas desplegables: el proyecto no usa frameworks y `<details>` funciona sin JavaScript.
+  - Chipá y fainá: necesitan ingredientes que no están (almidón de mandioca, harina de garbanzo); quedan para más adelante.
+- **Consecuencias:** etiquetas 5 a 9 con id fijo en `seed.sql` y en la migración 010, que también suma las recetas y les pone los tipos a las que ya estaban. Hay que importarla **una sola vez**. Las tarjetas con muchos tipos ocupan más alto.
+- **Participaron:** P2 (dibujos y pantallas), P3 (importador y recetas), P1 (base de datos), P4 revisa
 
 ---
 

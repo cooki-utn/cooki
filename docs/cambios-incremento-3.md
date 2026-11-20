@@ -1,10 +1,12 @@
 # Incremento 3 · Resumen: IA en las recetas, lista de compras y plan semanal
 
-> **Entregas:** A (lista de compras y correo), B (la IA) y C (plan semanal, accesibilidad y diseño).
-> **Pruebas:** **204 en verde** al cerrar la C (eran 119 antes de la entrega A; 2 se saltean si PHP no tiene GD).
+> **Entregas:** A (lista de compras y correo), B (la IA), C (plan semanal, accesibilidad y diseño) y D (tipos de
+> receta con dibujo y la bienvenida "Contanos cómo comés").
+> **Pruebas:** **221 en verde** al cerrar la D (eran 119 antes de la entrega A; 2 se saltean si PHP no tiene GD).
 > Ninguna usa la IA real. El lint queda limpio.
 > **Detalle de cada entrega:** [cambios-incremento-3-a.md](cambios-incremento-3-a.md),
-> [cambios-incremento-3-b.md](cambios-incremento-3-b.md) y [cambios-incremento-3-c.md](cambios-incremento-3-c.md).
+> [cambios-incremento-3-b.md](cambios-incremento-3-b.md), [cambios-incremento-3-c.md](cambios-incremento-3-c.md) y
+> [cambios-incremento-3-d.md](cambios-incremento-3-d.md).
 
 ## 1. Objetivos
 
@@ -34,7 +36,9 @@
 | HU-39 | Equipo de cuatro en el repositorio | A | P1 |
 
 Además: "Volver" a la misma altura (DEC-021), la hora del servidor (DEC-023), accesibilidad con axe-core y el menú
-de stickers con dibujo, el pie y las letras sin salto (DEC-024).
+de stickers con dibujo, el pie y las letras sin salto (DEC-024). En la entrega D: 9 tipos de receta con dibujo,
+la dificultad con semáforo y 8 recetas nuevas (DEC-025), y la bienvenida "Contanos cómo comés", donde la dieta filtra
+las recomendaciones y los gustos las ordenan (DEC-026).
 
 ## 3. Base de datos
 
@@ -43,6 +47,7 @@ de stickers con dibujo, el pie y las letras sin salto (DEC-024).
 | `007-incremento-3.sql` | Las seis tablas: `lista_compra_item`, `receta_ia`, `respuesta_ia`, `uso_ia`, `sugerencia_reemplazo` y `plan_comida` | A |
 | `008-nota-lista.sql` | `usuario.nota_lista` | A |
 | `009-nota-hoy.sql` | `usuario.nota_hoy` | C |
+| `010-personalizar.sql` | Tipos 5 a 9, 8 recetas nuevas, `usuario_tipo`, `usuario.nivel_cocina` y `usuario.comensales` | D |
 
 En una base que ya existe se importan en orden, una sola vez cada una. Detalle en [modelo-datos.md](modelo-datos.md).
 
@@ -59,6 +64,7 @@ En una base que ya existe se importan en orden, una sola vez cada una. Detalle e
 | `GET /lista`, `POST /lista`, `POST` y `DELETE /lista/{id}/comprado`, `DELETE /lista/{id}` | A |
 | `GET /ia`, `POST /ia/receta`, `POST /ia/adaptar/{id}`, `POST /ia/reemplazo` | B |
 | `GET /plan`, `PUT` y `DELETE /plan/{fecha}/{momento}` | C |
+| Sin rutas nuevas; `/recomendaciones` respeta la dieta y `etiquetas` suma los tipos nuevos | D |
 
 Contrato completo en [api.md](api.md).
 
@@ -70,6 +76,7 @@ Contrato completo en [api.md](api.md).
 | Entrega A | 145 | `ListaComprasTest` (11), `ListaTest` (7) y 8 más (correo, equipo y páginas) |
 | Entrega B | 182 | `RecetaIaTest` (13), `ClienteGeminiTest` (5), `IaTest` (16) y 3 de páginas de la IA |
 | Entrega C | 204 | `PlanSemanalTest` (13) y `PlanTest` (9) |
+| Entrega D | 221 | `TiposTest` (5), `PerfilTest` (5), `BienvenidaTest` (4), `SugerenciasTest` (2) y 1 del importador |
 
 ## 7. Lo que queda a futuro
 
@@ -77,3 +84,4 @@ Contrato completo en [api.md](api.md).
   compartida cambia el modelo de datos.
 - El menú en una columna al costado (probado, no adoptado por ahora).
 - En el pie: GitHub, créditos de las letras y una página de privacidad.
+- Chipá y fainá (necesitan ingredientes nuevos) y tipos revisados en las recetas de la IA, para filtrarlas por dieta.

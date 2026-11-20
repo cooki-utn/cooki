@@ -1,0 +1,62 @@
+{
+  "titulo": "Tostadas con palta y huevo",
+  "descripcion": "Palta pisada con limón y un huevo arriba.",
+  "porciones": 2,
+  "minutos_prep": 10,
+  "minutos_coccion": 5,
+  "dificultad": 1,
+  "etiquetas": [
+    "vegetariana",
+    "sin_lactosa",
+    "merienda_salada"
+  ],
+  "ingredientes": [
+    {
+      "nombre": "Pan",
+      "cantidad": 4,
+      "unidad": "u",
+      "peso": 3,
+      "nota": "rodajas"
+    },
+    {
+      "nombre": "Palta",
+      "cantidad": 1,
+      "unidad": "u",
+      "peso": 3
+    },
+    {
+      "nombre": "Huevo",
+      "cantidad": 2,
+      "unidad": "u",
+      "peso": 2
+    },
+    {
+      "nombre": "Limón",
+      "cantidad": 0.5,
+      "unidad": "u",
+      "peso": 1,
+      "nota": "el jugo"
+    },
+    {
+      "nombre": "Sal",
+      "cantidad": 1,
+      "unidad": "pizca",
+      "peso": 1
+    },
+    {
+      "nombre": "Pimienta",
+      "cantidad": 1,
+      "unidad": "pizca",
+      "peso": 1,
+      "opcional": true
+    }
+  ],
+  "pasos": [
+    "Pisar la palta con el jugo de limón y sal.",
+    {
+      "texto": "Cocinar los huevos en una sartén con unas gotas de aceite, o hervirlos 7 minutos.",
+      "minutos": 5
+    },
+    "Tostar el pan, untarlo con la palta y poner un huevo arriba. Terminar con pimienta."
+  ]
+}

@@ -45,8 +45,8 @@ if (esPost()) {
         Sesion::ingresar([
             'id' => $id, 'nombre' => $nombre, 'email' => $email, 'rol' => Sesion::ROL_GENERAL, 'color' => $color,
         ]);
-        Sesion::avisar('exito', '¡Bienvenido/a a Cooki! Empezá cargando lo que tenés en tu despensa.');
-        redirigir('app/index.php');
+        // Primero, "Contanos cómo comés" (se puede saltear con "Lo hago después")
+        redirigir('app/bienvenida.php?nueva=1');
     }
 }
 

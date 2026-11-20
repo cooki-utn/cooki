@@ -1,0 +1,66 @@
+{
+  "titulo": "Scones de queso",
+  "descripcion": "Esponjosos y bien quesosos, para el mate.",
+  "porciones": 4,
+  "minutos_prep": 15,
+  "minutos_coccion": 15,
+  "dificultad": 1,
+  "etiquetas": [
+    "vegetariana",
+    "merienda_salada"
+  ],
+  "ingredientes": [
+    {
+      "nombre": "Harina 0000",
+      "cantidad": 300,
+      "unidad": "g",
+      "peso": 3
+    },
+    {
+      "nombre": "Queso rallado",
+      "cantidad": 100,
+      "unidad": "g",
+      "peso": 3
+    },
+    {
+      "nombre": "Manteca",
+      "cantidad": 60,
+      "unidad": "g",
+      "peso": 2
+    },
+    {
+      "nombre": "Leche",
+      "cantidad": 120,
+      "unidad": "ml",
+      "peso": 2
+    },
+    {
+      "nombre": "Huevo",
+      "cantidad": 1,
+      "unidad": "u",
+      "peso": 2
+    },
+    {
+      "nombre": "Polvo de hornear",
+      "cantidad": 15,
+      "unidad": "g",
+      "peso": 1
+    },
+    {
+      "nombre": "Sal",
+      "cantidad": 1,
+      "unidad": "pizca",
+      "peso": 1
+    }
+  ],
+  "pasos": [
+    "Mezclar la harina, el polvo de hornear, la sal y el queso.",
+    "Sumar la manteca fría en cubitos y deshacerla con los dedos hasta que quede arenoso.",
+    "Agregar el huevo y la leche y unir sin amasar de más.",
+    "Estirar de 2 cm de alto, cortar redondeles y pintarlos con un poco de leche.",
+    {
+      "texto": "Hornear a 200 °C hasta que estén doraditos.",
+      "minutos": 15
+    }
+  ]
+}

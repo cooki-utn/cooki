@@ -7,6 +7,9 @@
 --    Generales:       maria@cooki.test, juan@cooki.test, sofia@cooki.test → Usuario1234
 -- =====================================================================
 SET NAMES utf8mb4;
+-- Las fechas de ejemplo (CURDATE, NOW) con la hora de Argentina, como la aplicación (DEC-023). Sin esto, si se
+-- importa entre las 21 y las 24 en un servidor en UTC, los vencimientos quedan corridos un día.
+SET time_zone = '-03:00';
 
 INSERT INTO usuario (id, email, nombre, hash_contrasena, rol) VALUES
  (1, 'admin@cooki.test',   'Administración', '$2y$10$2v72GYk760OoscGKNBR56u.cbCnpEm0kQIuLzRlN249jILhZF.Zey', 'admin'),
@@ -91,7 +94,8 @@ INSERT INTO sinonimo (ingrediente_id, texto, region) VALUES
  (60, 'betabel', 'MX'), (62, 'rábano', NULL), (63, 'yogurt', NULL), (64, 'requesón', NULL), (65, 'muzzarella', 'AR'),
  (68, 'pescado', NULL), (69, 'camarones', NULL), (71, 'discos de empanada', NULL);
 
-INSERT INTO etiqueta (id, nombre) VALUES (1, 'vegetariana'), (2, 'sin_tacc'), (3, 'economica'), (4, 'dulce');
+INSERT INTO etiqueta (id, nombre) VALUES (1, 'vegetariana'), (2, 'sin_tacc'), (3, 'economica'), (4, 'dulce'),
+ (5, 'vegana'), (6, 'sin_lactosa'), (7, 'sin_huevo'), (8, 'rapida'), (9, 'merienda_salada');
 
 INSERT INTO receta (id, slug, titulo, descripcion, porciones_base, minutos_prep, minutos_coccion, dificultad, fuente, autor_id) VALUES
  (1, 'tortilla-de-papas', 'Tortilla de papas', 'Clásica, rendidora y con pocos ingredientes.', 4, 15, 25, 1, 'Receta del equipo', 1),
@@ -242,7 +246,10 @@ INSERT INTO paso (receta_id, numero, instruccion, segundos_timer) VALUES
  (12, 4, 'Condimentar con limón, aceite y sal.', NULL);
 
 INSERT INTO receta_etiqueta (receta_id, etiqueta_id) VALUES
- (1, 1), (1, 2), (1, 3), (2, 1), (2, 3), (3, 2), (3, 3), (5, 1), (5, 2), (5, 3), (6, 1), (7, 2), (8, 2), (9, 1), (9, 3), (10, 1), (10, 2), (10, 3), (11, 1), (11, 2), (11, 3), (12, 2);
+ (1, 1), (1, 2), (1, 3), (2, 1), (2, 3), (3, 2), (3, 3), (5, 1), (5, 2), (5, 3), (6, 1), (7, 2), (8, 2), (9, 1), (9, 3), (10, 1), (10, 2), (10, 3), (11, 1), (11, 2), (11, 3), (12, 2),
+ -- Tipos del PR D ("rapida" = 30 minutos o menos entre preparación y cocción)
+ (1, 6), (2, 7), (2, 8), (3, 6), (3, 7), (4, 6), (5, 5), (5, 6), (5, 7), (7, 6), (9, 8), (10, 7), (10, 8),
+ (11, 5), (11, 6), (11, 7), (12, 6), (12, 8);
 
 -- Despensa de ejemplo (las fechas son relativas a hoy, para que siempre haya algo "por vencer")
 INSERT INTO despensa_item (usuario_id, ingrediente_id, nivel, fecha_vencimiento, ubicacion) VALUES

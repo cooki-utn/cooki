@@ -14,13 +14,10 @@ final class ImportadorRecetas
     public const UNIDADES = ['g', 'kg', 'ml', 'l', 'u', 'cda', 'cdita', 'taza', 'pizca', 'diente', 'lata', 'paquete',
         'atado'];
 
-    /** Ingredientes con gluten (TACC): una receta "sin_tacc" no puede usarlos. */
-    public const CON_TACC = ['harina-0000', 'fideos', 'pan-rallado', 'tapa-de-tarta', 'pan', 'tapas-de-empanada',
-        'galletitas', 'avena', 'salsa-de-soja'];
-
-    /** Categoría Carnes (incluye pescados y fiambres) y el atún: una receta "vegetariana" no puede usarlos. */
-    public const CATEGORIA_CARNES = 4;
-    public const NO_VEGETARIANOS = ['atun-en-lata'];
+    /** Las reglas de cada tipo están en Tipos (se dejan acá también porque RecetaIa las usa). */
+    public const CON_TACC = Tipos::CON_TACC;
+    public const CATEGORIA_CARNES = Tipos::CATEGORIA_CARNES;
+    public const NO_VEGETARIANOS = Tipos::NO_VEGETARIANOS;
 
     /** @var array<string, array{id: int, nombre: string, categoria_id: int}> por slug del nombre o sinónimo */
     private array $porNombre = [];
@@ -97,18 +94,27 @@ final class ImportadorRecetas
         [$ingredientes, $slugs, $erroresIng] = $this->ingredientes($json['ingredientes'] ?? null);
         $errores = array_merge($errores, $erroresIng);
 
-        if (isset($etiquetas['sin_tacc'])) {
-            foreach (array_intersect($slugs, self::CON_TACC) as $nombre => $slug) {
-                $errores[] = "Dice sin_tacc pero lleva {$nombre}.";
+        // Los tipos de dieta se revisan contra los ingredientes ("Dice vegana pero lleva Manteca.")
+        foreach (Tipos::DIETAS as $dieta) {
+            if (!isset($etiquetas[$dieta])) {
+                continue;
             }
-        }
-        if (isset($etiquetas['vegetariana'])) {
             foreach ($ingredientes as $ing) {
-                $esCarne = $ing['categoria_id'] === self::CATEGORIA_CARNES;
-                if ($esCarne || in_array($ing['slug'], self::NO_VEGETARIANOS, true)) {
-                    $errores[] = "Dice vegetariana pero lleva {$ing['nombre']}.";
+                if (Tipos::rompe($dieta, $ing['slug'], $ing['categoria_id'])) {
+                    $errores[] = "Dice {$dieta} pero lleva {$ing['nombre']}.";
                 }
             }
+        }
+        // "rapida" no se escribe: se calcula con los minutos
+        if (isset($etiquetas[Tipos::RAPIDA])) {
+            $errores[] = 'No pongas "rapida": se calcula sola (' . Tipos::MINUTOS_RAPIDA . ' minutos o menos).';
+        }
+        unset($etiquetas[Tipos::RAPIDA]);
+        if (
+            isset($this->etiquetas[Tipos::RAPIDA])
+            && Tipos::esRapida($datos['minutos_prep'], $datos['minutos_coccion'])
+        ) {
+            $etiquetas[Tipos::RAPIDA] = (int) $this->etiquetas[Tipos::RAPIDA];
         }
 
         [$pasos, $erroresPasos] = $this->pasos($json['pasos'] ?? null, array_values($slugs));

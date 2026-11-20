@@ -11,6 +11,7 @@ require dirname(__DIR__, 2) . '/src/bootstrap.php';
 use Cooki\Db;
 use Cooki\Dominio\FotoReceta;
 use Cooki\Dominio\Paginacion;
+use Cooki\Dominio\Tipos;
 use Cooki\Repositorios\RecetaRepositorio;
 use Cooki\Sesion;
 
@@ -79,7 +80,7 @@ require parcial('encabezado');
               <?= count($dibujos) > 5 ? '<small>+' . (count($dibujos) - 5) . '</small>' : '' ?>
             </span>
           </td>
-          <td><?= e(str_replace('_', ' ', (string) $r['etiquetas'])) ?></td>
+          <td><?= e(implode(', ', array_map([Tipos::class, 'nombre'], Tipos::ordenar(explode(', ', (string) $r['etiquetas']))))) ?></td>
           <td>
             <div class="acciones">
               <a class="boton boton--secundario boton--chico" href="<?= e(url('admin/receta-editar.php?id=' . $r['id'])) ?>">Editar</a>

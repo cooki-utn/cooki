@@ -5,7 +5,9 @@
   "minutos_prep": 40,
   "minutos_coccion": 20,
   "dificultad": 2,
-  "etiquetas": [],
+  "etiquetas": [
+    "sin_lactosa"
+  ],
   "ingredientes": [
     {
       "nombre": "Tapas de empanada",

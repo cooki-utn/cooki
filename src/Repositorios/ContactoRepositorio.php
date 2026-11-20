@@ -15,6 +15,20 @@ final class ContactoRepositorio
     {
     }
 
+    /** Asunto de lo que se manda desde "¿Falta algún tipo?" en Recetas, y cuántas se pueden mandar por día. */
+    public const ASUNTO_TIPO = 'Sugerencia de tipo';
+    public const TIPOS_POR_DIA = 5;
+
+    /** Cuántas consultas con ese asunto mandó hoy el usuario (para el tope de sugerencias). */
+    public function contarDeHoy(int $usuarioId, string $asunto): int
+    {
+        $consulta = $this->db->prepare(
+            'SELECT COUNT(*) FROM contacto WHERE usuario_id = :usuario AND asunto = :asunto AND creado_en >= CURDATE()'
+        );
+        $consulta->execute(['usuario' => $usuarioId, 'asunto' => $asunto]);
+        return (int) $consulta->fetchColumn();
+    }
+
     /** @param array{nombre: string, email: string, asunto: string, mensaje: string} $datos */
     public function crear(array $datos, ?int $usuarioId): int
     {

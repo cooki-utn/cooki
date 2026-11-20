@@ -29,7 +29,10 @@ $paraRevisar = count(array_filter($ia->recetasParaRevisar(), fn ($r) => $r['pasa
 $secciones = [
     ['recetas.php', 'Recetas', $totales['recetas'] . ' cargadas', 'Alta, baja y modificación del recetario.', 'fideos', 'amarillo'],
     ['ingredientes.php', 'Ingredientes', $totales['ingredientes'] . ' en el catálogo',
-        'Los ingredientes que se pueden usar en recetas y despensas.', 'zanahoria', 'rosa'],
+        $totales['ingredientes_propios'] > 0
+            ? $totales['ingredientes_propios'] . ($totales['ingredientes_propios'] === 1
+                ? ' agregado por un usuario, para revisar.' : ' agregados por los usuarios, para revisar.')
+            : 'Los ingredientes que se pueden usar en recetas y despensas.', 'zanahoria', 'rosa'],
     ['consultas.php', 'Consultas', $totales['consultas_nuevas'] . ' sin responder',
         'Mensajes que llegaron desde el formulario de contacto.', 'yerba', 'celeste'],
     ['usuarios.php', 'Usuarios', $totales['usuarios'] . ' generales · ' . $totales['administradores'] . ' administradores',
@@ -47,6 +50,15 @@ $titulo = 'Administración';
 require parcial('encabezado');
 ?>
 <h1>Administración</h1>
+<?php /* Los ingredientes que agregaron los usuarios (despensa o bienvenida): se revisan y se pasan a la lista de todos */ ?>
+<?php if ($totales['ingredientes_propios'] > 0) : ?>
+  <?php $propios = $totales['ingredientes_propios']; ?>
+  <p class="aviso aviso--info aviso-panel">
+    <?= $propios === 1 ? 'Hay 1 ingrediente nuevo' : 'Hay ' . e($propios) . ' ingredientes nuevos' ?> para revisar: los
+    agregaron los usuarios y solo los ven ellos.
+    <a href="<?= e(url('admin/ingredientes.php?propios')) ?>">Revisalos y pasalos a la lista de todos →</a>
+  </p>
+<?php endif; ?>
 <?php /* Cada sección es una nota de color con su dibujo; toda la nota es el enlace (se levanta y se hamaca) */ ?>
 <div class="notas-panel">
   <?php foreach ($secciones as [$ruta, $nombre, $dato, $descripcion, $dibujo, $color]) : ?>

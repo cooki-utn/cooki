@@ -5,7 +5,7 @@
 | `schema.sql` | Crea todas las tablas. Se puede correr las veces que haga falta (borra y recrea) | P3 |
 | `seed.sql` | Datos iniciales: categorías, ingredientes, sinónimos y una receta de ejemplo | P3 |
 | `datos/ingredientes.csv` | Planilla de ingredientes exportada (P2-04), fuente del seed | P2 |
-| `recetas/*.json` | Una receta por archivo, con el formato de `docs/guia-recetas.md` (50 recetas) | todos |
+| `recetas/*.json` | Una receta por archivo, con el formato de `docs/guia-recetas.md` (58 recetas; con las 12 del seed son 70) | todos |
 | `recetas.sql` | Las recetas de `recetas/` como SQL. Se genera con `php scripts/importar-recetas.php --sql`: no editar a mano | P3 |
 
 ## Cargar la base
@@ -54,6 +54,7 @@ mysql -u cooki -p cooki < database/migraciones/006-incremento-2-b.sql
 mysql -u cooki -p cooki < database/migraciones/007-incremento-3.sql
 mysql -u cooki -p cooki < database/migraciones/008-nota-lista.sql
 mysql -u cooki -p cooki < database/migraciones/009-nota-hoy.sql
+mysql -u cooki -p cooki < database/migraciones/010-personalizar.sql      # tipos, 8 recetas y la bienvenida (una sola vez)
 mysql -u cooki -p cooki < database/recetas.sql                           # el recetario nuevo
 ```
 

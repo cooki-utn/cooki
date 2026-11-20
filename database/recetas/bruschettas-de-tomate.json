@@ -1,0 +1,64 @@
+{
+  "titulo": "Bruschettas de tomate",
+  "descripcion": "Pan tostado con tomate, albahaca y un toque de ajo.",
+  "porciones": 4,
+  "minutos_prep": 10,
+  "minutos_coccion": 5,
+  "dificultad": 1,
+  "etiquetas": [
+    "vegetariana",
+    "vegana",
+    "sin_lactosa",
+    "sin_huevo",
+    "economica",
+    "merienda_salada"
+  ],
+  "ingredientes": [
+    {
+      "nombre": "Pan",
+      "cantidad": 8,
+      "unidad": "u",
+      "peso": 3,
+      "nota": "rodajas de pan francés"
+    },
+    {
+      "nombre": "Tomate",
+      "cantidad": 3,
+      "unidad": "u",
+      "peso": 3
+    },
+    {
+      "nombre": "Albahaca",
+      "cantidad": 10,
+      "unidad": "g",
+      "peso": 2
+    },
+    {
+      "nombre": "Ajo",
+      "cantidad": 1,
+      "unidad": "diente",
+      "peso": 1
+    },
+    {
+      "nombre": "Aceite",
+      "cantidad": 30,
+      "unidad": "ml",
+      "peso": 1
+    },
+    {
+      "nombre": "Sal",
+      "cantidad": 1,
+      "unidad": "pizca",
+      "peso": 1
+    }
+  ],
+  "pasos": [
+    "Picar los tomates en cubitos y mezclarlos con la albahaca, la mitad del aceite y sal.",
+    {
+      "texto": "Tostar las rodajas de pan.",
+      "minutos": 5
+    },
+    "Frotar cada tostada con el diente de ajo cortado al medio y rociarlas con el resto del aceite.",
+    "Poner el tomate arriba y servir enseguida."
+  ]
+}

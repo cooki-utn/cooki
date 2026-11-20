@@ -97,7 +97,9 @@ Busca ingredientes por nombre canónico o sinónimo.
   "paginacion": { "pagina": 1, "paginas": 6, "por_pagina": 12, "total": 62 }
 }
 ```
-Sin sesión, `tengo` cuenta solo los básicos y `favorita` es `false`.
+Sin sesión, `tengo` cuenta solo los básicos y `favorita` es `false`. `etiquetas` son las claves de los tipos
+(`vegetariana`, `vegana`, `sin_tacc`, `sin_lactosa`, `sin_huevo`, `rapida`, `economica`, `dulce`, `merienda_salada`);
+el nombre para mostrar ("Sin TACC") lo arma quien las muestra.
 
 ## GET /api/recetas/{id}
 
@@ -130,6 +132,9 @@ Cada recomendación trae lo mismo que una receta del catálogo, y además:
 - `faltantes`;
 - `sustituciones` (`[{ "falta": "Crema de leche", "usar": "Leche" }]`);
 - `usa_lo_que_vence`.
+
+Respeta lo que la persona contó en la bienvenida (DEC-026): no trae recetas que no van con su dieta, y sus gustos y
+su nivel suben o bajan un poco el `puntaje`.
 
 ## GET /api/despensa
 

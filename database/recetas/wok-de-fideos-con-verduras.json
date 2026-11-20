@@ -1,0 +1,79 @@
+{
+  "titulo": "Wok de fideos con verduras",
+  "descripcion": "Fideos salteados con brócoli, zanahoria y salsa de soja.",
+  "porciones": 3,
+  "minutos_prep": 15,
+  "minutos_coccion": 15,
+  "dificultad": 1,
+  "etiquetas": [
+    "vegetariana",
+    "vegana",
+    "sin_lactosa",
+    "sin_huevo"
+  ],
+  "ingredientes": [
+    {
+      "nombre": "Fideos",
+      "cantidad": 300,
+      "unidad": "g",
+      "peso": 3
+    },
+    {
+      "nombre": "Brócoli",
+      "cantidad": 1,
+      "unidad": "u",
+      "peso": 2
+    },
+    {
+      "nombre": "Zanahoria",
+      "cantidad": 1,
+      "unidad": "u",
+      "peso": 2,
+      "nota": "en tiritas"
+    },
+    {
+      "nombre": "Morrón",
+      "cantidad": 1,
+      "unidad": "u",
+      "peso": 2,
+      "nota": "en tiritas"
+    },
+    {
+      "nombre": "Salsa de soja",
+      "cantidad": 30,
+      "unidad": "ml",
+      "peso": 2
+    },
+    {
+      "nombre": "Jengibre",
+      "cantidad": 10,
+      "unidad": "g",
+      "peso": 1,
+      "opcional": true
+    },
+    {
+      "nombre": "Ajo",
+      "cantidad": 1,
+      "unidad": "diente",
+      "peso": 1
+    },
+    {
+      "nombre": "Aceite",
+      "cantidad": 30,
+      "unidad": "ml",
+      "peso": 1
+    }
+  ],
+  "pasos": [
+    {
+      "texto": "Hervir los fideos en agua con sal y escurrirlos.",
+      "minutos": 10
+    },
+    "Cortar el brócoli en arbolitos y las demás verduras en tiritas.",
+    {
+      "texto": "Saltear las verduras con el aceite, el ajo y el jengibre a fuego fuerte, que queden crocantes.",
+      "minutos": 5
+    },
+    "Sumar los fideos y la salsa de soja y mezclar bien."
+  ]
+}

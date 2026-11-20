@@ -27,7 +27,7 @@ erDiagram
 | `receta` | Contenido principal del sitio | `autor_id` → usuario (`ON DELETE SET NULL`) |
 | `receta_ingrediente` | Ingredientes de cada receta, con cantidad y unidad. `peso` = 3 principal, 2 secundario, 1 accesorio (para el puntaje, DEC-008). `es_opcional` no cuenta para el puntaje. `nota` = "picado", "para servir"… | → receta (`CASCADE`), → ingrediente |
 | `paso` | Pasos numerados de cada receta. `instruccion` puede tener marcadores `{ing:papa}` que se reemplazan por la cantidad escalada; `segundos_timer` = temporizador del paso (modo cocina) | → receta (`CASCADE`) |
-| `etiqueta` · `receta_etiqueta` | Vegetariana, sin TACC, económica, dulce | → receta, → etiqueta |
+| `etiqueta` · `receta_etiqueta` | Los tipos de receta: vegetariana, sin TACC, económica, dulce (y desde el PR D del incremento 3: vegana, sin lactosa, sin huevo, rápida y merienda salada) | → receta, → etiqueta |
 | `sustitucion` | "Si falta X, podés usar Y" (manteca → aceite). Cuenta como medio ingrediente en el puntaje (DEC-008) | `ingrediente_id` y `reemplazo_id` → ingrediente |
 | `categoria` · `ingrediente` · `sinonimo` | Catálogo de ingredientes y nombres alternativos (palta = aguacate). `ingrediente.usuario_id` NULL = lista general; con un usuario = ingrediente propio que agregó desde su despensa (DEC-006) | ingrediente → categoria · ingrediente → usuario (`CASCADE`) |
 | `despensa_item` | Lo que tiene cada usuario: nivel, vencimiento y ubicación | → usuario (`CASCADE`), → ingrediente |
@@ -80,6 +80,9 @@ erDiagram
 | `usuario.nota_lista` (columna nueva, migración `008-nota-lista.sql`) | Cómo se ve la nota de la lista de compras en Mi cocina y Mi despensa: `abierta`, `cerrada` o `nunca` (DEC-019) | — | Entrega A: Mi cocina, Mi despensa, Mis preferencias |
 | `plan_comida` | Plan semanal: una receta (del recetario o de la IA) por día y comida. Único por usuario, fecha y momento. `receta_id` **o** `receta_ia_id`, nunca los dos (lo controlan la página, con `PlanSemanal::opcion()`, y `PlanControlador`). `momento` = `almuerzo` o `cena`; `porciones` de 1 a 12. Lo de días que ya pasaron se borra cuando la persona guarda algo (no hay tareas programadas). Lo que falta no se guarda: se calcula cada vez (DEC-022) | → usuario, → receta, → receta_ia (`CASCADE`) | Entrega C: `app/plan.php`, nota "Hoy" de Mi cocina, API `/plan` |
 | `usuario.nota_hoy` (columna nueva, migración `009-nota-hoy.sql`) | Cómo se ve la nota "Hoy" del plan en Mi cocina: `abierta`, `cerrada` o `nunca`, como `nota_lista` | — | Entrega C: Mi cocina, Mis preferencias |
+| `usuario_tipo` (tabla nueva, migración `010-personalizar.sql`) | Lo que se cuenta en la bienvenida: la **dieta** (`clase` = `dieta`: solo se recomiendan recetas con todos esos tipos) y los **gustos** (`clase` = `gusto`: esas recetas suben). Clave: usuario, clase y tipo (DEC-026) | → usuario y → etiqueta (`CASCADE`) | Entrega D: `app/bienvenida.php`, Mi cocina, Recetas, plan |
+| `usuario.nivel_cocina` · `usuario.comensales` (columnas nuevas, migración 010) | Nivel: 1 recién empieza, 2 se defiende, 3 se anima a todo (las recetas más difíciles bajan un poco). Comensales: de 1 a 5 ("5 o más"), las porciones con que se anota cada comida del plan. NULL = no lo contó | — | Entrega D |
+| `etiqueta` 5 a 9 (filas nuevas, migración 010) | `vegana`, `sin_lactosa`, `sin_huevo`, `rapida` (se calcula: 30 minutos o menos) y `merienda_salada`, con id fijo. Las reglas de cada tipo están en `Dominio\Tipos` (DEC-025) | — | Entrega D |
 
 ## Reglas importantes
 
@@ -91,4 +94,8 @@ erDiagram
 - Un ingrediente que está en alguna lista de compras se puede borrar: se borra también de la lista (`CASCADE`).
 - Un usuario no puede tener dos veces el mismo ingrediente en la misma ubicación (`UNIQUE (usuario_id, ingrediente_id, ubicacion)`).
 - El nombre de un ingrediente no se repite en la lista general ni entre los propios de un mismo usuario (`UNIQUE (nombre, ambito)`, donde `ambito` = `usuario_id` o 0).
+- Al borrar una cuenta, `UsuarioRepositorio::borrar()` borra primero sus listas ("No puedo comer", "Siempre tengo"),
+  la despensa y la lista de compras, y después la cuenta: si no, un ingrediente propio usado en esas listas lo impedía.
+- Un tipo de dieta (`vegetariana`, `vegana`, `sin_tacc`, `sin_lactosa`, `sin_huevo`) solo se le pone a una receta si
+  ningún ingrediente lo rompe, ni siquiera uno opcional: lo revisa el importador con `Tipos::rompe()`.
 - Las búsquedas ignoran tildes y mayúsculas gracias al cotejamiento `utf8mb4_unicode_ci` ("morron" encuentra "Morrón").

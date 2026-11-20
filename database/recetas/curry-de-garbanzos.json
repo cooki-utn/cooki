@@ -1,0 +1,93 @@
+{
+  "titulo": "Curry de garbanzos",
+  "descripcion": "Con coco, tomate y jengibre, para servir con arroz.",
+  "porciones": 4,
+  "minutos_prep": 15,
+  "minutos_coccion": 25,
+  "dificultad": 2,
+  "etiquetas": [
+    "vegetariana",
+    "vegana",
+    "sin_tacc",
+    "sin_lactosa",
+    "sin_huevo"
+  ],
+  "ingredientes": [
+    {
+      "nombre": "Garbanzo",
+      "cantidad": 300,
+      "unidad": "g",
+      "peso": 3,
+      "nota": "ya cocidos"
+    },
+    {
+      "nombre": "Arroz",
+      "cantidad": 250,
+      "unidad": "g",
+      "peso": 2
+    },
+    {
+      "nombre": "Coco rallado",
+      "cantidad": 50,
+      "unidad": "g",
+      "peso": 2,
+      "nota": "remojado en una taza de agua caliente"
+    },
+    {
+      "nombre": "Cebolla",
+      "cantidad": 1,
+      "unidad": "u",
+      "peso": 2
+    },
+    {
+      "nombre": "Tomate",
+      "cantidad": 2,
+      "unidad": "u",
+      "peso": 2
+    },
+    {
+      "nombre": "Ajo",
+      "cantidad": 2,
+      "unidad": "diente",
+      "peso": 1
+    },
+    {
+      "nombre": "Jengibre",
+      "cantidad": 10,
+      "unidad": "g",
+      "peso": 1,
+      "nota": "rallado"
+    },
+    {
+      "nombre": "Comino",
+      "cantidad": 1,
+      "unidad": "cdita",
+      "peso": 1
+    },
+    {
+      "nombre": "Aceite",
+      "cantidad": 30,
+      "unidad": "ml",
+      "peso": 1
+    },
+    {
+      "nombre": "Sal",
+      "cantidad": 1,
+      "unidad": "pizca",
+      "peso": 1
+    }
+  ],
+  "pasos": [
+    {
+      "texto": "Cocinar el arroz en agua con sal.",
+      "minutos": 18
+    },
+    "Rehogar la cebolla, el ajo y el jengibre picados en el aceite.",
+    "Sumar el comino y los tomates picados y cocinar hasta que se deshagan.",
+    {
+      "texto": "Agregar los garbanzos y el coco con su agua. Cocinar a fuego bajo hasta que la salsa espese.",
+      "minutos": 10
+    },
+    "Servir el curry arriba del arroz."
+  ]
+}

@@ -17,6 +17,7 @@ use Cooki\Dominio\FotoReceta;
 use Cooki\Dominio\Pasos;
 use Cooki\Dominio\Puntaje;
 use Cooki\Dominio\RecetaIa;
+use Cooki\Dominio\Tipos;
 use Cooki\Repositorios\IaRepositorio;
 use Cooki\Repositorios\IngredienteRepositorio;
 use Cooki\Repositorios\RecetaRepositorio;
@@ -285,12 +286,16 @@ require parcial('encabezado');
       <?= $error('foto') ?>
     </div>
     <fieldset class="campo">
-      <legend>Etiquetas</legend>
+      <legend>Tipos</legend>
       <div class="casillas">
         <?php foreach ($etiquetas as $etiqueta) : ?>
-          <label><input type="checkbox" name="etiquetas[]" value="<?= e($etiqueta['id']) ?>"<?= in_array((int) $etiqueta['id'], $etiquetasElegidas, true) ? ' checked' : '' ?>> <?= e(str_replace('_', ' ', $etiqueta['nombre'])) ?></label>
+          <?php if ($etiqueta['nombre'] === Tipos::RAPIDA) {
+              continue;
+          } ?>
+          <label><input type="checkbox" name="etiquetas[]" value="<?= e($etiqueta['id']) ?>"<?= in_array((int) $etiqueta['id'], $etiquetasElegidas, true) ? ' checked' : '' ?>> <?= e(Tipos::nombre($etiqueta['nombre'])) ?></label>
         <?php endforeach; ?>
       </div>
+      <small>“Rápida” se pone sola si entre la preparación y la cocción son <?= Tipos::MINUTOS_RAPIDA ?> minutos o menos.</small>
     </fieldset>
   </section>
 

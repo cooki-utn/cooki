@@ -5,7 +5,9 @@
   "minutos_prep": 15,
   "minutos_coccion": 10,
   "dificultad": 1,
-  "etiquetas": [],
+  "etiquetas": [
+    "sin_lactosa"
+  ],
   "ingredientes": [
     {
       "nombre": "Carne picada",

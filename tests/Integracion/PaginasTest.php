@@ -236,7 +236,7 @@ final class PaginasTest extends TestCase
         [, , $destino] = $web->post('registro.php', [
             'nombre' => 'Prueba', 'email' => $email, 'contrasena' => 'Clave1234', 'repetir' => 'Clave1234',
         ]);
-        $this->assertStringEndsWith('app/index.php', $destino);
+        $this->assertStringEndsWith('app/bienvenida.php?nueva=1', $destino, 'primero, "Contanos cómo comés"');
 
         $consulta = Db::conexion()->prepare('SELECT rol, hash_contrasena FROM usuario WHERE email = ?');
         $consulta->execute([$email]);

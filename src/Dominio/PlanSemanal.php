@@ -138,7 +138,7 @@ final class PlanSemanal
      * que dejaron las comidas anteriores, y la "gasta" antes de pasar al siguiente. Primero las que entran en un
      * grupo de Mi cocina (ahora, falta 1, casi); si no alcanzan, la de más puntaje aunque falten cosas. No repite
      * recetas en la semana (tampoco las que ya estaban) ni usa las que tienen algo que la persona no come
-     * (restringida). Si no quedan recetas, el lugar queda vacío.
+     * (restringida) o no van con su dieta (fuera_de_dieta). Si no quedan recetas, el lugar queda vacío.
      *
      * @param list<array{clave: string, fecha: string, comida: ?array<string, mixed>}> $lugares los 14, en orden;
      *        comida = la que ya está (como en simular(), con "id") o null si está vacío
@@ -162,7 +162,8 @@ final class PlanSemanal
             if ($comida === null) {
                 $mejor = null;
                 foreach ($candidatas as $candidata) {
-                    if (isset($usadas[$candidata['id']]) || !empty($candidata['restringida'])) {
+                    $noSirve = !empty($candidata['restringida']) || !empty($candidata['fuera_de_dieta']);
+                    if (isset($usadas[$candidata['id']]) || $noSirve) {
                         continue;
                     }
                     $calculo = Puntaje::calcular(

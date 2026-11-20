@@ -1,0 +1,78 @@
+{
+  "titulo": "Hamburguesas de lentejas",
+  "descripcion": "Doraditas por fuera, sin carne ni huevo.",
+  "porciones": 4,
+  "minutos_prep": 20,
+  "minutos_coccion": 35,
+  "dificultad": 2,
+  "etiquetas": [
+    "vegetariana",
+    "vegana",
+    "sin_lactosa",
+    "sin_huevo",
+    "economica"
+  ],
+  "ingredientes": [
+    {
+      "nombre": "Lenteja",
+      "cantidad": 250,
+      "unidad": "g",
+      "peso": 3
+    },
+    {
+      "nombre": "Cebolla",
+      "cantidad": 1,
+      "unidad": "u",
+      "peso": 2
+    },
+    {
+      "nombre": "Zanahoria",
+      "cantidad": 1,
+      "unidad": "u",
+      "peso": 2,
+      "nota": "rallada"
+    },
+    {
+      "nombre": "Avena",
+      "cantidad": 60,
+      "unidad": "g",
+      "peso": 2
+    },
+    {
+      "nombre": "Ajo",
+      "cantidad": 1,
+      "unidad": "diente",
+      "peso": 1
+    },
+    {
+      "nombre": "Comino",
+      "cantidad": 1,
+      "unidad": "cdita",
+      "peso": 1
+    },
+    {
+      "nombre": "Aceite",
+      "cantidad": 30,
+      "unidad": "ml",
+      "peso": 1
+    },
+    {
+      "nombre": "Sal",
+      "cantidad": 1,
+      "unidad": "pizca",
+      "peso": 1
+    }
+  ],
+  "pasos": [
+    {
+      "texto": "Hervir las lentejas hasta que estén bien tiernas y escurrirlas.",
+      "minutos": 25
+    },
+    "Rehogar la cebolla y el ajo picados con un poco de aceite.",
+    "Pisar las lentejas y mezclarlas con la cebolla, la zanahoria, la avena, el comino y sal. Formar 8 hamburguesas.",
+    {
+      "texto": "Dorarlas en una sartén con el resto del aceite, de los dos lados.",
+      "minutos": 8
+    }
+  ]
+}

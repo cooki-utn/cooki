@@ -40,7 +40,7 @@
 | `porciones` | sí | Entero de 1 a 20. Es la base para escalar las cantidades. |
 | `minutos_prep` / `minutos_coccion` | sí | Enteros. La preparación lleva al menos 1; la cocción puede ser 0. |
 | `dificultad` | sí | 1 fácil, 2 media, 3 difícil. |
-| `etiquetas` | no | `vegetariana`, `sin_tacc`, `economica`, `dulce`. |
+| `etiquetas` | no | Los tipos: `vegetariana`, `vegana`, `sin_tacc`, `sin_lactosa`, `sin_huevo`, `economica`, `dulce`, `merienda_salada`. **`rapida` no se escribe**: se pone sola si preparación + cocción suman 30 minutos o menos. |
 | `ingredientes` | sí | Al menos uno (ver abajo). |
 | `pasos` | sí | Un texto, o `{ "texto": ..., "minutos": N }` si el paso tiene temporizador (de 1 a 180). |
 
@@ -68,7 +68,16 @@ El importador no carga nada si alguna receta tiene un error, y dice en qué arch
 - que cada marcador `{ing:...}` sea un ingrediente de la receta;
 - que las etiquetas sean ciertas:
   - una receta `vegetariana` no puede llevar carnes, pescados, fiambres ni atún;
-  - una receta `sin_tacc` no puede llevar harina, fideos, pan, pan rallado, tapas, galletitas, avena ni salsa de soja.
+  - una receta `vegana`, además, no puede llevar lácteos, huevo, miel, dulce de leche, mayonesa, tapas de tarta o de
+    empanada (llevan grasa), galletitas ni chocolate;
+  - una receta `sin_tacc` no puede llevar harina, fideos, pan, pan rallado, tapas, galletitas, avena ni salsa de soja;
+  - una receta `sin_lactosa` no puede llevar lácteos (leche, manteca, crema, quesos, yogur, ricota) ni dulce de leche;
+  - una receta `sin_huevo` no puede llevar huevo ni mayonesa;
+  - los ingredientes opcionales también cuentan (para una alergia, más vale no arriesgar);
+  - y que no diga `rapida` (se calcula sola).
+
+Las reglas están en `src/Dominio/Tipos.php`; si se agrega un ingrediente que rompe alguna dieta y no es de la
+categoría Carnes, Lácteos o Huevos, hay que sumarlo ahí.
 
 ## 3. Cómo se corre
 
@@ -95,4 +104,5 @@ Cuando una receta ya existe (mismo título), el importador la **actualiza**: no 
 
 - Las 12 recetas del incremento 1 siguen en `seed.sql`.
 - Las 50 de `database/recetas/` las escribió el equipo para el incremento 2: son recetas caseras argentinas redactadas por nosotros, no copiadas de ningún sitio.
-- Entre las dos suman **62 recetas**.
+- En el incremento 3 (PR D) se sumaron 8 más: 4 veganas (hamburguesas de lentejas, chili de porotos, curry de garbanzos, wok de fideos) y 4 meriendas saladas (scones de queso, tostado de jamón y queso, bruschettas, tostadas con palta y huevo).
+- Entre todas suman **70 recetas**.

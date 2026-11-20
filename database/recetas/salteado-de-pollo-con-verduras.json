@@ -5,7 +5,10 @@
   "minutos_prep": 20,
   "minutos_coccion": 15,
   "dificultad": 2,
-  "etiquetas": [],
+  "etiquetas": [
+    "sin_lactosa",
+    "sin_huevo"
+  ],
   "ingredientes": [
     {
       "nombre": "Pollo",

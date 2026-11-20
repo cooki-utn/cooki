@@ -1,0 +1,85 @@
+{
+  "titulo": "Chili de porotos",
+  "descripcion": "Un guiso picantito y rendidor, con porotos y morrón.",
+  "porciones": 4,
+  "minutos_prep": 15,
+  "minutos_coccion": 30,
+  "dificultad": 1,
+  "etiquetas": [
+    "vegetariana",
+    "vegana",
+    "sin_tacc",
+    "sin_lactosa",
+    "sin_huevo",
+    "economica"
+  ],
+  "ingredientes": [
+    {
+      "nombre": "Poroto",
+      "cantidad": 300,
+      "unidad": "g",
+      "peso": 3,
+      "nota": "ya cocidos"
+    },
+    {
+      "nombre": "Cebolla",
+      "cantidad": 1,
+      "unidad": "u",
+      "peso": 2
+    },
+    {
+      "nombre": "Morrón",
+      "cantidad": 1,
+      "unidad": "u",
+      "peso": 2
+    },
+    {
+      "nombre": "Puré de tomate",
+      "cantidad": 400,
+      "unidad": "g",
+      "peso": 2
+    },
+    {
+      "nombre": "Ajo",
+      "cantidad": 2,
+      "unidad": "diente",
+      "peso": 1
+    },
+    {
+      "nombre": "Comino",
+      "cantidad": 1,
+      "unidad": "cdita",
+      "peso": 1
+    },
+    {
+      "nombre": "Pimentón",
+      "cantidad": 1,
+      "unidad": "cdita",
+      "peso": 1
+    },
+    {
+      "nombre": "Aceite",
+      "cantidad": 30,
+      "unidad": "ml",
+      "peso": 1
+    },
+    {
+      "nombre": "Sal",
+      "cantidad": 1,
+      "unidad": "pizca",
+      "peso": 1
+    }
+  ],
+  "pasos": [
+    "Picar la cebolla, el morrón y el ajo.",
+    {
+      "texto": "Rehogarlos en el aceite hasta que estén blandos.",
+      "minutos": 8
+    },
+    "Sumar el comino y el pimentón, revolver un minuto y agregar el puré de tomate y los porotos.",
+    {
+      "texto": "Cocinar a fuego bajo, revolviendo de vez en cuando, hasta que espese. Salar a gusto.",
+      "minutos": 20
+    }
+  ]
+}
