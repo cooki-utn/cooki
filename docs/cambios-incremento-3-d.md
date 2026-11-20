@@ -16,7 +16,7 @@
 | Lo que cambia con la bienvenida | La **dieta filtra** Mi cocina, el selector de ingredientes y "Armá mi semana"; en Recetas viene la casilla "Solo de mi dieta" (se puede sacar) y las demás dicen "No va con tu dieta". Los **gustos y el nivel ordenan**. **Para cuántos** son las porciones del plan | P3 |
 | ¿Falta algún tipo? | Al final de Recetas, una nota para sugerir un tipo: llega como consulta con el asunto "Sugerencia de tipo" y se responde desde Consultas (hasta 5 por día) | P2 + P1 |
 | Aviso en Administración | "Hay N ingredientes nuevos para revisar", con el enlace a Ingredientes filtrado por los que agregaron los usuarios | P1 |
-| Arreglos | Ya se puede borrar una cuenta con ingredientes propios en sus listas; "1 receta encontrada" en singular; la bienvenida no muestra las 4 notas un instante al cargar (la clase `js` se pone en el `<head>`) | P1 + P2 |
+| Arreglos | Ya se puede borrar una cuenta con ingredientes propios en sus listas; "1 receta encontrada" en singular; la bienvenida no muestra las 4 notas un instante al cargar (la clase `js` se pone en el `<head>`); `seed.sql` carga las fechas de ejemplo con la hora de Argentina (DEC-023), así importado entre las 21 y las 24 en un servidor en UTC los vencimientos no se corren un día | P1 + P2 |
 | Calidad | `TiposTest` (5), `PerfilTest` (5), `BienvenidaTest` (4), `SugerenciasTest` (2) y una más del importador | P4 revisa |
 
 Las decisiones son **DEC-025** (tipos y listas con dibujo) y **DEC-026** (bienvenida).

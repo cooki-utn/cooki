@@ -7,6 +7,9 @@
 --    Generales:       maria@cooki.test, juan@cooki.test, sofia@cooki.test → Usuario1234
 -- =====================================================================
 SET NAMES utf8mb4;
+-- Las fechas de ejemplo (CURDATE, NOW) con la hora de Argentina, como la aplicación (DEC-023). Sin esto, si se
+-- importa entre las 21 y las 24 en un servidor en UTC, los vencimientos quedan corridos un día.
+SET time_zone = '-03:00';
 
 INSERT INTO usuario (id, email, nombre, hash_contrasena, rol) VALUES
  (1, 'admin@cooki.test',   'Administración', '$2y$10$2v72GYk760OoscGKNBR56u.cbCnpEm0kQIuLzRlN249jILhZF.Zey', 'admin'),
