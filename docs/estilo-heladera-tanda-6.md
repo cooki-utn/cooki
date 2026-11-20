@@ -87,3 +87,10 @@ Las decisiones están en **DEC-025** (tipos y listas con dibujo) y **DEC-026** (
   tipo?") también se mueven menos con el mouse encima: crecen 10 a 12 % en lugar de 18 a 25 %, y se mecen con
   `menear-suave` (−3° a 4°, en 0,8 s) en lugar de `menear` (−6° a 8°, en 0,5 s). `menear` queda para los dibujos que se
   menean solos (al confirmar y al cambiar el dibujo de una receta).
+- Los ingredientes sueltos se mecen como los de la cinta de la portada, con una diferencia: arrancan hacia el otro
+  lado y van un poco más lentos (`alternate-reverse`, 0,9 s).
+- Los demás dibujos también se mueven menos: el logo (y la ola de las letras, que suben 4 px en lugar de 7), los
+  stickers del menú y del pie (crecen 8 % en lugar de 15 %), el dibujo que baila en el título de la portada (`bailar` a
+  la mitad y crece 20 % en lugar de 45 %; al cambiarlo gira 20° en lugar de 40°), los dibujos de las notas del panel y
+  de las hojas, el corazón de favoritos, el dibujo de "pensando" de la IA, las opciones con dibujo y los imanes.
+- Todos los rebotes al crecer y al volver bajan: `cubic-bezier(.3, 1.6, .5, 1)` pasa a `1.3`.

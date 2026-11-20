@@ -140,9 +140,9 @@ img { max-width: 100%; }
 .marca__dibujo {
   width: 46px; height: 46px; flex: none; transform: rotate(-8deg);
   filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 4px 4px rgb(30 50 40 / 30%));
-  transition: transform .3s cubic-bezier(.3, 1.6, .5, 1);
+  transition: transform .3s cubic-bezier(.3, 1.3, .5, 1);
 }
-.marca:hover .marca__dibujo { transform: rotate(6deg) scale(1.1); }
+.marca:hover .marca__dibujo { transform: rotate(-2deg) scale(1.06); }
 .marca__rotulo {
   display: inline-block;
   background: var(--color-texto); color: #F2F2EE;
@@ -153,11 +153,11 @@ img { max-width: 100%; }
 .marca:hover .marca__rotulo { background: var(--color-azul); }
 /* Al pasar el mouse por el nombre: las letras saltan de a una (como una ola) y los fideos echan vapor */
 .marca__letra { display: inline-block; }
-.marca:hover .marca__letra, .marca:focus-visible .marca__letra, .marca--ola .marca__letra { animation: letra-salta .55s cubic-bezier(.3, 1.6, .5, 1) calc(var(--i) * 55ms) both; }
+.marca:hover .marca__letra, .marca:focus-visible .marca__letra, .marca--ola .marca__letra { animation: letra-salta .55s cubic-bezier(.3, 1.3, .5, 1) calc(var(--i) * 55ms) both; }
 @keyframes letra-salta {
   0%, 100% { transform: none; }
-  40% { transform: translateY(-7px) rotate(-8deg); }
-  70% { transform: translateY(1px) rotate(3deg); }
+  40% { transform: translateY(-4px) rotate(-4deg); }
+  70% { transform: translateY(1px) rotate(1.5deg); }
 }
 .marca__vapor { position: absolute; left: 12px; top: -10px; display: flex; gap: 5px; pointer-events: none; }
 .marca__vapor i { width: 4px; height: 16px; border-radius: 4px; background: rgb(255 255 255 / 85%); opacity: 0; box-shadow: 0 0 0 1px rgb(30 43 38 / 12%); }
@@ -188,12 +188,12 @@ img { max-width: 100%; }
 .menu__dibujo {
   width: 44px; height: 44px; flex: none; transform: rotate(var(--giro-sticker, -5deg));
   filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 4px 4px rgb(30 50 40 / 30%));
-  transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), filter .3s;
+  transition: transform .3s cubic-bezier(.3, 1.3, .5, 1), filter .3s;
 }
 .menu li:nth-child(even) .menu__dibujo { --giro-sticker: 6deg; }
 .menu ul a:hover .menu__dibujo, .menu ul a:focus-visible .menu__dibujo,
 .cuenta__resumen:hover .menu__dibujo, .cuenta[open] .cuenta__resumen .menu__dibujo {
-  transform: translateY(-3px) rotate(0deg) scale(1.15);
+  transform: translateY(-2px) rotate(0deg) scale(1.08);
   filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 10px 8px rgb(30 50 40 / 30%));
 }
 .menu ul a[aria-current="page"] .menu__texto, .cuenta[open] .cuenta__nombre {
@@ -221,7 +221,7 @@ img { max-width: 100%; }
   background: var(--color-superficie); color: var(--color-texto); transform: rotate(.6deg);
   box-shadow: 0 18px 30px rgb(0 0 0 / 24%), 0 0 0 1px rgb(0 0 0 / 5%);
   --color-sobre-puerta: var(--color-texto); --color-sobre-puerta-suave: var(--color-suave); --color-enlace: var(--color-azul);
-  animation: despegar .3s cubic-bezier(.3, 1.4, .5, 1) both;
+  animation: despegar .3s cubic-bezier(.3, 1.25, .5, 1) both;
 }
 .cuenta__panel::before {   /* chinche */
   content: ""; position: absolute; top: -9px; left: 50%; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%;
@@ -285,10 +285,10 @@ img { max-width: 100%; }
 .pie__dibujo {
   width: 34px; height: 34px; flex: none; transform: rotate(-6deg);
   filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 3px 3px rgb(30 50 40 / 30%));
-  transition: transform .3s cubic-bezier(.3, 1.6, .5, 1);
+  transition: transform .3s cubic-bezier(.3, 1.3, .5, 1);
 }
 .pie__enlace:nth-child(even) .pie__dibujo { transform: rotate(6deg); }
-.pie__enlace:hover .pie__dibujo, .pie__enlace:focus-visible .pie__dibujo { transform: translateY(-2px) rotate(0deg) scale(1.15); }
+.pie__enlace:hover .pie__dibujo, .pie__enlace:focus-visible .pie__dibujo { transform: translateY(-2px) rotate(0deg) scale(1.08); }
 .pie__enlace[aria-current="page"] span { background-image: linear-gradient(transparent 58%, rgb(255 242 122 / 85%) 58%); }
 :root[data-color="noche"] .pie__enlace[aria-current="page"] span { background-image: linear-gradient(transparent 58%, rgb(255 156 143 / 40%) 58%); }
 
@@ -549,7 +549,7 @@ body { transition: background-color .5s; }
   --c: #CFE6DC;
   width: 26px; height: 26px; padding: 0; border: none; border-radius: 50%; cursor: pointer;
   background: radial-gradient(circle at 35% 30%, var(--c), color-mix(in srgb, var(--c) 75%, #000) 100%);
-  box-shadow: var(--sombra-iman); transition: transform .2s cubic-bezier(.3, 1.6, .5, 1);
+  box-shadow: var(--sombra-iman); transition: transform .2s cubic-bezier(.3, 1.3, .5, 1);
 }
 .colores__iman--crema { --c: #F2E6D0; }
 .colores__iman--celeste { --c: #D9E4F2; }
@@ -610,17 +610,17 @@ body { transition: background-color .5s; }
 .portada__dibujo img {
   width: 100%; height: 100%;
   filter: drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 6px 7px rgb(30 50 40 / 30%));
-  transition: transform .35s cubic-bezier(.3, 1.6, .5, 1);
+  transition: transform .35s cubic-bezier(.3, 1.3, .5, 1);
 }
-.portada__dibujo:hover img, .portada__dibujo:focus-visible img { transform: scale(1.45); }
-.portada__dibujo--cambia img { animation: cambiar-dibujo .45s cubic-bezier(.3, 1.6, .5, 1); }
+.portada__dibujo:hover img, .portada__dibujo:focus-visible img { transform: scale(1.2); }
+.portada__dibujo--cambia img { animation: cambiar-dibujo .45s cubic-bezier(.3, 1.3, .5, 1); }
 @keyframes bailar {
-  0%, 100% { transform: rotate(-8deg) translateY(0); }
-  25% { transform: rotate(6deg) translateY(-6px); }
-  50% { transform: rotate(-4deg) translateY(0); }
-  75% { transform: rotate(9deg) translateY(-4px); }
+  0%, 100% { transform: rotate(-4deg) translateY(0); }
+  25% { transform: rotate(3deg) translateY(-3px); }
+  50% { transform: rotate(-2deg) translateY(0); }
+  75% { transform: rotate(4.5deg) translateY(-2px); }
 }
-@keyframes cambiar-dibujo { 0% { transform: scale(.3) rotate(-40deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes cambiar-dibujo { 0% { transform: scale(.6) rotate(-20deg); } 100% { transform: scale(1) rotate(0); } }
 
 /* Vitrina: todos los dibujos se desplazan solos dentro del recuadro (no hay cinta a la vista).
    La lista está dos veces seguidas: al llegar a la mitad, vuelve a empezar sin que se note. */
@@ -645,6 +645,7 @@ body { transition: background-color .5s; }
 .vitrina__dibujo:hover img { transform: scale(1.1) rotate(-4deg); animation: menear-suave .8s ease-in-out infinite alternate; }
 @keyframes menear { from { rotate: -6deg; } to { rotate: 8deg; } }
 @keyframes menear-suave { from { rotate: -3deg; } to { rotate: 4deg; } }
+/* Los ingredientes sueltos de las páginas se mecen igual, pero arrancan hacia el otro lado y un poco más lento (.9s) */
 .vitrina__dibujo .ya { top: -12px; right: -10px; width: 36px; height: 36px; font-size: 1.1rem; font-style: normal; }
 @keyframes vitrina { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @media (max-width: 520px) {
@@ -694,7 +695,7 @@ body { transition: background-color .5s; }
   position: relative; display: inline-flex; flex-direction: column; padding: 8px 14px 6px; max-width: 340px;
   background: var(--color-error-fondo); color: var(--color-error); text-decoration: none;
   font: 700 1.2rem/1.1 var(--fuente-mano); transform: rotate(2deg); box-shadow: 0 3px 6px rgb(0 0 0 / 16%);
-  transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), box-shadow .3s;
+  transition: transform .3s cubic-bezier(.3, 1.3, .5, 1), box-shadow .3s;
 }
 .aviso-vencidos::before {   /* el pedacito de cinta que lo pega al post-it */
   content: ""; position: absolute; top: -8px; left: 50%; width: 46px; height: 14px; margin-left: -23px;
@@ -735,7 +736,7 @@ td small { display: block; }
 #tabla-despensa tbody { display: grid; gap: 34px 18px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); padding: 10px 0; }
 #tabla-despensa tr {
   position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
-  padding: 8px 6px; border: none; transform: rotate(var(--r, -2deg)); transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+  padding: 8px 6px; border: none; transform: rotate(var(--r, -2deg)); transition: transform .25s cubic-bezier(.3, 1.3, .5, 1);
 }
 #tabla-despensa tr:nth-child(4n + 2) { --r: 3deg; }
 #tabla-despensa tr:nth-child(4n + 3) { --r: -4deg; }
@@ -782,7 +783,7 @@ td small { display: block; }
 .contador { display: flex; flex-wrap: wrap; gap: 10px 14px; margin: 0 0 18px; }
 /* Cada número es un imán que filtra la lista: el elegido queda despegado y marcado */
 .contador__item {
-  text-decoration: none; transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), box-shadow .25s;
+  text-decoration: none; transition: transform .25s cubic-bezier(.3, 1.3, .5, 1), box-shadow .25s;
   --claro: #A8E6B8; --base: var(--color-exito);
   display: inline-flex; align-items: center; gap: 8px; padding: 4px 16px 4px 4px; border-radius: 99px;
   background: var(--color-superficie); color: var(--color-texto); font: 700 1.35rem/1 var(--fuente-mano);
@@ -816,7 +817,7 @@ td small { display: block; }
   width: min(800px, calc(100vw - 12px)); max-width: none; max-height: calc(100vh - 12px);
   padding: 28px 20px 56px; border: none; background: transparent; overflow: auto;
 }
-.nota-despegada[open] { animation: despegar .38s cubic-bezier(.3, 1.4, .5, 1) both; }
+.nota-despegada[open] { animation: despegar .38s cubic-bezier(.3, 1.25, .5, 1) both; }
 .nota-despegada > .tarjeta {
   margin: 0; transform: rotate(-1.2deg);
   box-shadow: 0 34px 60px rgb(0 0 0 / 34%), 0 10px 18px rgb(0 0 0 / 20%);
@@ -937,7 +938,7 @@ td small { display: block; }
 .selector__sticker {
   position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 96px;
   text-align: center; cursor: pointer; transform: rotate(var(--r, -3deg));
-  transition: transform .22s cubic-bezier(.3, 1.6, .5, 1);
+  transition: transform .22s cubic-bezier(.3, 1.3, .5, 1);
 }
 .selector__sticker:nth-child(4n + 2) { --r: 3deg; }
 .selector__sticker:nth-child(4n + 3) { --r: -5deg; }
@@ -1026,9 +1027,9 @@ td small { display: block; }
 .nota-panel__dibujo {
   position: absolute; top: 10px; right: 12px; width: 64px; height: 64px; transform: rotate(8deg);
   filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 4px 4px rgb(30 50 40 / 28%));
-  transition: transform .35s cubic-bezier(.3, 1.6, .5, 1);
+  transition: transform .35s cubic-bezier(.3, 1.3, .5, 1);
 }
-.nota-panel:hover .nota-panel__dibujo { transform: rotate(-6deg) scale(1.12); }
+.nota-panel:hover .nota-panel__dibujo { transform: rotate(2deg) scale(1.06); }
 
 /* Administración → Correo: la configuración como pares "dato: valor" */
 .datos-correo { display: grid; grid-template-columns: max-content 1fr; gap: 0 16px; margin: 0 0 var(--renglon); line-height: var(--renglon); }
@@ -1118,7 +1119,7 @@ td > .acciones { flex-wrap: nowrap; }
   flex: none; width: 36px; height: 24px; background: currentColor; rotate: -4deg;
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 26' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M37 19c-6-9-17-12-31-7'/%3E%3Cpath d='M13 4.5 5.5 12.3l9.2 4.4'/%3E%3C/svg%3E") center / contain no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 26' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M37 19c-6-9-17-12-31-7'/%3E%3Cpath d='M13 4.5 5.5 12.3l9.2 4.4'/%3E%3C/svg%3E") center / contain no-repeat;
-  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+  transition: transform .25s cubic-bezier(.3, 1.3, .5, 1);
 }
 .volver__texto {
   background: linear-gradient(transparent 58%, rgb(255 242 122 / 0%) 58%) no-repeat 0 0 / 100% 100%;
@@ -1135,7 +1136,7 @@ td > .acciones { flex-wrap: nowrap; }
   display: inline-block; padding: 3px 12px 5px; text-decoration: none;
   font: 700 1.2rem/1.1 var(--fuente-mano); color: var(--color-texto);
   background: var(--color-cinta); transform: rotate(-2deg); box-shadow: 0 1px 3px rgb(0 0 0 / 15%);
-  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), box-shadow .25s;
+  transition: transform .25s cubic-bezier(.3, 1.3, .5, 1), box-shadow .25s;
 }
 .atajo:nth-child(odd) { transform: rotate(1.5deg); background: #CFE8F3; }
 .atajo:hover, .atajo:focus-visible { transform: translateY(-2px) rotate(0deg); box-shadow: 0 5px 8px rgb(0 0 0 / 18%); }
@@ -1165,7 +1166,7 @@ td > .acciones { flex-wrap: nowrap; }
     animation: mecer 4s ease-in-out var(--d) infinite alternate;
     transition: scale .3s cubic-bezier(.3, 1.3, .5, 1);
   }
-  .stickers-deco__dibujo:hover { scale: 1.12; animation: menear-suave .8s ease-in-out infinite alternate; }
+  .stickers-deco__dibujo:hover { scale: 1.1; animation: menear-suave .9s ease-in-out infinite alternate-reverse; }
   /* Los de abajo no llegan hasta el borde inferior de su zona */
   .stickers-deco--abajo .stickers-deco__dibujo { top: min(var(--y), calc(100% - 120px)); }
   /* Inicio: a los costados de "¿Por qué Cooki?", un poco más chicos */
@@ -1190,16 +1191,16 @@ td > .acciones { flex-wrap: nowrap; }
     animation: mecer 4s ease-in-out var(--d) infinite alternate;
     transition: scale .3s cubic-bezier(.3, 1.3, .5, 1);
   }
-  .sueltos__dibujo:hover { scale: 1.1; animation: menear-suave .8s ease-in-out infinite alternate; }
+  .sueltos__dibujo:hover { scale: 1.1; animation: menear-suave .9s ease-in-out infinite alternate-reverse; }
 }
 
 /* Dibujo pegado en la esquina de una hoja (error, "Dónde estamos") */
 .tarjeta__dibujo {
   position: absolute; top: -18px; right: -14px; z-index: 2; width: 72px; height: 72px; transform: rotate(10deg);
   filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 5px 5px rgb(30 50 40 / 30%));
-  transition: transform .3s cubic-bezier(.3, 1.6, .5, 1);
+  transition: transform .3s cubic-bezier(.3, 1.3, .5, 1);
 }
-.tarjeta:hover > .tarjeta__dibujo { transform: rotate(-4deg) scale(1.12); }
+.tarjeta:hover > .tarjeta__dibujo { transform: rotate(4deg) scale(1.06); }
 /* Título con un dibujo que baila al lado (Contacto) */
 .titulo-con-dibujo { display: flex; align-items: center; gap: 12px; }
 .titulo-con-dibujo__img {
@@ -1215,7 +1216,7 @@ td > .acciones { flex-wrap: nowrap; }
 .elegir__elegido img {
   width: 56px; height: 56px; transform: rotate(-6deg);
   filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 4px 4px rgb(30 50 40 / 30%));
-  animation: despegar .3s cubic-bezier(.3, 1.4, .5, 1);
+  animation: despegar .3s cubic-bezier(.3, 1.25, .5, 1);
 }
 .elegir__elegido--vacio { color: var(--color-suave); }
 .elegir__elegido--vacio img { opacity: .35; }
@@ -1230,10 +1231,10 @@ td > .acciones { flex-wrap: nowrap; }
   background: transparent; cursor: pointer; color: var(--color-texto); font: 700 1.05rem/1.05 var(--fuente-mano); text-align: center;
 }
 .elegir__opcion img {
-  width: 48px; height: 48px; transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+  width: 48px; height: 48px; transition: transform .25s cubic-bezier(.3, 1.3, .5, 1);
   filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 3px 3px rgb(30 50 40 / 25%));
 }
-.elegir__opcion:hover img { transform: scale(1.15) rotate(-6deg); }
+.elegir__opcion:hover img { transform: scale(1.08) rotate(-3deg); }
 .elegir__opcion[aria-pressed="true"] { background: var(--color-postit); box-shadow: 0 0 0 2px var(--color-texto); }
 .elegir__opcion--propio span::after { content: " ★"; color: var(--color-marca); }
 .elegir__opcion[hidden] { display: none; }
@@ -1266,7 +1267,7 @@ td > .acciones { flex-wrap: nowrap; }
 .responder > summary { list-style: none; display: inline-flex; cursor: pointer; }
 .responder > summary::-webkit-details-marker { display: none; }
 .responder[open] > summary { background: var(--color-superficie); color: var(--color-texto); }
-.responder__form { display: grid; gap: 8px; margin-top: 12px; animation: despegar .3s cubic-bezier(.3, 1.4, .5, 1) both; }
+.responder__form { display: grid; gap: 8px; margin-top: 12px; animation: despegar .3s cubic-bezier(.3, 1.25, .5, 1) both; }
 .responder__form label { font-weight: 800; }
 .responder__form .boton { justify-self: start; }
 .responder__form p { margin: 0; }
@@ -1300,7 +1301,7 @@ td > .acciones { flex-wrap: nowrap; }
   transition: opacity .2s;
 }
 .editor__dibujo--vacio { opacity: 0; }
-.editor__dibujo--cambia { animation: cambiar-dibujo .45s cubic-bezier(.3, 1.6, .5, 1), menear .5s ease-in-out .45s 2 alternate; }
+.editor__dibujo--cambia { animation: cambiar-dibujo .45s cubic-bezier(.3, 1.3, .5, 1), menear .5s ease-in-out .45s 2 alternate; }
 /* En el celular no hay lugar al lado del título: alcanza con el dibujo de "elegido" */
 @media (max-width: 700px) { .editor__dibujo { display: none; } }
 
@@ -1327,7 +1328,7 @@ td > .acciones { flex-wrap: nowrap; }
 .porciones__boton {
   display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; text-decoration: none;
   font: 800 1.2rem/1 var(--fuente); color: #fff; background: radial-gradient(circle at 35% 30%, #9FD3FF, var(--color-azul) 70%);
-  box-shadow: var(--sombra-iman); transition: transform .2s cubic-bezier(.3, 1.6, .5, 1);
+  box-shadow: var(--sombra-iman); transition: transform .2s cubic-bezier(.3, 1.3, .5, 1);
 }
 .porciones__boton:hover { transform: translateY(-2px) scale(1.08); color: #fff; }
 .porciones__boton--tope { opacity: .35; pointer-events: none; }
@@ -1372,7 +1373,7 @@ td > .acciones { flex-wrap: nowrap; }
 .nosotros__foto {
   flex: none; display: grid; place-items: center; width: 104px; height: 118px; margin-top: 4px;
   padding: 8px 8px 24px; background: #fff; box-shadow: 0 4px 10px rgb(0 0 0 / 18%);
-  transform: rotate(-5deg); transition: transform .3s cubic-bezier(.3, 1.6, .5, 1);
+  transform: rotate(-5deg); transition: transform .3s cubic-bezier(.3, 1.3, .5, 1);
 }
 .nosotros__persona:nth-of-type(even) .nosotros__foto { transform: rotate(4deg); }
 .nosotros__foto img { width: 86px; height: 86px; background: #EAF4EF; border-radius: 2px; }
@@ -1386,12 +1387,12 @@ td > .acciones { flex-wrap: nowrap; }
   --claro: #8A949C; --base: #24292F;
   display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; color: #fff;
   background: radial-gradient(circle at 35% 30%, var(--claro), var(--base) 70%);
-  box-shadow: var(--sombra-iman); transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), box-shadow .25s;
+  box-shadow: var(--sombra-iman); transition: transform .25s cubic-bezier(.3, 1.3, .5, 1), box-shadow .25s;
 }
 .iman-enlace svg { filter: drop-shadow(0 1px 0 rgb(0 0 0 / 30%)); }
 .iman-enlace--linkedin { --claro: #6FB3F2; --base: #0A66C2; }
 .iman-enlace--correo { --claro: #FF9C8F; --base: var(--color-marca); }
-.iman-enlace:hover, .iman-enlace:focus-visible { transform: translateY(-3px) rotate(-6deg); box-shadow: var(--sombra-iman-alto); }
+.iman-enlace:hover, .iman-enlace:focus-visible { transform: translateY(-2px) rotate(-3deg); box-shadow: var(--sombra-iman-alto); }
 /* Los dos ingredientes a los costados de la última hoja (solo en la computadora) */
 /* La nota de contacto, con el mate y el café a los costados (en pantallas angostas solo la nota) */
 .nosotros__fila-contacto { display: grid; grid-template-columns: minmax(0, 640px); justify-content: center; align-items: center; gap: 0 32px; margin: 44px 0 30px; }
@@ -1492,13 +1493,13 @@ td > .acciones { flex-wrap: nowrap; }
   display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px 0 10px; cursor: pointer;
   border: 2px solid var(--color-texto); border-radius: 99px; background: var(--color-superficie); color: var(--color-texto);
   font: 800 .9rem var(--fuente); box-shadow: 0 3px 0 rgb(0 0 0 / 20%);
-  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+  transition: transform .25s cubic-bezier(.3, 1.3, .5, 1);
 }
 .favorita__corazon { font-size: 1.4rem; line-height: 1; color: var(--color-marca); }
 .favorita__boton[aria-pressed="true"] { background: #F7C9D4; }
 .favorita__boton:hover { transform: rotate(-3deg) scale(1.05); }
 .favorita__boton[aria-pressed="true"] .favorita__corazon { animation: latido .4s ease-out; }
-@keyframes latido { 50% { transform: scale(1.35); } }
+@keyframes latido { 50% { transform: scale(1.2); } }
 .tarjeta-receta__favorita { margin-left: 6px; color: var(--color-marca); font-size: 1.3rem; }
 .lista-ingredientes .no-como strong { text-decoration: underline wavy var(--color-error); }
 /* Menú de la cuenta como hoja de cuaderno: Mi cuenta y Mis preferencias son imanes chicos,
@@ -1513,7 +1514,7 @@ td > .acciones { flex-wrap: nowrap; }
 .cuenta__enlace {
   display: inline-flex; align-items: center; gap: 12px; padding: 3px 0; text-decoration: none;
   font: 700 1.55rem/1.1 var(--fuente-mano); color: var(--color-texto);
-  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+  transition: transform .25s cubic-bezier(.3, 1.3, .5, 1);
 }
 .cuenta__enlace::before {
   content: ""; flex: none; width: 24px; height: 24px; border-radius: 50%; box-shadow: var(--sombra-iman); transition: box-shadow .25s;
@@ -1529,7 +1530,7 @@ td > .acciones { flex-wrap: nowrap; }
   min-height: 32px; padding: 2px 14px 4px; border: none; border-radius: 0;
   font: 700 1.3rem/1 var(--fuente-mano); background: var(--color-cinta); color: var(--color-texto);
   transform: rotate(-2deg); box-shadow: 0 1px 3px rgb(0 0 0 / 15%);
-  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), box-shadow .25s;
+  transition: transform .25s cubic-bezier(.3, 1.3, .5, 1), box-shadow .25s;
 }
 .cuenta__panel .disposicion__boton + .disposicion__boton { transform: rotate(1.5deg); }
 .cuenta__panel .disposicion__boton:hover { transform: translateY(-2px) rotate(0deg); box-shadow: 0 5px 8px rgb(0 0 0 / 18%); }
@@ -1594,7 +1595,7 @@ td > .acciones { flex-wrap: nowrap; }
   display: inline-grid; place-items: center; min-width: 40px; height: 40px; padding: 0 10px; border-radius: 99px;
   border: 2px solid var(--color-texto); background: var(--color-superficie); color: var(--color-texto);
   font-weight: 800; text-decoration: none; box-shadow: 0 3px 0 rgb(0 0 0 / 20%);
-  transition: transform .2s cubic-bezier(.3, 1.6, .5, 1);
+  transition: transform .2s cubic-bezier(.3, 1.3, .5, 1);
 }
 a.paginacion__numero:hover, .paginacion__flecha:hover { transform: translateY(-2px) rotate(-4deg); color: var(--color-azul); }
 .paginacion__numero[aria-current="page"] { background: var(--color-texto); color: #fff; }
@@ -1611,7 +1612,7 @@ a.paginacion__numero:hover, .paginacion__flecha:hover { transform: translateY(-2
 .mas-lista__boton {
   min-height: 32px; padding: 0 10px; border: 2px dashed var(--color-azul); border-radius: 8px;
   background: var(--color-superficie); color: var(--color-azul); font: 700 1.1rem/1 var(--fuente-mano);
-  cursor: pointer; transform: rotate(-2deg); transition: transform .2s cubic-bezier(.3, 1.6, .5, 1);
+  cursor: pointer; transform: rotate(-2deg); transition: transform .2s cubic-bezier(.3, 1.3, .5, 1);
 }
 .mas-lista__boton:hover { transform: rotate(1deg) scale(1.05); background: #EAF2FB; }
 .mas-lista__boton:disabled { opacity: .5; cursor: wait; }
@@ -1707,7 +1708,7 @@ a.etiqueta--lista:hover { text-decoration: underline; }
   display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 16px 6px 14px;
   border: none; background: #CFE0F2; color: var(--color-texto); font: 700 1.45rem/1 var(--fuente-mano);
   box-shadow: 0 6px 12px rgb(0 0 0 / 16%); transform: rotate(-2deg); cursor: pointer;
-  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+  transition: transform .25s cubic-bezier(.3, 1.3, .5, 1);
 }
 .nota-lista__asomada b {
   display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding: 0 6px; border-radius: 99px;
@@ -1788,7 +1789,7 @@ a.etiqueta--lista:hover { text-decoration: underline; }
 /* Mientras piensa, el gorro se mueve (no se mueve con "reducir movimiento") */
 form.pensando button[aria-busy="true"] { cursor: progress; }
 .nota-ia:has(form.pensando) .nota-ia__dibujo { animation: pensar 1s ease-in-out infinite alternate; }
-@keyframes pensar { from { transform: rotate(-6deg) translateY(0); } to { transform: rotate(10deg) translateY(-4px); } }
+@keyframes pensar { from { transform: rotate(-3deg) translateY(0); } to { transform: rotate(5deg) translateY(-2px); } }
 @media (prefers-reduced-motion: reduce) { .nota-ia:has(form.pensando) .nota-ia__dibujo { animation: none; } }
 
 /* "Adaptar con IA" en una receta (HU-31): un botón que despliega una nota verde con las opciones */
@@ -1959,7 +1960,7 @@ form.pensando button[aria-busy="true"] { cursor: progress; }
   animation: mecer 4s ease-in-out var(--d) infinite alternate;
   transition: scale .3s cubic-bezier(.3, 1.3, .5, 1);
 }
-.plan-relleno__dibujo:hover { scale: 1.1; animation: menear-suave .8s ease-in-out infinite alternate; }
+.plan-relleno__dibujo:hover { scale: 1.1; animation: menear-suave .9s ease-in-out infinite alternate-reverse; }
 @media (min-width: 1000px) { .plan-relleno { grid-column: span 2; } }
 /* Con 2 columnas el lugar es angosto: más chicos */
 @media (min-width: 640px) and (max-width: 999px) { .plan-relleno__dibujo { width: calc(var(--t) * .75); } }
